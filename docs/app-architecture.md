@@ -76,3 +76,39 @@ Image: `dumps/app.bin` = flash 0x08006000–0x080294E7 (144,616 bytes), byte-ide
 | `tools/fingerprint.py app` | per-function peripheral/RAM/fan-in summary (`docs/app_fingerprint.txt`) |
 | `tools/match_functions.py` | functions byte-identical to identified bootloader code |
 | `tools/iar_lz77.py` | IAR LZ77 initialiser decompressor |
+| `tools/globals_access.py` | global memory accesses (address, width, read/write) of original functions |
+
+## Reconstruction workflow (hybrid build)
+
+The application is rebuilt module by module and verified before the whole firmware exists:
+
+1. **Analyse:** decompile in Ghidra, check global access widths with `tools/globals_access.py`, and check subtle code against the disassembly. Signedness and stack out-parameters are the usual traps.
+2. **Write C** in `firmware/src/`, with each function tagged `orig: 0x...`. Globals go in headers with their original addresses noted, and calls to code not yet rebuilt go through `firmware/include/orig_calls.h`.
+3. **Hybrid build** (`cmake -S firmware -B build/firmware`): the rebuilt modules are linked at 0x08100000. Every global is bound to its original RAM address and every unreconstructed function to its original code (`tools/hybrid_syms.py`, using `ghidra/app_names.tsv`).
+4. **Equivalence test** (`python -P tools/emu/test_app_functions.py`): each rebuilt function and its original run from identical randomised states, with boundary values taken from the original's compare constants, optionally as multi-step sequences. The test compares the return value, all RAM outside the stack, and every peripheral write. A planted off-by-one is caught.
+
+When every function is reconstructed, the globals are defined normally and the hybrid bindings disappear.
+
+## Reconstruction status
+
+`python -P tools/coverage.py app` → `docs/coverage_app.csv`.
+
+| Module | Source | Functions | Status |
+|---|---|---|---|
+| Keys and rotary switch | `firmware/src/keys.c` | 9 | equivalent |
+| Board I/O (delay, GPIO_Init) | `firmware/src/board_io.c` | 2 | equivalent (GPIO via callers) |
+| HY3131 serial bus, PF8 detect | `firmware/src/hy3131_bus.c` | 6 | equivalent |
+| NJU6350 RTC | `firmware/src/rtc.c` | 11 | equivalent |
+| LCD driver | `firmware/src/lcd_driver.c` | 12 | equivalent |
+
+Known deviation: `lcd_reapply_pulse_duration()` with a contrast outside 10–17 uses 0 where the original passes an uninitialised register. Valid settings never reach that case.
+
+## Findings from the reconstruction so far
+
+- **Keys:** PG8–PG15 are the keys (`g_keys_raw` bit n = PG(8+n)). PG0–PG7 are the rotary switch (`g_rotary_raw` bit n = PG(7−n)).
+  - Debounce is two equal samples.
+  - A long press fires after 50 scan ticks. It applies to single keys and the PG11+PG13 combination (the bootloader's update keys).
+  - PG14/PG15 auto-repeat in the menu: after 3 ticks in the menu (50 elsewhere), then 5 repeats at 30 ticks, then every 10 ticks.
+- **Settings in initialised data:** 0x2000022C log interval (1 s), 0x2000022E an unidentified key-timing setting (500), 0x20000230 auto power-off (1800 s), 0x20000237 LCD contrast (14).
+- **LCD:** the application drives three more segment pins than the bootloader (PA15, PB3, PB4). The display shadow is 16 words at 0x20007790. Numbers go through `number_to_digits` → `digits_to_text` (signed digits, leading-zero blanking) → glyph rendering (still to be reconstructed).
+- **RTC:** writes send address + 1, values are BCD, and the date/time registers are 2, 4, 6, 10, 12, 14.

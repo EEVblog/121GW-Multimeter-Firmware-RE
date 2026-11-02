@@ -73,6 +73,23 @@ SPECS = {
     "rtc_write_register": dict(ret=None, args=lambda r: (r.getrandbits(4), r.getrandbits(8))),
     "rtc_read_register": dict(ret=8, args=lambda r: (r.getrandbits(4),), idr=pin_pattern("B", 7)),
     "rtc_write_datetime": dict(ret=None, trials=100),
+    # ---- LCD driver ----
+    "lcd_update": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
+    "lcd_update_partial": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
+    "lcd_clear_shadow": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(16)]),
+    "number_to_digits": dict(ret=None, args=lambda r: (r.choice([0, 9, 10, 99999, 100000,
+                                                                  r.getrandbits(17), r.getrandbits(32)]),)),
+    "digits_to_text": dict(ret=None, args=lambda r: (r.randrange(0, 7),),
+                           extra=[(0x20007DB0 + 4 * i, 4) for i in range(5)], trials=400),
+    "lcd_set_main_dp": dict(ret=None, args=lambda r: (r.randrange(0, 7),), extra=[(0x20007790, 4)]),
+    "lcd_set_sub_dp": dict(ret=None, args=lambda r: (r.randrange(0, 7),),
+                           extra=[(0x20007790, 4), (0x20007794, 4)]),
+    "lcd_set_pulse_duration": dict(ret=None, args=lambda r: (r.randrange(8, 20),)),
+    "lcd_reapply_pulse_duration": dict(ret=None, ram_set=lambda r: {0x20000237: r.randrange(10, 18)}),
+    "lcd_gpio_init": dict(ret=None, trials=20),
+    "lcd_init": dict(ret=None, args=lambda r: (r.randrange(10, 18), r.choice([0, 1])), trials=60,
+                     extra=[(0x20007790 + 4 * i, 4) for i in range(16)],
+                     with_globals_of=["lcd_update"]),
     # ---- keys ----
     "keys_read_raw": dict(ret=None, idr=lambda r: {"G": r.choice(KEY_IDR_POOL + [r.getrandbits(16)])}),
     "rotary_read_raw": dict(ret=None, idr=lambda r: {"G": r.getrandbits(16)}),
@@ -213,6 +230,8 @@ def main():
         for t in range(n):
             ram = baseline_ram()
             randomise(ram, rnd, sorted(targets), pool)
+            for addr, val in (spec["ram_set"](rnd).items() if "ram_set" in spec else []):
+                ram[addr - RAM_BASE] = val
             mo = new_machine(flash, hybrid, ram)
             mn = new_machine(flash, hybrid, ram)
             idr = spec["idr"](rnd) if "idr" in spec else {}

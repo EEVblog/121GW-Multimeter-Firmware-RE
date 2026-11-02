@@ -14,6 +14,7 @@ set(APP_SOURCES
     src/board_io.c
     src/hy3131_bus.c
     src/rtc.c
+    src/lcd_driver.c
 )
 
 add_library(app_modules STATIC ${APP_SOURCES})

@@ -16,6 +16,10 @@
 0800c1bc	func	hy3131_clock_pulse
 0800c28c	func	detect_pf8_low
 0800ecf6	func	delay_loop
+0801013e	func	bin_to_bcd
+0801016c	func	rtc_write_datetime	registers 2,4,6,10,12,14 from g_rtc_set_reg*
+080101ac	func	rtc_write_register	address+1 then BCD value
+080101e2	func	rtc_read_register
 08010204	func	rtc_write_address4
 08010254	func	rtc_read_byte
 080102b8	func	rtc_write_byte
@@ -34,6 +38,17 @@
 08016b7c	func	key_is_single_key
 08016bb8	func	key_is_update_combo
 08016bca	func	keys_read_raw
+0801717e	func	lcd_set_sub_dp
+08017fb4	func	lcd_set_main_dp
+0801a81c	func	lcd_clear_shadow
+0801b090	func	number_to_digits
+0801b130	func	digits_to_text
+0801b304	func	lcd_update
+0801b396	func	lcd_update_partial
+0801b450	func	lcd_init
+0801b4d6	func	lcd_gpio_init
+0801b708	func	lcd_set_pulse_duration
+0801b77a	func	lcd_reapply_pulse_duration
 0801bb5c	func	log_entry_stub
 0801bd48	func	GPIO_Init
 0801bdec	func	GPIO_StructInit
@@ -47,6 +62,7 @@
 0801fe06	func	RCC_SYSCLKConfig
 0801ff34	func	RCC_RTCCLKConfig
 080203b4	func	LCD_Init
+08020402	func	lcd_wait_fcr_sync
 08020426	func	LCD_ContrastConfig
 0802043e	func	LCD_DeadTimeConfig
 08020456	func	LCD_BlinkConfig
@@ -100,7 +116,11 @@
 2000022c	label	g_log_interval_s
 2000022e	label	g_cfg_022e	u16 setting, default 500; role unknown (key timing)
 20000230	label	g_apo_seconds_left	Auto power-off countdown (beeps at 60 s, off at 0)
+20000237	label	g_lcd_contrast	10..17, default 14
+20007790	label	g_lcd_shadow	16 words, copy of LCD->RAM
 200077d0	label	hy3131_rx_buffer
+20007c30	label	g_digit_text	5 chars
+20007db0	label	g_digits	5 x u32
 20007fa8	label	g_log_tick_count
 20007fdf	label	g_pf8_detected_low
 20007fe1	label	g_logging_active
@@ -109,6 +129,9 @@
 2000801b	label	g_flag_801b
 2000801d	label	g_flag_801d
 2000803a	label	g_power_off_request
+20008050	label	g_flag_8050	selects partial LCD updates; role unknown
+20008053	label	g_flag_8053	forces a full LCD update
+2000805b	label	g_display_dirty
 20008066	label	g_rotary_raw
 20008067	label	g_key_short_pending
 20008068	label	g_key_long_pending
@@ -129,19 +152,15 @@
 200080d2	label	g_task_flag_c
 200080d3	label	g_task_flag_d
 200080d4	label	g_task_flag_1s
-200080ee	label	g_key_release_armed
-200080ef	label	g_key_stable_count
-200080f0	label	g_key_prev_sample
-200080f1	label	g_key_armed_code
-200080f2	label	g_key_repeat_stage
-200080f3	label	g_key_repeat_ticks
-0801013e	func	bin_to_bcd
-080101ac	func	rtc_write_register	address+1 then BCD value
-080101e2	func	rtc_read_register
-0801016c	func	rtc_write_datetime	registers 2,4,6,10,12,14 from g_rtc_set_reg*
 200080d7	label	g_rtc_set_reg2
 200080d8	label	g_rtc_set_reg4
 200080d9	label	g_rtc_set_reg6
 200080da	label	g_rtc_set_reg10
 200080db	label	g_rtc_set_reg12
 200080dc	label	g_rtc_set_reg14
+200080ee	label	g_key_release_armed
+200080ef	label	g_key_stable_count
+200080f0	label	g_key_prev_sample
+200080f1	label	g_key_armed_code
+200080f2	label	g_key_repeat_stage
+200080f3	label	g_key_repeat_ticks

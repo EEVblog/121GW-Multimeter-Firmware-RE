@@ -59,7 +59,8 @@ def orig_tags(src_dir):
 def main():
     name = sys.argv[1] if len(sys.argv) > 1 else "bootloader"
     tsv = os.path.join(ROOT, "ghidra", "export", name, "functions.tsv")
-    tags = orig_tags(os.path.join(ROOT, name))
+    src_dir = {"app": "firmware"}.get(name, name)
+    tags = orig_tags(os.path.join(ROOT, src_dir))
     lib = LIBRARY.get(name, {})
     rows, missing = [], []
     for r in csv.DictReader(open(tsv), delimiter="\t"):
@@ -69,7 +70,7 @@ def main():
         elif addr in lib:
             status, where = "library", lib[addr]
         elif r["name"].endswith("IRQHandler") and int(r["size"]) <= 4:
-            status, where = "default handler", "%s/src/startup.c Default_Handler" % name
+            status, where = "default handler", "%s/src/startup.c Default_Handler" % src_dir
         else:
             status, where = "UNACCOUNTED", ""
             missing.append(r)
@@ -84,11 +85,12 @@ def main():
     for row in rows:
         counts[row[3]] = counts.get(row[3], 0) + 1
     print("%d functions: %s" % (len(rows), ", ".join("%s %d" % kv for kv in sorted(counts.items()))))
-    for r in missing:
+    for r in (missing if name == "bootloader" else []):
         print("  UNACCOUNTED %s %-24s %s bytes  callers: %s" % (r["addr"], r["name"], r["size"],
                                                              r["callers"][:60]))
     print("wrote", os.path.relpath(out, ROOT))
-    sys.exit(1 if missing else 0)
+    if name == "bootloader":
+        sys.exit(1 if missing else 0)
 
 
 if __name__ == "__main__":
