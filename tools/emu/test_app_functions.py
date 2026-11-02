@@ -200,6 +200,14 @@ SPECS = {
         ram_set=lambda r: {0x20008095: r.choice([16, 16, 1, 2]),
                            0x2000803C: r.randrange(0, 25), 0x2000803D: r.randrange(0, 7)},
         with_globals_of=["gain_select_for_range", "cal_store_value"]),
+    # ---- measurement: AD1 ----
+    "ad1_read_value": dict(ret=32, trials=2000, extra=[(0x200077D0 + i, 1) for i in range(3)]),
+    "ad1_average": dict(ret=8, trials=80, steps=20, args=lambda r: (r.randrange(-0x800000, 0x800000),),
+                        ram_set=lambda r: {0x2000803C: r.choice([0, 1, 9, 9, 17]), 0x2000803D: r.randrange(0, 8)}),
+    "ad1_process_func0": dict(ret=None, trials=40),
+    "hy3131_on_ad1_ready": dict(ret=None, trials=120, extra=[(0x200077D0 + i, 1) for i in range(3)],
+                                ram_set=lambda r: {0x2000803C: r.randrange(0, 26), 0x2000803D: r.randrange(0, 4)},
+                                with_globals_of=["ad1_read_value", "ad1_average"]),
     # ---- LCD driver ----
     "lcd_update": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
     "lcd_update_partial": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),

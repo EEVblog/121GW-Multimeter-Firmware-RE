@@ -2,6 +2,9 @@
 08006124	func	hy3131_poll	Polls PF3 (HY3131 DO = IRQ while CS high); runs hy3131_service
 0800614e	func	hy3131_service	Reads regs 0x00-0x33, clears INTF, dispatches AD1/RMS/peak/counter handlers
 080061e4	func	hy3131_on_ad1_ready
+080062f8	func	ad1_read_value
+08006342	func	ad1_average
+08006540	func	ad1_process_func0
 08008208	func	hy3131_on_rms_ready
 0800827c	func	rms_read_value
 080082d4	func	rms_average
@@ -196,9 +199,14 @@
 20007c30	label	g_digit_text	5 chars
 20007d0c	label	g_bor_level
 20007d5c	label	g_cal_address
+20007d74	label	g_ad1_value
 20007d78	label	g_rms_value
 20007db0	label	g_digits	5 x u32
 20007dc4	label	g_hy_scratch
+20007dc8	label	g_ad1_raw24
+20007dcc	label	g_ad1_value_copy
+20007dd0	label	g_ad1_sum
+20007dd4	label	g_ad1_average
 20007dd8	label	g_rms_raw_low
 20007ddc	label	g_rms_raw
 20007de0	label	g_rms_value_copy
@@ -247,6 +255,8 @@
 2000807d	label	g_hy_r20
 2000807e	label	g_hy_r29
 2000807f	label	g_hy_irq_pending
+20008080	label	g_ad1_count
+20008081	label	g_ad1_average_ready
 20008082	label	g_rms_average_ready
 20008083	label	g_rms_count
 2000808c	label	g_avg_flag_808c

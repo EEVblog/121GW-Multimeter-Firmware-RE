@@ -23,6 +23,7 @@ set(APP_SOURCES
     src/measure_scale.c
     src/eeprom.c
     src/calibration.c
+    src/measure_ad1.c
 )
 
 add_library(app_modules STATIC ${APP_SOURCES})

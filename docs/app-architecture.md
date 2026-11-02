@@ -106,6 +106,9 @@ When every function is reconstructed, the globals are defined normally and the h
 
 | RMS results | `firmware/src/measure_rms.c` | 7 | equivalent |
 | Measurement scaling (zero offset, gain, 16-sample mean, gain divisors) | `firmware/src/measure_scale.c`, `firmware/include/numeric.h` | 11 | equivalent for finite, realistic float values |
+| Data EEPROM access (read, program with retries, BE writes, markers) | `firmware/src/eeprom.c` | 11 | equivalent, including EEPROM write traces |
+| Calibration storage and zero/gain calibration | `firmware/src/calibration.c` | 5 | equivalent |
+| AD1 results (24-bit read, running mean, per-function dispatch) | `firmware/src/measure_ad1.c` | 4 | equivalent; per-function processing still calls the original |
 
 Known deviations, all for inputs that valid firmware state never produces:
 - **NaN results:** IAR's soft-float runtime produces a *negative* default NaN (0xFFC00000) where GCC's libgcc produces a positive one, and that changes sign-dependent saturation later. NaN needs corrupt calibration data; an erased STM32L1 EEPROM reads as zeros.
