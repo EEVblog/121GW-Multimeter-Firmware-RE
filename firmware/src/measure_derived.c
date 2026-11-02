@@ -222,14 +222,14 @@ void func12_set_interval(void)
         if (g_pf8_detected_low != 0) {
             g_func12_interval = 200;
         } else {
-            g_func12_interval = (g_flag_8042 != 0) ? 300 : 200;
+            g_func12_interval = (g_manual_range != 0) ? 300 : 200;
         }
         break;
     case 1:
         if (g_pf8_detected_low != 0) {
-            g_func12_interval = (g_flag_8042 != 0) ? 300 : 150;
+            g_func12_interval = (g_manual_range != 0) ? 300 : 150;
         } else {
-            g_func12_interval = (g_flag_8042 != 0) ? 300 : 200;
+            g_func12_interval = (g_manual_range != 0) ? 300 : 200;
         }
         break;
     case 2: case 3: case 4:
@@ -270,7 +270,7 @@ void minmax_start(void)
     g_minmax_mode = 1;
     g_minmax_max = INT32_MIN;
     g_minmax_min = INT32_MAX;
-    g_minmax_d90 = 0;
-    g_minmax_d98 = 0;
-    g_minmax_d94 = 0;
+    g_minmax_avg = 0;
+    g_minmax_count = 0;
+    g_minmax_avg_rem = 0;
 }

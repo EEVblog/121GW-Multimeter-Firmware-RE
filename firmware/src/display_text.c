@@ -419,12 +419,12 @@ void show_secondary_number_dp(int32_t value, uint8_t dp, uint8_t update_now)
 
 /*
  * orig: 0x08017100 - signed number on the main readout; skipped while
- * g_flag_804f is set if check_804f. The first argument is unused.
+ * g_hold_active is set if check_804f. The first argument is unused.
  */
 void show_main_number(uint32_t unused, uint8_t dp, int32_t value, uint8_t check_804f)
 {
     (void)unused;
-    if (check_804f != 0 && g_flag_804f != 0) {
+    if (check_804f != 0 && g_hold_active != 0) {
         return;
     }
     lcd_set_main_dp(dp);

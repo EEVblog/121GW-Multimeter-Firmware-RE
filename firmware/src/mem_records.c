@@ -20,6 +20,18 @@ void mem_mark_counts(void)
     g_log_count_mark = g_log_count;
 }
 
+/* orig: 0x08010BE8 - restore the counts kept by mem_mark_counts(); implausible counts clear them */
+void mem_restore_counts(void)
+{
+    g_mem_count = g_mem_count_mark;
+    g_log_count = g_log_count_mark;
+    if (g_mem_count_mark > MEM_PAGE || g_log_count_mark >= 600000u) {
+        g_mem_count = 0;
+        g_log_count = 0;
+    }
+    mem_recall_init();
+}
+
 /* orig: 0x08010C34 - set up recall of the last (at most 60) records */
 void mem_recall_init(void)
 {

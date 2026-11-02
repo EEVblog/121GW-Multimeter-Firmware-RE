@@ -55,10 +55,6 @@
 
 #define FRONT_END_NONE         100u
 
-/* Byte 2 of RCC_CR holds HSEON/HSERDY/HSEBYP; byte 1 of RCC_CSR holds LSEON/LSEBYP. */
-#define RCC_CR_BYTE2  (*(volatile uint8_t *)((uint32_t)&RCC->CR + 2))
-#define RCC_CSR_BYTE1 (*(volatile uint8_t *)((uint32_t)&RCC->CSR + 1))
-
 /* ---- Reset-time clock set-up ---------------------------------------------- */
 
 /* orig: 0x08025FC2 - as the bootloader's, with a 10x longer HSE timeout */
@@ -357,7 +353,7 @@ void adc_init(void)
 }
 
 /* orig: 0x08020876 (enable path of NVIC_Init) */
-static void nvic_enable(unsigned irq, uint32_t preempt, uint32_t sub)
+void nvic_irq_init(unsigned irq, uint32_t preempt, uint32_t sub)
 {
     uint32_t group_shift = (0x700u - (SCB->AIRCR & 0x700u)) >> 8;
     uint32_t priority = (preempt << (4u - group_shift)) | (sub & (0x0Fu >> group_shift));
@@ -370,10 +366,10 @@ static void nvic_enable(unsigned irq, uint32_t preempt, uint32_t sub)
 void nvic_init(void)
 {
     SCB->AIRCR = 0x05FA0000u | 0x500u;
-    nvic_enable(IRQ_SDIO, 0, 0);
-    nvic_enable(IRQ_DMA2_CHANNEL4, 0, 0);
-    nvic_enable(IRQ_TIM2, 2, 2);
-    nvic_enable(IRQ_TIM3, 1, 1);
+    nvic_irq_init(IRQ_SDIO, 0, 0);
+    nvic_irq_init(IRQ_DMA2_CHANNEL4, 0, 0);
+    nvic_irq_init(IRQ_TIM2, 2, 2);
+    nvic_irq_init(IRQ_TIM3, 1, 1);
 }
 
 /* TIM_TimeBaseInit + clear update flag + enable update interrupt + start */

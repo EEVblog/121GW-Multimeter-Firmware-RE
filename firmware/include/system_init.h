@@ -10,6 +10,14 @@
 #define SYSTEM_INIT_H
 
 #include <stdint.h>
+#include "stm32l1xx.h"
+
+/* Bit-band alias of one bit of a peripheral register */
+#define BITBAND_PERIPH(reg, bit)     (*(volatile uint32_t *)(0x42000000u + (((uint32_t)(reg) - 0x40000000u) << 5) + ((bit) << 2)))
+
+/* Byte 2 of RCC_CR holds HSEON/HSERDY/HSEBYP; byte 1 of RCC_CSR holds LSEON/LSEBYP. */
+#define RCC_CR_BYTE2  (*(volatile uint8_t *)((uint32_t)&RCC->CR + 2))
+#define RCC_CSR_BYTE1 (*(volatile uint8_t *)((uint32_t)&RCC->CSR + 1))
 
 extern uint8_t g_woke_from_standby;   /* 0x20007FDE */
 extern uint32_t g_bor_level;          /* 0x20007D0C */
@@ -32,5 +40,6 @@ void system_init(void);
 
 void gpio_clocks_disable(void);
 void nvic_enable_irq(uint8_t irq);
+void nvic_irq_init(unsigned irq, uint32_t preempt, uint32_t sub);
 
 #endif /* SYSTEM_INIT_H */

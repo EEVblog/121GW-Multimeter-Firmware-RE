@@ -374,11 +374,11 @@ void ble_build_packet(void)
         b = (uint8_t)(b + 0x01);
     }
 
-    uint8_t s = (g_flag_802b != 0) ? 0x40 : 0;
+    uint8_t s = (g_ble_enabled != 0) ? 0x40 : 0;
     if (g_flag_80b1 != 0) {
         s = (uint8_t)(s + 0x20);
     }
-    if (g_flag_8058 != 0) {
+    if (g_rel_active != 0) {
         s = (uint8_t)(s + 0x10);
     }
     if (g_function == 2 && g_mode_8037 == 11) {

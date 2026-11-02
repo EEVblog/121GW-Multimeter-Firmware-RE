@@ -44,13 +44,13 @@ extern uint8_t g_flag_80ce;             /* 0x200080CE */
 extern uint8_t g_flag_7fe3;             /* 0x20007FE3 */
 extern uint8_t g_flag_7fe7;             /* 0x20007FE7  menu copy of g_flag_80b9 */
 extern uint8_t g_flag_7fe8;             /* 0x20007FE8  menu copy of g_flag_80b7 */
-extern uint8_t g_flag_802b;             /* 0x2000802B */
+extern uint8_t g_ble_enabled;             /* 0x2000802B */
 extern uint8_t g_apo_disabled;          /* 0x20008039  auto power-off disabled (setup) */
 extern uint8_t g_flag_803b;             /* 0x2000803B */
 extern uint8_t g_dp_position;           /* 0x20008040  decimal point of the number being drawn */
 extern uint8_t g_flag_804d;             /* 0x2000804D  symbol state 0..2 */
-extern uint8_t g_flag_804f;             /* 0x2000804F */
-extern uint8_t g_flag_8058;             /* 0x20008058 */
+extern uint8_t g_hold_active;           /* 0x2000804F  HOLD */
+extern uint8_t g_rel_active;            /* 0x20008058  REL */
 extern uint8_t g_flag_80b1;             /* 0x200080B1 */
 extern uint8_t g_flag_8061;             /* 0x20008061  set by main loop, cleared by sym_range_marks_update() */
 extern uint8_t g_flag_7fe9;             /* 0x20007FE9  menu copy of g_flag_80ba */

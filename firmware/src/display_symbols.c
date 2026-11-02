@@ -136,7 +136,7 @@ void sym_w7_b7_update(uint8_t refresh)
 /* orig: 0x08019D2C - shadow[0] bit 31 from 0x2000802B */
 void sym_w0_b31_update(uint8_t refresh)
 {
-    set_bits(&g_lcd_shadow[0], 0x80000000u, g_flag_802b != 0);
+    set_bits(&g_lcd_shadow[0], 0x80000000u, g_ble_enabled != 0);
     maybe_refresh(refresh);
 }
 
@@ -195,7 +195,7 @@ uint8_t display_partial_mode(void)
     if ((uint8_t)(g_logging_active & (g_flag_8050 ^ 1u)) != 0 || g_menu_active != 0) {
         return 0;
     }
-    if (g_flag_804f != 0) {
+    if (g_hold_active != 0) {
         return 2;
     }
     return (g_flag_8050 != 0) ? 1 : 0;
@@ -223,7 +223,7 @@ void sym_w5_b7_update(uint8_t refresh)
 void sym_w0_b0_update(uint8_t refresh)
 {
     set_bits(&g_lcd_shadow[0], 0x1u,
-             g_logging_active == 0 && g_menu_active == 0 && g_flag_8058 != 0);
+             g_logging_active == 0 && g_menu_active == 0 && g_rel_active != 0);
     maybe_refresh(refresh);
 }
 
@@ -239,7 +239,7 @@ uint8_t autorange_shown(void)
     if (g_function == 11 || g_function == 10 || g_function == 5 || g_function == 0 || g_function == 8) {
         return 0;
     }
-    return (g_flag_8042 == 0) ? 1 : 0;
+    return (g_manual_range == 0) ? 1 : 0;
 }
 
 /* orig: 0x08019268 - shadow[6] bit 7 / shadow[2] bit 11 by state 0..2, stored in 0x2000804D */

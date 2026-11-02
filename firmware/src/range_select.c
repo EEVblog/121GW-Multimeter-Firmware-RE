@@ -12,6 +12,8 @@
 #include "buzzer.h"
 #include "measure_funcs.h"
 #include "measure_scale.h"
+#include "measure_counter.h"
+#include "display_symbols.h"
 
 /*
  * orig: 0x0800D81E
@@ -191,7 +193,7 @@ void reconfigure_borrow_f1(uint8_t borrow)
 
 static int autorange_allowed(void)
 {
-    return (uint8_t)(g_flag_808a | g_flag_8042) == 0 && g_minmax_mode == 0;
+    return (uint8_t)(g_flag_808a | g_manual_range) == 0 && g_minmax_mode == 0;
 }
 
 /* |value| for functions 22..24 (wrapping, as the original), else value. */
@@ -297,4 +299,65 @@ uint8_t range_fixed_function(uint8_t ignore_range)
         return (ignore_range == 0 && g_range >= 2) ? 1 : 0;
     }
     return 0;
+}
+
+/*
+ * orig: 0x0801485A - dual functions (13-15, 22-24): the two row selects of a
+ * range; functions 15 and 24 use select 2 for row 1
+ */
+void dual_rows_for_range(uint8_t function, uint8_t range)
+{
+    if (function == 13 || function == 14 || function == 15 || function == 22 || function == 23
+        || function == 24) {
+        if (range == 0) {
+            g_sel_80c6 = 0;
+            g_sel_80c7 = 0;
+        } else if (range == 1) {
+            g_sel_80c6 = 1;
+            g_sel_80c7 = 0;
+        } else if (range == 2) {
+            g_sel_80c6 = 0;
+            g_sel_80c7 = 1;
+        } else if (range == 3) {
+            g_sel_80c6 = 1;
+            g_sel_80c7 = 1;
+        }
+        if ((function == 15 || function == 24) && g_sel_80c7 == 1) {
+            g_sel_80c7 = 2;
+        }
+    }
+}
+
+/*
+ * orig: 0x08014796 - RANGE key: the first press switches to manual range,
+ * later presses step through the function's ranges (not in HOLD or the
+ * 0x20008050 mode, nor for single-range functions)
+ */
+void range_key(void)
+{
+    if (g_hold_active != 0 || g_flag_8050 != 0) {
+        beep_triple();
+        return;
+    }
+    if (g_flag_808a == 0 && g_manual_range == 0) {
+        if (g_range_count[g_function] < 2) {
+            beep_triple();
+        } else {
+            if (g_manual_range == 0) {
+                g_manual_range = 1;
+                sym_w7_b0_update(1);
+            }
+            beep_short();
+        }
+    } else if (g_range_count[g_function] < 2) {
+        beep_triple();
+    } else {
+        g_range++;
+        if (g_range >= g_range_count[g_function]) {
+            g_range = 0;
+        }
+        g_flag_804b = 1;
+        dual_rows_for_range(g_function, g_range);
+        beep_short();
+    }
 }

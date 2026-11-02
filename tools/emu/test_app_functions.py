@@ -1511,6 +1511,234 @@ SPECS.update({
     "nvic_enable_irq": dict(ret=None, args=lambda r: (r.choice([r.randrange(0, 60), r.getrandbits(7)]),)),
 })
 
+
+# ---- power-off ----
+USART_CFG = 0x20000300      # (inside the stack area, so not compared)
+
+
+def usart_cfg_ram(r):
+    import struct as _st
+    baud = r.choice([9600, 19200, 115200]) if r.random() < 0.3 else r.randrange(300, 1000000)
+    words = [r.choice([0, 0x1000]), r.choice([0, 0x2000, 0x3000]), r.choice([0, 0x400, 0x600]),
+             r.choice([0x4, 0x8, 0xC]), r.choice([0, 0x100, 0x300])]
+    b = _st.pack("<I5H", baud, *words)
+    return {USART_CFG + i: v for i, v in enumerate(b)}
+
+
+ROTARY_POS = lambda r: {0x20008065: r.choice([0, 1, 2, 4, 8, 0x10, 0x20, 0x40, 0x80, r.getrandbits(8)])}
+CLOCK_REGS = {
+    "msi": {0x40023808: 0x00000000, 0x40023804: 0x0000A000},
+    "hsi": {0x40023808: 0x00000001 | 0x90},
+    "hse": {0x40023808: 0x00000002 | 0x400},
+    "pll": {0x40023808: 0x00000003 | 0x00910000 | 0x2800},
+    "pllhsi": {0x40023808: 0x00000003 | 0x00C40000 | 0x0500 | 0xB0},
+}
+
+SPECS.update({
+    "lcd_off": dict(ret=None, trials=20, regs={0x40002400: 1}),
+    "timers_off": dict(ret=None, trials=5, regs={0x40000000: 0x81, 0x40000400: 0x81, 0x40023824: 0x10000203}),
+    "ble_uart_off": dict(ret=None, trials=5, regs={0x4000440C: 0x202C, 0x40023824: 0x10020203}),
+    "ble_uart_on": dict(ret=None, trials=5),
+    "adc_off": dict(ret=None, trials=5, regs={0x40012408: 1, 0x40023820: 0x201}),
+    "pvd_off": dict(ret=None, trials=5, regs={0x40007000: 0x1F1F}),
+    "clocks_minimal": dict(ret=None, trials=5),
+    "systick_off": dict(ret=None, trials=5, regs={0xE000E010: 7}),
+    "oscillators_off": dict(ret=None, trials=5, regs={0x40023800: 0x01010301, 0x40023834: 0x00000301}),
+    "pins_all_analog": dict(ret=None, trials=5),
+    "exti_pin_source": dict(ret=8, args=lambda r: (r.getrandbits(8),)),
+    "exti_line_bit": dict(ret=32, args=lambda r: (r.choice([r.randrange(0, 20), r.getrandbits(8)]),)),
+    "exti_irq_for_line": dict(ret=8, args=lambda r: (r.choice([r.randrange(0, 20), r.getrandbits(8)]),)),
+    "exti_wake_line": dict(ret=None, trials=60, args=lambda r: (r.randrange(0, 16),),
+                           regs={0x40010008: 0x1234, 0x4001000C: 0x5678, 0x40010400: 0xF0F0,
+                                 0x40010404: 0x0F0F, 0x40010408: 0xFFFF, 0x4001040C: 0x00FF}),
+    "wake_sources_config": dict(ret=None, trials=40, ram_set=ROTARY_POS),
+    "power_circuits_off": dict(ret=None, trials=20, regs={0x40002400: 1},
+                               with_globals_of=["front_end_select", "lcd_update"]),
+    "power_down_prepare": dict(ret=None, trials=20, ram_set=ROTARY_POS, regs={0x40002400: 1},
+                               with_globals_of=["front_end_select", "lcd_update"]),
+})
+for _k, _regs in CLOCK_REGS.items():
+    SPECS["rcc_get_clocks@" + _k] = dict(ret=None, trials=10, args=lambda r: (0x2000B000,),
+                                         regs=_regs)
+    SPECS["usart_init@" + _k] = dict(ret=None, trials=150, ram_set=usart_cfg_ram,
+                                     args=lambda r: (r.choice([0x40004400, 0x40013800]), USART_CFG),
+                                     regs={**_regs, 0x4000440C: 0x8000, 0x40013810: 0x3FFF})
+
+
+# ---- setup menu ----
+SETUP_KEYS = lambda r: (r.choice([0, 1, 1, 2, 2, 3, 100, 100, r.getrandbits(8)]),)
+EE_SETTINGS = lambda r: {o: r.choice([0, 1, 2, 5, 14, 0xFF, r.getrandbits(8)]) for o in range(0x30)}
+
+
+def setup_ram(r):
+    v = r.choice([0, 9, 99999, 12345, r.randrange(0, 100000)])
+    d = {0x2000803C: r.choice([2, 4, 10, 11, 13, 16, 17, 19, 21, 22, r.randrange(0, 26)]),
+         0x2000803D: r.randrange(0, 4),
+         0x20008037: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 100, r.getrandbits(8)]),
+         0x20008071: r.randrange(0, 5),
+         0x200080D6: r.choice([0, 1]),
+         0x20000237: r.randrange(10, 18),
+         0x200080DE: r.choice([1, 2, 11, 12, r.randrange(1, 13)]),
+         0x200080DF: r.choice([0, 1, 2, 27, 28, 29, 30, 31, 32, r.getrandbits(8)]),
+         0x200080D8: r.choice([1, 2, 4, 12, r.randrange(1, 13)]),   # month (0 and 13+ hit the documented rtc_days_in_month deviation)
+         0x200080D7: r.choice([0, 4, 23, r.randrange(0, 100)])}
+    for i in range(4):
+        d[0x20007D18 + i] = (v >> (8 * i)) & 0xFF
+    return d
+
+
+SETUP_GLOBALS = ["settings_save_beep", "settings_save_apo", "settings_save_contrast", "lcd_init",
+                 "settings_save_log_interval", "settings_save_sel_80b6", "settings_save_flag_80a8",
+                 "rtc_write_datetime", "settings_serial_yymm_from_clock", "settings_save_serial_number",
+                 "sym_w5_b7_update", "rtc_clamp_day", "rtc_days_in_month"]
+
+
+def _setup_spec(**kw):
+    d = dict(ret=None, trials=200, args=SETUP_KEYS, ram_set=setup_ram, eeprom=EE_SETTINGS,
+             with_globals_of=SETUP_GLOBALS)
+    d.update(kw)
+    return d
+
+
+SPECS.update({
+    "secondary_mode_default": dict(ret=None, ram_set=lambda r: {0x2000803C: r.randrange(0, 26),
+                                                                0x2000808B: r.choice([0, 0, 1]),
+                                                                0x200080BA: r.choice([0, 1])}),
+    "setup_bd_dual_key": _setup_spec(),
+    "setup_bd_va_key": _setup_spec(trials=120, with_globals_of=SETUP_GLOBALS + [
+        "reconfigure_borrow_f1", "reconfigure_borrow_f2", "hy3131_configure_mode", "cal_load",
+        "front_end_configure", "mode_238_select"]),
+    "setup_updn_key": _setup_spec(),
+    "setup_apo_key": _setup_spec(),
+    "setup_beep_key": _setup_spec(),
+    "setup_contrast_key": _setup_spec(trials=100),
+    "setup_log_interval_key": _setup_spec(extra=[(0x20007FA6, 2)]),
+    "setup_year_key": _setup_spec(),
+    "setup_date_key": _setup_spec(trials=300),
+    "setup_time_key": _setup_spec(),
+    "setup_serial_key": _setup_spec(trials=300),
+    "setup_item_key": _setup_spec(ret=8, trials=400, with_globals_of=SETUP_GLOBALS + [
+        "settings_temp_unit_key", "reconfigure_borrow_f1", "reconfigure_borrow_f2",
+        "hy3131_configure_mode", "cal_load", "front_end_configure", "mode_238_select"]),
+    "rtc_load_clock": dict(ret=None, trials=200, idr=pin_pattern("B", 7)),
+    "app_state_init": dict(ret=None, trials=60, idr=pin_pattern("B", 7), eeprom=EE_SETTINGS,
+                           ram_set=lambda r: {0x20008038: r.choice([0, 1]), 0x2000808B: r.choice([0, 1]),
+                                              0x20007FAC: r.choice([0, 60, 61])},
+                           with_globals_of=["cal_load", "settings_load_log_interval", "settings_load_contrast",
+                                            "settings_load_apo", "settings_load_temp_unit",
+                                            "settings_load_flag_80b3", "settings_load_sel_80b6",
+                                            "settings_load_flag_80a8", "settings_load_beep",
+                                            "settings_load_serial_yymm", "settings_load_serial_number",
+                                            "mem_recall_init", "apo_reset", "lcd_reapply_pulse_duration"]),
+    "mem_restore_counts": dict(ret=None, ram_set=lambda r: {0x20007FAC: r.choice([0, 59, 60, 61, 0xFF]),
+                                                            0x20007FAD: r.choice([0, 0, 1])},
+                               extra=[(0x20007D3C, 4)], with_globals_of=["mem_recall_init"]),
+})
+
+
+# ---- modes (HOLD, REL, MIN/MAX, MEM, calibration start) ----
+def le32(addr, v):
+    return {addr + i: (v >> (8 * i)) & 0xFF for i in range(4)}
+
+
+MINMAX_VALUES = [0, 1, -1, 99999, 100000, 100001, -99999, -100000, -100001, 0x7FFFFFFF, -0x80000000]
+
+
+def minmax_ram(r):
+    d = {0x2000804E: r.choice([0, 1, 2, 3, 4, 5, r.getrandbits(8)]),
+         0x2000804F: r.choice([0, 0, 1]), 0x20008046: r.choice([0, 0, 1]), 0x20008045: r.choice([0, 1]),
+         0x20008058: r.choice([0, 1]), 0x20008059: r.choice([0, 1])}
+    for a in (0x20007D88, 0x20007D8C, 0x20007D90, 0x20007D6C, 0x20007D64, 0x20007D9C, 0x20007DA8):
+        d.update(le32(a, r.choice(MINMAX_VALUES + [r.randrange(-200000, 200000), r.getrandbits(32)])))
+    d.update(le32(0x20007D98, r.choice([0, 1, 2, 999999, 1000000, 1000001, -1, r.randrange(0, 2000000),
+                                        r.getrandbits(32)])))
+    d.update(le32(0x20007D94, r.choice([0, 1, -1, r.randrange(-1000, 1000), r.getrandbits(32)])))
+    return d
+
+
+def cal_ram(r):
+    d = {0x2000803C: r.choice([2, 4, 16, 18, 20, 9, 13, 22, r.randrange(0, 25)]),
+         0x2000803D: r.randrange(0, 7), 0x2000803E: r.randrange(0, 6)}
+    d.update(le32(0x20007D84, r.choice([7999, 8000, 12000, 12001, 17999, 18000, 22000, 22001, 89999,
+                                        90000, r.randrange(0, 200000), r.getrandbits(32)])))
+    return d
+
+
+SPECS.update({
+    "bar_limit_update": dict(ret=None, ram_set=lambda r: {0x2000803C: r.randrange(0, 25),
+                                                          0x2000803D: r.randrange(0, 7),
+                                                          0x200080B3: r.choice([0, 1, 2])}),
+    "minmax_value": dict(ret=32, trials=600, ram_set=minmax_ram,
+                         args=lambda r: (r.choice([0, 1, 0x100, 0x101, r.getrandbits(32)]),)),
+    "minmax_update": dict(ret=None, trials=800, ram_set=minmax_ram),
+    "rel_apply": dict(ret=None, trials=400, ram_set=minmax_ram),
+    "mode_8050_set": dict(ret=None, args=lambda r: (r.choice([0, 1, 2]), r.choice([0, 1, 2]))),
+    "menu_exit": dict(ret=None, ram_set=lambda r: {0x2000803C: r.randrange(0, 26)},
+                      with_globals_of=["secondary_mode_default"]),
+    "flag_80b3_toggle": dict(ret=None, trials=60, ram_set=lambda r: {0x2000803C: r.randrange(0, 25),
+                                                                     0x2000803D: r.randrange(0, 7),
+                                                                     0x200080B3: r.choice([0, 1, 2])},
+                             eeprom=EE_SETTINGS,
+                             with_globals_of=["main_dp_for_range", "front_end_pe15_pf6", "settings_save_flag_80b3"]),
+    "minmax_show": dict(ret=None, trials=200, ram_set=minmax_ram,
+                        with_globals_of=["show_main_number", "show_ofl"]),
+    "minmax_key": dict(ret=None, trials=200, ram_set=minmax_ram,
+                       with_globals_of=["show_main_number", "show_ofl", "sym_w7_b0_update",
+                                        "sym_w5_b7_update", "sym_b30_update"]),
+    "mem_log_store": dict(ret=None, ram_set=lambda r: {0x20007FA4: r.choice([0, 58, 59, 60, 61, r.randrange(0, 60)]),
+                                                       0x20007FA5: r.choice([0, 0, 0, 1])},
+                          extra=[(0x20007D38, 4)], with_globals_of=["mem_store_record"]),
+    "mem_recall_show": dict(ret=None, trials=200, args=lambda r: (r.choice([1, 2, 30, 59, 60, 61, r.randrange(0, 70)]),),
+                            ram_set=lambda r: {0x20007FA0: r.randrange(0, 61), 0x20007F9E: r.randrange(0, 61),
+                                               0x20007FEB: r.randrange(0, 25), 0x20007FED: r.randrange(0, 5)},
+                            with_globals_of=["mem_recall_record", "show_main_number", "show_ofl",
+                                             "show_secondary_number_dp", "lcd_update"]),
+    "cal_trims_reset": dict(ret=None, trials=60, ram_set=lambda r: {0x2000803C: r.randrange(0, 25),
+                                                                    0x2000803D: r.randrange(0, 7)},
+                            with_globals_of=["cal_store_trims"]),
+    "cal_freq_check": dict(ret=8, trials=600, args=lambda r: (r.choice([0, 1, 2]),), ram_set=cal_ram,
+                           with_globals_of=["scale_by_decimal", "cal_store_trims"]),
+    "cal_sample_count": dict(ret=8, ram_set=lambda r: {0x2000803C: r.randrange(0, 26), 0x2000803D: r.randrange(0, 8)}),
+    "cal_start": dict(ret=8, trials=400, args=lambda r: (r.choice([0, 1, 2]),), ram_set=cal_ram,
+                      with_globals_of=["scale_by_decimal", "cal_store_trims"]),
+})
+
+
+# ---- rotary switch and RANGE key ----
+ONE_HOT = [0, 1, 2, 4, 8, 0x10, 0x20, 0x40, 0x80]
+ROTARY_RAM = lambda r: {0x20008065: r.choice(ONE_HOT + [r.getrandbits(8)]),
+                        0x2000023C: r.choice(ONE_HOT + [0xFF, r.getrandbits(8)]),
+                        0x200080EC: r.choice([0, 3, 4, 5, r.getrandbits(8)]),
+                        0x200080EB: r.choice([0, 0, 1, 15]),
+                        0x20008064: r.choice([0, 1])}
+SPECS.update({
+    "rotary_debounce": dict(ret=None, trials=400, ram_set=ROTARY_RAM,
+                            idr=lambda r: {"G": r.choice([0xFFFF & ~(1 << r.randrange(8)), 0xFFFF, r.getrandbits(16)])}),
+    "rotary_select_function": dict(ret=None, trials=200, ram_set=ROTARY_RAM, eeprom=EE_SETTINGS,
+                                   with_globals_of=["settings_function_a"]),
+    "rotary_apply": dict(ret=None, trials=200, ram_set=ROTARY_RAM, eeprom=EE_SETTINGS),
+    "rotary_task": dict(ret=None, trials=200, ram_set=ROTARY_RAM, eeprom=EE_SETTINGS, steps=6,
+                        idr=lambda r: {"G": r.choice([0xFFFF & ~(1 << r.randrange(8)), 0xFFFF])}, idr_change=0.2),
+    "dual_rows_for_range": dict(ret=None, args=lambda r: (r.choice([13, 14, 15, 22, 23, 24, r.randrange(0, 26)]),
+                                                          r.choice([0, 1, 2, 3, 4, r.getrandbits(8)]))),
+    "range_key": dict(ret=None, trials=400, ram_set=lambda r: {0x2000803C: r.randrange(0, 25), 0x2000803D: r.randrange(0, 8),
+                                                               0x2000804F: r.choice([0, 0, 1]), 0x20008050: r.choice([0, 0, 1]),
+                                                               0x2000808A: r.choice([0, 1]), 0x20008042: r.choice([0, 1])},
+                      with_globals_of=["beep_short", "beep_triple", "sym_w7_b0_update"]),
+})
+
+
+SPECS.update({
+    "mode_key": dict(ret=None, trials=300, ram_set=lambda r: {0x2000803C: r.choice(list(range(26)) + [r.getrandbits(8)]),
+                                                              0x200080BA: r.choice([0, 1])},
+                     eeprom=EE_SETTINGS,
+                     with_globals_of=["annunciator_sub_clear", "acdc_mode_toggle", "settings_save_function"]),
+    "input_event_dispatch": dict(ret=None, trials=150, eeprom=EE_SETTINGS, model=FS_MODEL, regs=SD_IRQS,
+                                 ram_set=lambda r: {0x2000806D: r.choice(list(range(10)) + list(range(0x80, 0x8A)) + [r.getrandbits(8)]),
+                                                    0x20008069: 1, 0x20007FE4: r.choice([0, 1]),
+                                                    0x20007FE1: r.choice([0, 1]), 0x2000803C: r.randrange(0, 25)}),
+})
+
 # ---- BLE commands ----
 _HEX = b"0123456789ABCDEF"
 def _ble_cmd_ram(r):

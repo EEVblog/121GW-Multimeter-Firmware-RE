@@ -139,6 +139,10 @@ When every function is reconstructed, the globals are defined normally and the h
 | BLE reading packet (19 bytes, XOR checksum) and the 1000-entry reading histories | `firmware/src/ble_packet.c` | 20 | equivalent |
 | BLE commands (set clock, inject key; echoed back over USART2), setting-edit time-out | `firmware/src/ble_command.c` | 5 | equivalent |
 | Message screens (SdCAL/SdSAv/SdSEt/SAvEd/-Err-/CAL1, version, segment test, power-off), recall symbols, RTC helpers (BCD, days in month, 1 s poll) | `display_text.c`, `display_update.c`, `rtc.c` and others | 22 | equivalent; `rtc_days_in_month()` returns 0 for months outside 1-12, where the original reads past its stack copy of the table |
+| Power-off: circuits, timers, BLE UART, ADC and oscillators off, 65 kHz MSI in range 3, pins analog, EXTI wake-up on the rotary/key lines, STOP mode; BLE UART on (USART2 19200 baud) | `firmware/src/power.c` | 22 incl. inlined SPL helpers (USART_Init, RCC_GetClocksFreq, EXTI_Init...) | equivalent; `power_off` itself (STOP entry, restart) checked against the disassembly |
+| SETUP menu items (temperature unit, APO, beep, contrast, date/time, serial number, log interval, per-function options), start-up state, RTC clock load | `firmware/src/setup_menu.c` | 16 | equivalent (invalid months excluded: documented `rtc_days_in_month` deviation) |
+| Key actions: HOLD/REL/MIN-MAX values, MODE key, bargraph limits, MEM store/recall display, calibration start | `firmware/src/modes.c` | 17 | equivalent |
+| Rotary switch debounce and function selection, RANGE key, BLE button events | `firmware/src/keys.c`, `firmware/src/range_select.c` | 7 | equivalent |
 | IAR `log10`, reproduced bit-for-bit | `firmware/src/iar_math.c` | 1 | equivalent on 4000 inputs incl. NaN/inf/zero/subnormal/negative and errno |
 
 Known deviations, all for inputs that valid firmware state never produces:

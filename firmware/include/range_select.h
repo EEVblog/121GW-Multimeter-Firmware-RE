@@ -28,4 +28,9 @@ void autorange_secondary(int32_t value);
 
 uint8_t range_fixed_function(uint8_t ignore_range);
 
+extern const uint8_t g_range_count[26];   /* 0x20000000  ranges per function (initialised RAM) */
+
+void dual_rows_for_range(uint8_t function, uint8_t range);
+void range_key(void);
+
 #endif /* RANGE_SELECT_H */

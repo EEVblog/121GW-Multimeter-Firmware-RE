@@ -21,7 +21,7 @@ extern float g_dbm;                /* 0x20007E94 */
 extern uint16_t g_func12_interval; /* 0x20007FC4 */
 extern uint16_t g_func12_count;    /* 0x20007FC6 */
 extern uint8_t g_flag_80a3;        /* 0x200080A3 */
-extern uint8_t g_flag_8042;        /* 0x20008042 */
+extern uint8_t g_manual_range;     /* 0x20008042  manual range (AUTO off); set by HOLD, REL, MIN/MAX */
 
 void holdoff_on_low_reading(void);
 int32_t range_threshold(void);
@@ -42,9 +42,9 @@ void overload_latch(void);
 
 extern int32_t g_minmax_max;        /* 0x20007D88 */
 extern int32_t g_minmax_min;        /* 0x20007D8C */
-extern int32_t g_minmax_d90;        /* 0x20007D90  cleared at start (sum/count?) */
-extern int32_t g_minmax_d94;        /* 0x20007D94 */
-extern int32_t g_minmax_d98;        /* 0x20007D98 */
+extern int32_t g_minmax_avg;        /* 0x20007D90  running average */
+extern int32_t g_minmax_avg_rem;    /* 0x20007D94  remainder of the running average */
+extern int32_t g_minmax_count;      /* 0x20007D98  readings averaged (at most 1000000) */
 
 void minmax_start(void);
 

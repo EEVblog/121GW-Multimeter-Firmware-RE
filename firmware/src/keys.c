@@ -4,6 +4,13 @@
 #include "keys.h"
 #include "app_globals.h"
 #include "orig_calls.h"
+#include "measure_counter.h"
+#include "modes.h"
+#include "power.h"
+#include "settings.h"
+#include "system_init.h"
+#include "lcd_driver.h"
+#include "hy3131_ctrl.h"
 #include "stm32l1xx.h"
 
 #define KEY_STABLE_SAMPLES     2u    /* identical samples before a change counts */
@@ -213,6 +220,109 @@ void keys_task(void)
     key_scan();
     keys_dispatch_events();
     if (g_input_event_pending) {
-        FUN_08014ae6(g_input_event_code);
+        input_event_dispatch();
+    }
+}
+
+/*
+ * orig: 0x0801496E - rotary switch debounce: a one-hot code held for five
+ * scans becomes g_rotary_pos (then changes are ignored for 15 scans)
+ */
+void rotary_debounce(void)
+{
+    if (g_rotary_lockout != 0) {
+        g_rotary_lockout--;
+    }
+    rotary_read_raw();
+    if (g_rotary_raw == g_rotary_prev) {
+        g_rotary_stable++;
+        if (g_rotary_stable > 4) {
+            g_rotary_stable = 0;
+            if (key_is_single_key(g_rotary_raw) && g_rotary_pos != g_rotary_raw
+                && g_rotary_lockout == 0) {
+                g_rotary_pos = g_rotary_raw;
+                g_rotary_lockout = 15;
+                g_rotary_changed = 1;
+            }
+        }
+    } else {
+        g_rotary_prev = g_rotary_raw;
+        g_rotary_stable = 0;
+    }
+}
+
+/* orig: 0x080143EE - function of the rotary position (EEPROM settings for positions 2..8) */
+void rotary_select_function(void)
+{
+    uint8_t (*const function_of[7])(void) = {
+        settings_function_a, settings_function_b, settings_function_c, settings_function_d,
+        settings_function_e, settings_function_f, settings_function_g,
+    };
+    uint8_t selected = 0;
+
+    if (g_rotary_pos == 0x01) {
+        g_function = 0;
+        selected = 1;
+    } else {
+        for (unsigned i = 0; i < 7; i++) {
+            if (g_rotary_pos == (uint8_t)(0x02u << i)) {
+                g_function = function_of[i]();
+                selected = 1;
+                break;
+            }
+        }
+    }
+    if (selected) {
+        g_flag_801b = 0;
+        g_flag_801d = 0;
+        g_flag_804a = 1;
+        g_flag_80b9 = 0;
+        g_hold_active = 0;
+        g_flag_8050 = 0;
+        g_flag_8053 = 0;
+        g_flag_8051 = 0;
+        g_count_7fb2 = 0;
+        g_flag_8052 = 0;
+    }
+}
+
+/* orig: 0x08014954 */
+void rotary_apply(void)
+{
+    if (g_rotary_changed != 0) {
+        g_rotary_changed = 0;
+        rotary_select_function();
+    }
+}
+
+/* orig: 0x08014948 */
+void rotary_task(void)
+{
+    rotary_debounce();
+    rotary_apply();
+}
+
+/*
+ * orig: 0x08014AE6 - button event from the BLE app: codes 1..8 are short
+ * presses, 0x81..0x88 long presses (RANGE, HOLD, REL, 0x80, MODE, MIN/MAX,
+ * 0x08, 0x02 in that order)
+ */
+void input_event_dispatch(void)
+{
+    static const uint8_t key_of_event[9] = {0, 0x10, 0x20, 0x40, 0x80, 0x01, 0x04, 0x08, 0x02};
+    uint8_t code = g_input_event_code;
+    uint8_t key;
+
+    g_input_event_pending = 0;
+    g_flag_801b = 0;
+    g_flag_801d = 0;
+    key = (code <= 8) ? key_of_event[code] : 0;
+    if (key != 0) {
+        FUN_08014c3c(key);
+        return;
+    }
+    code = g_input_event_code;
+    if (code >= 0x81 && code <= 0x88) {
+        FUN_0801622c(key_of_event[code - 0x80]);
     }
 }

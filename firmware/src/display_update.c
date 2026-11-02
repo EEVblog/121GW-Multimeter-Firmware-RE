@@ -71,7 +71,7 @@ void display_redraw_symbols(void)
 /*
  * orig: 0x08016E08 - main readout for a new reading: status texts of the
  * averaging/calibration steps first (each shown once), then OFL or the
- * reading (one digit less above 5 digits with g_flag_8058).
+ * reading (one digit less above 5 digits with g_rel_active).
  */
 void main_display_update(void)
 {
@@ -80,7 +80,7 @@ void main_display_update(void)
 
     g_new_reading = 0;
     g_flag_805f = 0;
-    if (g_function == 9 && g_flag_8042 == 0 && g_flag_808a == 0 && g_minmax_mode == 0 &&
+    if (g_function == 9 && g_manual_range == 0 && g_flag_808a == 0 && g_minmax_mode == 0 &&
         g_count_805a != 0) {
         g_count_805a--;
     } else if (g_flag_8076 != 0) {
@@ -124,14 +124,14 @@ void main_display_update(void)
             show_blank(0);
         }
         g_flag_8046 = 0;
-    } else if (g_flag_804f == 0 && g_flag_8046 == 1) {
+    } else if (g_hold_active == 0 && g_flag_8046 == 1) {
         show_ofl(0);
         g_flag_8046 = 0;
     } else {
         v = g_derived_value;
         if (v < 100000 && v > -100000) {
             show_main_number(g_function, g_main_dp, v, 1);
-        } else if (g_flag_8058 != 0) {
+        } else if (g_rel_active != 0) {
             dp = g_main_dp;
             if (dp != 0) {
                 dp--;

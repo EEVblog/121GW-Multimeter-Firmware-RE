@@ -50,6 +50,9 @@ set(APP_SOURCES
     src/mem_records.c
     src/ble_packet.c
     src/ble_command.c
+    src/power.c
+    src/setup_menu.c
+    src/modes.c
     ${COMMON_DIR}/fatfs/ff.c
 )
 

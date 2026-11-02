@@ -8,7 +8,6 @@
 
 #include <stdint.h>
 
-void FUN_08014ae6(uint8_t code);    /* input event handler */
 void FUN_08014c3c(uint8_t code);    /* short-press key handler */
 void FUN_0801622c(uint8_t code);    /* long-press key handler */
 

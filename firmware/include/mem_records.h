@@ -65,6 +65,7 @@ extern uint8_t g_clock_a_backup[6];            /* 0x2000800F */
 extern uint8_t g_clock_b_backup[6];            /* 0x20008015 */
 
 void mem_mark_counts(void);
+void mem_restore_counts(void);
 void mem_recall_init(void);
 uint16_t mem_recall_index(uint16_t n);
 void mem_save_function(void);

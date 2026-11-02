@@ -38,4 +38,15 @@ void key_scan(void);
 void keys_dispatch_events(void);
 void keys_task(void);
 
+extern uint8_t g_rotary_prev;      /* 0x2000023C  previous raw rotary sample (initially 0xFF) */
+extern uint8_t g_rotary_stable;    /* 0x200080EC  scans with an unchanged sample */
+extern uint8_t g_rotary_lockout;   /* 0x200080EB  scans before the next position change */
+extern uint8_t g_rotary_changed;   /* 0x20008064  g_rotary_pos changed */
+
+void rotary_debounce(void);
+void rotary_select_function(void);
+void rotary_apply(void);
+void rotary_task(void);
+void input_event_dispatch(void);
+
 #endif /* KEYS_H */

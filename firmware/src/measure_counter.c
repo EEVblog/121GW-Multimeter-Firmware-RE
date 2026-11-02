@@ -256,7 +256,7 @@ static uint8_t freq_auto_decade(uint64_t v, uint8_t current)
  * orig: 0x0800AC1C
  * Frequency from the counters (function 6 value). dest 0 is the main
  * reading (function 6, range given), dest 1 the secondary frequency
- * (decimal given). With g_flag_8042 set (manual range, outside
+ * (decimal given). With g_manual_range set (manual range, outside
  * calibration) the main reading uses the selected range and flags an
  * overload above it; otherwise the decade is chosen automatically.
  */
@@ -267,7 +267,7 @@ void freq_process(uint8_t dest, uint8_t range)
     counter_value_func6();
     g_peak_is_min = 0;
     g_flag_8046 = 0;
-    if (dest == 0 && (uint8_t)(g_flag_808a | (g_flag_8042 ^ 1u)) == 0) {
+    if (dest == 0 && (uint8_t)(g_flag_808a | (g_manual_range ^ 1u)) == 0) {
         if (range <= 4) {
             if (g_ctr_value6 < manual_limit[range]) {
                 freq_scale_store(0, range);
@@ -310,7 +310,7 @@ static uint8_t func7_auto_selector(uint64_t v)
 /*
  * orig: 0x0800B070 - function 7
  * Value = function 7 value * counts per ms / 1000, then manual range
- * (g_flag_8042 outside calibration; overload above the range) or
+ * (g_manual_range outside calibration; overload above the range) or
  * auto-range over ranges 0..2.
  */
 void counter_process_func7(void)
@@ -319,7 +319,7 @@ void counter_process_func7(void)
     counter_value_func7();
     counter_rate_per_ms();
     g_ctr_value7 = iar_uldiv(g_ctr_value7 * g_ctr_rate, 1000u);
-    if ((uint8_t)(g_flag_808a | (g_flag_8042 ^ 1u)) == 0) {
+    if ((uint8_t)(g_flag_808a | (g_manual_range ^ 1u)) == 0) {
         static const uint32_t limit[3] = { 100000u, 1000000u, 10000000u };
         if (g_range <= 2) {
             if (g_ctr_value7 < limit[g_range]) {
@@ -384,7 +384,7 @@ void counter_process_func12(void)
         g_derived_value = 0;
     }
     g_func12_count_copy = g_func12_count;
-    if ((g_flag_8042 & (g_flag_808a ^ 1u)) != 0 && g_range == 4 && g_f12_skip != 0) {
+    if ((g_manual_range & (g_flag_808a ^ 1u)) != 0 && g_range == 4 && g_f12_skip != 0) {
         g_f12_skip--;
     } else {
         g_new_reading = 1;
@@ -452,10 +452,10 @@ void func12_timeout_poll(void)
     }
     g_flag_80a3 = 0;
     func12_set_interval();
-    if ((g_flag_8042 & (g_flag_808a ^ 1u)) != 0 && g_range == 4) {
+    if ((g_manual_range & (g_flag_808a ^ 1u)) != 0 && g_range == 4) {
         g_f12_skip = 2;
     }
-    if ((uint8_t)(g_flag_8042 | g_flag_808a) != 0) {
+    if ((uint8_t)(g_manual_range | g_flag_808a) != 0) {
         g_flag_8046 = 1;
         g_new_reading = 1;
         return;

@@ -78,6 +78,18 @@ static inline uint32_t m3_udiv(uint32_t a, uint32_t b)
     return b != 0 ? a / b : 0u;
 }
 
+/* Cortex-M3 SDIV: division by zero gives 0, INT32_MIN / -1 gives INT32_MIN. */
+static inline int32_t m3_sdiv(int32_t a, int32_t b)
+{
+    if (b == 0) {
+        return 0;
+    }
+    if (a == INT32_MIN && b == -1) {
+        return INT32_MIN;
+    }
+    return a / b;
+}
+
 /* IAR 64-bit divides (__aeabi_uldivmod / __aeabi_ldivmod): division by zero
  * returns the dividend unchanged (checked in emulation). */
 static inline uint64_t iar_uldiv(uint64_t a, uint64_t b)
