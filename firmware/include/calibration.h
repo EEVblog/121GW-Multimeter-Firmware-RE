@@ -41,6 +41,7 @@ extern uint8_t g_setting_238;       /* 0x20000238  set to 5 after the index-150 
 extern int32_t g_cal_extra_offset;  /* 0x20007E0C  functions 16..21 range 0, subtracted from the reading */
 extern int32_t g_cal_trim[4];       /* 0x20007E4C  16-bit trims at record + 8 */
 extern uint8_t g_flag_808a;         /* 0x2000808A */
+extern uint8_t g_cal_trim_request[4]; /* 0x2000809C  set to capture trim 1..4 */
 
 uint32_t cal_address_for_range(uint32_t unused);
 void cal_clamp_e14(void);
@@ -57,5 +58,7 @@ void cal_trim_clamp(uint8_t index);
 void cal_load_trims(void);
 void cal_store_trims(uint8_t function, uint8_t range, uint8_t which);
 void cal_load(uint8_t function, uint8_t range);
+void cal_set_trim(uint8_t which, int32_t measured);
+void cal_trim_requests(void);
 
 #endif /* CALIBRATION_H */

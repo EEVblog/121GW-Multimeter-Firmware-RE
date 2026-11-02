@@ -22,6 +22,8 @@ extern uint8_t g_flag_8053;             /* 0x20008053  forces one full update */
 extern uint8_t g_logging_active;        /* 0x20007FE1 */
 
 void lcd_wait_fcr_sync(void);
+void lcd_request_update(void);
+uint8_t lcd_flag_set(uint32_t flag);
 void lcd_update(void);
 void lcd_update_partial(void);
 void lcd_clear_shadow(void);

@@ -46,9 +46,16 @@ void lcd_wait_fcr_sync(void)
     } while ((sr & LCD_SR_FCRSR) == 0);
 }
 
-static void lcd_request_update(void)
+/* orig: 0x0802048A (LCD_UpdateDisplayRequest) */
+void lcd_request_update(void)
 {
     LCD->SR = LCD_SR_UDR;
+}
+
+/* orig: 0x08020492 (LCD_GetFlagStatus) */
+uint8_t lcd_flag_set(uint32_t flag)
+{
+    return (LCD->SR & flag) != 0;
 }
 
 /*

@@ -31,6 +31,8 @@ set(APP_SOURCES
     src/iar_math.c
     src/filters.c
     src/temperature.c
+    src/range_select.c
+    src/measure_funcs.c
 )
 
 add_library(app_modules STATIC ${APP_SOURCES})

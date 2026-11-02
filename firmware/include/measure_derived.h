@@ -30,6 +30,7 @@ void product_scaled(int32_t a, int32_t b);
 void vector_magnitude(void);
 void dbm_from_voltage(void);
 void derived_from_average(void);
+void derived_from_average_positive(void);
 void scaled_from_ad1(void);
 void threshold_check(uint32_t value);
 void func12_set_interval(void);

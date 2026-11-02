@@ -37,35 +37,54 @@ int32_t smooth3(int32_t value)
 }
 
 /*
- * orig: 0x08008344
- * Mean of the last max_count readings (64-bit sum). A reading more than
- * `window` away from the previous output restarts the average.
+ * Mean of the last max_count readings (64-bit sum), newest first in buf.
+ * A reading more than `window` away from the previous output restarts it.
  */
-int32_t moving_average(int32_t value, int32_t window, uint16_t max_count)
+static int32_t mavg_step(int32_t *buf, int32_t *out, uint8_t *count,
+                         int32_t value, int32_t window, uint16_t max_count)
 {
-    int32_t step = (int32_t)((uint32_t)value - (uint32_t)g_mavg_out);
+    int32_t step = (int32_t)((uint32_t)value - (uint32_t)*out);
     int64_t sum = 0;
 
     if (step > window || (int64_t)step + window < 0) {
-        g_mavg_count = 0;
+        *count = 0;
     }
-    if (g_mavg_count == 0) {
-        g_mavg_buf[g_mavg_count] = value;
-        g_mavg_count++;
-        g_mavg_out = value;
-        return g_mavg_out;
+    if (*count == 0) {
+        buf[*count] = value;
+        (*count)++;
+        *out = value;
+        return *out;
     }
-    g_mavg_count++;
-    if (max_count < g_mavg_count) {
-        g_mavg_count = (uint8_t)max_count;
+    (*count)++;
+    if (max_count < *count) {
+        *count = (uint8_t)max_count;
     }
-    for (int16_t i = 1; i < g_mavg_count; i++) {
-        g_mavg_buf[g_mavg_count - i] = g_mavg_buf[g_mavg_count - 1 - i];
+    for (int16_t i = 1; i < *count; i++) {
+        buf[*count - i] = buf[*count - 1 - i];
     }
-    g_mavg_buf[0] = value;
-    for (int16_t i = 0; i < g_mavg_count; i++) {
-        sum += g_mavg_buf[i];
+    buf[0] = value;
+    for (int16_t i = 0; i < *count; i++) {
+        sum += buf[i];
     }
-    g_mavg_out = (int32_t)(sum / g_mavg_count);
-    return g_mavg_out;
+    *out = (int32_t)(sum / *count);
+    return *out;
+}
+
+/* orig: 0x08008344 */
+int32_t moving_average(int32_t value, int32_t window, uint16_t max_count)
+{
+    return mavg_step(g_mavg_buf, &g_mavg_out, &g_mavg_count, value, window, max_count);
+}
+
+/*
+ * orig: 0x0800B754
+ * Second instance with its own history; window 0 or max_count 0 passes
+ * the reading through untouched.
+ */
+int32_t moving_average_b(int32_t value, int32_t window, uint16_t max_count)
+{
+    if (window == 0 || max_count == 0) {
+        return value;
+    }
+    return mavg_step(g_mavg_b_buf, &g_mavg_b_out, &g_mavg_b_count, value, window, max_count);
 }

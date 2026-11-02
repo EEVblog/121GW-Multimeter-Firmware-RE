@@ -99,7 +99,7 @@ When every function is reconstructed, the globals are defined normally and the h
 | Board I/O (delay, GPIO_Init) | `firmware/src/board_io.c` | 2 | equivalent (GPIO via callers) |
 | HY3131 serial bus, PF8 detect | `firmware/src/hy3131_bus.c` | 6 | equivalent |
 | NJU6350 RTC | `firmware/src/rtc.c` | 11 | equivalent |
-| LCD driver | `firmware/src/lcd_driver.c` | 12 | equivalent |
+| LCD driver | `firmware/src/lcd_driver.c` | 14 | equivalent |
 | Start-up (clocks, power, GPIO, ADC, NVIC, timers) | `firmware/src/system_init.c` | 15 | equivalent, including BOR-set, wake-from-standby and no-HSE variants |
 | Flash/option-byte helpers | `firmware/src/flash_ob.c` | 8 | equivalent (tested directly or via `system_init`) |
 | HY3131 control (mode registers, IRQ enables, counter, service, poll) | `firmware/src/hy3131_ctrl.c`, generated `hy3131_tables.c` | 6 | equivalent for valid function/range indices |
@@ -107,13 +107,15 @@ When every function is reconstructed, the globals are defined normally and the h
 | Measurement scaling (zero offset, gain, 16-sample mean, gain divisors) | `firmware/src/measure_scale.c`, `firmware/include/numeric.h` | 11 | equivalent for finite, realistic float values |
 | Data EEPROM access (read, program with retries, BE reads/writes, markers) | `firmware/src/eeprom.c` | 14 | equivalent, including EEPROM write traces |
 | Calibration storage and zero/gain calibration | `firmware/src/calibration.c` | 5 | equivalent |
-| Calibration loading (records, trims, extra offsets, dual-gain pairs) | `firmware/src/calibration.c` | 8 | equivalent on randomised EEPROM contents |
+| Calibration loading (records, trims, extra offsets, dual-gain pairs), trim capture | `firmware/src/calibration.c` | 10 | equivalent on randomised EEPROM contents |
 | AD1 results (24-bit read, running mean, per-function dispatch) | `firmware/src/measure_ad1.c` | 4 | equivalent; per-function processing still calls the original |
 | Front-end switching per function | `firmware/src/front_end.c` | 8 | equivalent |
 | Buzzer (PE7), beep presets, auto power-off reset | `firmware/src/buzzer.c` | 6 | equivalent |
 | Measurement helpers, calibration stages | `firmware/src/measure_scale.c`, `firmware/src/calibration.c` | 7 | equivalent |
 | Derived values (power/VA product, vector magnitude, thresholds, hold-off, dBm, AD1 staging, function 12 interval) | `firmware/src/measure_derived.c` | 10 | equivalent (dBm for ranges 0–3) |
-| Reading filters (3-sample smoother, 10-sample moving average) | `firmware/src/filters.c` | 2 | equivalent for in-range counters |
+| Reading filters (3-sample smoother, two moving-average instances) | `firmware/src/filters.c` | 3 | equivalent for in-range counters |
+| Function/range change (HY3131 + calibration reload, decimal point, display mode, VA borrow) | `firmware/src/range_select.c` | 8 | equivalent for valid table rows |
+| Per-function AD1 processing: functions 1, 2 (incl. AC+DC phases), 3, 5, 9, 10, 11 | `firmware/src/measure_funcs.c` | 12 | equivalent |
 | Type K thermocouple table, °C → °F | `firmware/src/temperature.c` | 2 | equivalent |
 | IAR `log10`, reproduced bit-for-bit | `firmware/src/iar_math.c` | 1 | equivalent on 4000 inputs incl. NaN/inf/zero/subnormal/negative and errno |
 
@@ -122,7 +124,7 @@ Known deviations, all for inputs that valid firmware state never produces:
 - **Float divide near FLT_MAX:** IAR's `fdiv` returns ±infinity for quotients just below FLT_MAX in magnitude (dividend within ~3% of FLT_MAX), where IEEE and libgcc give the finite value. Measurement values are many orders of magnitude smaller.
 - `lcd_reapply_pulse_duration()` with a contrast outside 10–17 uses 0 where the original passes an uninitialised register.
 - `hy3131_write_mode_registers()` / `hy3131_set_irq_enables()` with a function index above 0x18 use zeros / AD1 where the original uses an uninitialised stack buffer.
-- `smooth3()` and `moving_average()` are tested with their counters in range (0–3 and 0–10), which is where the firmware keeps them. A corrupted counter could divide by zero: the Cortex-M3 returns 0 for that, while C leaves it undefined.
+- `smooth3()` and the moving averages are tested with their counters in range (0–3 and 0–10), which is where the firmware keeps them. A corrupted counter could divide by zero: the Cortex-M3 returns 0 for that, while C leaves it undefined.
 - Table rows beyond the end of the original's register-table blocks read code in the original. Every function has at most 4 rows in its smallest table, and real ranges stay inside the blocks.
 
 Original quirks that are reproduced deliberately:
@@ -148,7 +150,16 @@ In the rebuild, the basic IEEE operations are left to GCC's libgcc, which gives 
   - function 0 uses `table[1 or 2] + 0x30`, and function 10 uses `table[9] + 0x10`.
 - Each record holds four signed 16-bit trims at +8. Their limits are ±20000, ±20000, ±10000 and ±10000, and an out-of-range trim reads as 0. Functions 16 and 18 always use their range-1 record.
 - Functions 16–21 have an extra offset at 0x4D0 + 8·(function − 16): a 0xA5 marker followed by a big-endian int32. It is used for range 0 only.
+- Trim capture (calibration mode, functions 2, 4, 16, 18, 20): trim n = reading − nominal. The nominal is 5000 for trims 1 and 3 and 50000 for trims 2 and 4, a tenth of that for function 2 range 3.
 - The type K table (0x08025CF8) holds EMF in µV from −210 °C to +1360 °C in 10 °C steps. Readings are interpolated in 0.01 °C. Valid inputs run from −5891 µV (−200 °C) up to 54138 µV (1350 °C).
+
+## Measurement processing (found so far)
+
+- **Function 2 with 0x200080BA set (AC+DC):** the meter alternates between two HY3131 set-ups (0x200080BD selects the phase and the function 1 or 2 calibration record). It captures the reading after 5 readings in one phase and 3 in the other. The displayed value is √(a² + b²) through the second moving average.
+- **Function 5 (temperature):** the thermocouple voltage plus a cold-junction offset (0x20007E7C) is converted to 0.01 °C, or to °F when 0x200080AB is 0, and then to 0.1°. The original rounds up when the last digit of the already-divided value is 5 or more, not the discarded digit. This is reproduced.
+- **Function 9 (and 10, which adds the threshold beeper):** negative readings are clipped except in range 0. Range 5 subtracts a correction (0 to 15 counts) that rises and falls with the reading. Range 6 subtracts `g_cal_e14 × curve / 100`, where the curve is a 13-point table of percentages. A reading of exactly 0 makes the original interpolate from the word before that table; the rebuild keeps that word, so the result is identical.
+- **Function 11:** a reading within ±999 keeps the buzzer on. A change of more than 1000 gives one triple beep until 0x200080B4 is cleared.
+- The second moving average is used with up to 20 samples (function 9 range 6). Its buffer at 0x20007238 has 400 bytes free before the next variable, so the rebuild declares 20 entries.
 
 ## Start-up summary
 

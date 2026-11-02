@@ -6,6 +6,9 @@
 #include "hy3131_bus.h"
 #include "hy3131_ctrl.h"
 #include "board_io.h"
+#include "buzzer.h"
+#include "measure_derived.h"
+#include "range_select.h"
 #include "hy3131_tables.h"
 #include "measure_scale.h"
 #include "numeric.h"
@@ -427,4 +430,54 @@ void cal_load(uint8_t function, uint8_t range)
         g_gain = g_gain / 1000000.0f;
     }
     delay_loop(1);
+}
+
+/*
+ * orig: 0x0800F8E4
+ * Trim calibration: stores (measured - nominal) as trim `which` (1..4)
+ * and writes it to EEPROM. Nominals are 5000 for trims 1 and 3 and 50000
+ * for trims 2 and 4, a tenth of that for function 2 range 3. Other values
+ * of `which` change nothing (100 rewrites all four).
+ */
+void cal_set_trim(uint8_t which, int32_t measured)
+{
+    int low = (g_function == 2 && g_range == 3);
+
+    switch (which) {
+    case 1:
+    case 3:
+        g_cal_trim[which - 1] = (int32_t)((uint32_t)measured - (low ? 600u : 5000u));
+        break;
+    case 2:
+    case 4:
+        g_cal_trim[which - 1] = (int32_t)((uint32_t)measured - (low ? 6000u : 50000u));
+        break;
+    default:
+        break;
+    }
+    cal_store_trims(g_function, g_range, which);
+}
+
+/*
+ * orig: 0x08007532
+ * In calibration mode (functions 2, 4, 16, 18, 20, with g_flag_80a5 clear)
+ * takes the current reading as each requested trim (flags 0x2000809C..9F),
+ * with a short beep per trim.
+ */
+void cal_trim_requests(void)
+{
+    if (g_flag_80a5 != 0 || g_flag_808a == 0) {
+        return;
+    }
+    if (!(g_function == 16 || g_function == 18 || g_function == 20
+          || g_function == 2 || g_function == 4)) {
+        return;
+    }
+    for (uint8_t i = 0; i < 4; i++) {
+        if (g_cal_trim_request[i] != 0) {
+            g_cal_trim_request[i] = 0;
+            cal_set_trim(i + 1, g_derived_value);
+            beep_short();
+        }
+    }
 }

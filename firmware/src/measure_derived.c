@@ -241,3 +241,12 @@ void func12_set_interval(void)
         break;
     }
 }
+
+/* orig: 0x0800699A - derived_from_average() limited to >= 0 */
+void derived_from_average_positive(void)
+{
+    derived_from_average();
+    if (g_derived_value < 0) {
+        g_derived_value = 0;
+    }
+}
