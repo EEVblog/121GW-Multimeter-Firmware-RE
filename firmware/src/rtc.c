@@ -138,3 +138,40 @@ void rtc_write_datetime(void)
     rtc_write_register(12, g_rtc_set_reg12);
     rtc_write_register(14, g_rtc_set_reg14);
 }
+
+/* orig: 0x08010118 - packed BCD byte to binary */
+uint8_t bcd_to_bin(uint8_t bcd)
+{
+    return (uint8_t)((bcd >> 4) * 10u + (bcd & 0x0Fu));
+}
+
+/*
+ * orig: 0x080103D8 - days in month 1..12 of year 2000 + yy (Gregorian leap
+ * years). Other months read past the original's 12-byte stack copy of the
+ * table; the rebuild returns 0 for them.
+ */
+uint8_t rtc_days_in_month(uint8_t yy, uint8_t month)
+{
+    static const uint8_t days[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };   /* orig: 0x08029190 */
+    uint32_t year = (uint32_t)yy + 2000u;
+
+    if (month < 1 || month > 12) {
+        return 0;
+    }
+    if (month == 2 && ((year % 4u == 0 && year % 100u != 0) || year % 400u == 0)) {
+        return 29;
+    }
+    return days[month - 1];
+}
+
+/* orig: 0x080100C4 - on each new RTC second: request the 1 s task and toggle g_flag_80e7 */
+void rtc_poll_second(void)
+{
+    uint8_t sec = rtc_read_register(0x0E);
+
+    if (g_rtc_last_second != sec) {
+        g_task_flag_1s = 1;
+        g_rtc_last_second = sec;
+        g_flag_80e7 = (g_flag_80e7 == 1) ? 0 : 1;
+    }
+}

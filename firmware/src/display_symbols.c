@@ -15,6 +15,7 @@
 #include "temperature.h"
 #include "measure_funcs.h"
 #include "measure_peak.h"
+#include "rtc.h"
 #include "dual_correction.h"
 #include "ac_response.h"
 
@@ -528,4 +529,11 @@ void sym_function_units_clear(void)
         g_lcd_shadow[6] &= ~1u;
     }
     g_lcd_shadow[2] &= ~0x00000700u;
+}
+
+/* orig: 0x08019CBC - shadow[5] bit 7 follows g_flag_80e7 (toggles each second), refreshed at once */
+void sym_w5_b7_blink(void)
+{
+    set_bits(&g_lcd_shadow[5], 0x80u, g_flag_80e7 != 0);
+    lcd_update();
 }

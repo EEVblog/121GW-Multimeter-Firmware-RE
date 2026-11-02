@@ -136,6 +136,9 @@ When every function is reconstructed, the globals are defined normally and the h
 | Interrupt handlers (faults, SysTick, SDIO/DMA, RTC wake-up, EXTI, ADC, TIM3 buzzer tick) | `firmware/src/irq.c` | 23 | equivalent (TIM2 and USART2 pending) |
 | User settings in data EEPROM (function per rotary position, contrast, APO, units, beep, log interval, VA extra offsets) | `firmware/src/settings.c` | 33 | equivalent on randomised EEPROM contents |
 | MEM records (60 stored readings with clock) and clock snapshots | `firmware/src/mem_records.c` | 13 | equivalent |
+| BLE reading packet (19 bytes, XOR checksum) and the 1000-entry reading histories | `firmware/src/ble_packet.c` | 20 | equivalent |
+| BLE commands (set clock, inject key; echoed back over USART2), setting-edit time-out | `firmware/src/ble_command.c` | 5 | equivalent |
+| Message screens (SdCAL/SdSAv/SdSEt/SAvEd/-Err-/CAL1, version, segment test, power-off), recall symbols, RTC helpers (BCD, days in month, 1 s poll) | `display_text.c`, `display_update.c`, `rtc.c` and others | 22 | equivalent; `rtc_days_in_month()` returns 0 for months outside 1-12, where the original reads past its stack copy of the table |
 | IAR `log10`, reproduced bit-for-bit | `firmware/src/iar_math.c` | 1 | equivalent on 4000 inputs incl. NaN/inf/zero/subnormal/negative and errno |
 
 Known deviations, all for inputs that valid firmware state never produces:
@@ -202,8 +205,8 @@ Offsets are from 0x08080000. Out-of-range contents fall back to the defaults sho
 
 | Offset | Contents |
 |---|---|
-| 0x01–0x02 | 16-bit value at 0x20007F9A (default 1708; role unknown) |
-| 0x03–0x06 | 32-bit value at 0x20007D14 (0–99999; copied to the edited value) |
+| 0x01–0x02 | serial number prefix YYMM (default 1708), sent over BLE |
+| 0x03–0x06 | serial number (0–99999), sent over BLE; edited in the setup menu |
 | 0x08 | function at rotary position A: 1 or 2, 0x82 = 2 with AC+DC |
 | 0x09 / 0x0A / 0x0B | functions 3–5 / 6–8 / 9–12 |
 | 0x0C | 15 or 24 |
@@ -218,6 +221,30 @@ Offsets are from 0x08080000. Out-of-range contents fall back to the defaults sho
 | 0x1B | 0x200080A8 flag |
 | 0x1E | beep enabled |
 | 0x26 | 0xA5 once calibrated |
+
+## BLE protocol (found so far)
+
+Reading packet, sent after each reading (`ble_build_packet`, 0x0800C5DA):
+
+| Byte | Contents |
+|---|---|
+| 0 | 0xF2 |
+| 1-4 | serial number, packed BCD: YYMM prefix (EEPROM 0x01) and 5-digit number (EEPROM 0x03) |
+| 5 | main function; +0x80 / +0x40 for bits 17 / 16 of the magnitude |
+| 6 | main range; +0x80 overload, +0x40 negative, +0x10 (F) / +0x20 (C) for temperature; diode 15 V reports range 1 |
+| 7-8 | main value magnitude, big-endian (low 16 bits) |
+| 9 | secondary type: 0x64/0x69 temperature C/F, 0x6E battery, 0x78/0x7D APO on/off, 0xA0 contrast, 0x82 year, 0x87 date, 0x8C time, 0x06 frequency, 0x0B diode voltage, 0xB4 dBm, 0x96 burden, 0x9B/0x9C bd on/off, 0x01/0x02/0x10-0x15 dual readings, 0xAA-0xAD for 0x200080B6 |
+| 10 | secondary flags: decimal point, +0x80 overload/open, +0x40 negative (frequency: +0x10, +0x20 above decade 1) |
+| 11-12 | secondary magnitude, big-endian |
+| 13 | bar graph state; +0x10 functions without bar graph, +0x04 negative, +0x08 hidden |
+| 14 | bar graph length |
+| 15-17 | symbol bits (AC/DC, auto range, APO, hold/peak, partial-update mode, logging) |
+| 18 | XOR of bytes 0-17 |
+
+Commands from the app (`ble_handle_command`, 0x0800C332), ASCII hex after a command byte:
+- 0xF8 + six bytes (clock registers 2, 4, 6, 10, 12, 14) + their XOR: sets the clock, once per power-up.
+- 0xF4 + key code twice: injects that key event.
+Accepted commands are echoed back over USART2.
 
 ## Display (found so far)
 

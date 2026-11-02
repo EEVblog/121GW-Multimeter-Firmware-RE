@@ -20,6 +20,7 @@
 #include "measure_derived.h"
 #include "measure_funcs.h"
 #include "measure_scale.h"
+#include "mem_records.h"
 #include "range_select.h"
 #include "rtc.h"
 
@@ -322,4 +323,15 @@ void display_update(void)
         g_display_dirty = 0;
         lcd_update();
     }
+}
+
+/* orig: 0x0801772E - symbols for a recalled MEM record (its function and range) */
+void display_recall_symbols(void)
+{
+    g_recall_dp = main_dp_for_range(g_function_7feb, g_range_7fec);
+    sym_status_update_all();
+    sym_function_units_clear();
+    sym_function_units(g_function_7feb, g_range_7fec, g_flag_7fe5, g_flag_7fe6);
+    bargraph_off();
+    lcd_update();
 }

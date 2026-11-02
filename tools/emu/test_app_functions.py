@@ -1357,8 +1357,8 @@ SPECS = {
     "DebugMon_Handler": dict(ret=None, trials=2), "PendSV_Handler": dict(ret=None, trials=2),
     # ---- EEPROM settings ----
     "settings_uncalibrated": dict(ret=8, trials=400, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}),
-    "settings_load_value_7f9a": dict(ret=None, trials=400, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}),
-    "settings_load_saved_value": dict(ret=None, trials=400, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}),
+    "settings_load_serial_yymm": dict(ret=None, trials=400, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}),
+    "settings_load_serial_number": dict(ret=None, trials=400, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}),
     "settings_function_a": dict(ret=8, trials=400, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}),
     "settings_function_b": dict(ret=8, trials=400, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}),
     "settings_function_c": dict(ret=8, trials=400, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}),
@@ -1374,8 +1374,8 @@ SPECS = {
     "settings_load_sel_80b6": dict(ret=None, trials=400, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}),
     "settings_load_flag_80a8": dict(ret=None, trials=400, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}),
     "settings_load_beep": dict(ret=None, trials=400, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}),
-    "settings_save_value_7f9a": dict(ret=None, trials=100, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}, ram_set=lambda r: {a: r.getrandbits(8) for a in (0x20007F9A, 0x20007F9B, 0x20007D14, 0x20007D15, 0x20007D16, 0x20007D17)}),
-    "settings_save_saved_value": dict(ret=None, trials=100, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}, ram_set=lambda r: {a: r.getrandbits(8) for a in (0x20007F9A, 0x20007F9B, 0x20007D14, 0x20007D15, 0x20007D16, 0x20007D17)}),
+    "settings_save_serial_yymm": dict(ret=None, trials=100, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}, ram_set=lambda r: {a: r.getrandbits(8) for a in (0x20007F9A, 0x20007F9B, 0x20007D14, 0x20007D15, 0x20007D16, 0x20007D17)}),
+    "settings_save_serial_number": dict(ret=None, trials=100, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}, ram_set=lambda r: {a: r.getrandbits(8) for a in (0x20007F9A, 0x20007F9B, 0x20007D14, 0x20007D15, 0x20007D16, 0x20007D17)}),
     "settings_save_log_interval": dict(ret=None, trials=100, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}, args=lambda r: (r.getrandbits(16),)),
     "settings_save_contrast": dict(ret=None, trials=100, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}, args=lambda r: (r.getrandbits(16),)),
     "settings_save_apo": dict(ret=None, trials=100, eeprom=lambda r: {o: r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0x82, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}, args=lambda r: (r.getrandbits(16),)),
@@ -1403,6 +1403,30 @@ SPECS = {
     "mem_store": dict(ret=None, trials=300, ram_set=lambda r: {**{a: r.getrandbits(8) for a in list(range(0x20007FE5, 0x20008024)) + list(range(0x20007D1C, 0x20007D40)) + list(range(0x200080D7, 0x200080DD)) + list(range(0x20007F9C, 0x20007FAE))}, **le32_at(0x20007D38, [0, 1, 59, 60, 61, 1000])(r), 0x2000803C: r.randrange(0, 26), 0x2000803D: r.randrange(0, 8)}, extra=[(0x20007810 + i, 1) for i in range(0, 0x2D0, 7)] + [(0x200073C8 + 4 * i, 4) for i in range(0, 180, 5)], args=lambda r: (r.randrange(0, 60),)),
     "mem_recall_record": dict(ret=None, trials=300, ram_set=lambda r: {**{a: r.getrandbits(8) for a in list(range(0x20007FE5, 0x20008024)) + list(range(0x20007D1C, 0x20007D40)) + list(range(0x200080D7, 0x200080DD)) + list(range(0x20007F9C, 0x20007FAE))}, **le32_at(0x20007D38, [0, 1, 59, 60, 61, 1000])(r), 0x2000803C: r.randrange(0, 26), 0x2000803D: r.randrange(0, 8)}, extra=[(0x20007810 + i, 1) for i in range(0, 0x2D0, 7)] + [(0x200073C8 + 4 * i, 4) for i in range(0, 180, 5)], args=lambda r: (r.randrange(0, 60),)),
     "mem_recall": dict(ret=None, trials=300, ram_set=lambda r: {**{a: r.getrandbits(8) for a in list(range(0x20007FE5, 0x20008024)) + list(range(0x20007D1C, 0x20007D40)) + list(range(0x200080D7, 0x200080DD)) + list(range(0x20007F9C, 0x20007FAE))}, **le32_at(0x20007D38, [0, 1, 59, 60, 61, 1000])(r), 0x2000803C: r.randrange(0, 26), 0x2000803D: r.randrange(0, 8)}, extra=[(0x20007810 + i, 1) for i in range(0, 0x2D0, 7)] + [(0x200073C8 + 4 * i, 4) for i in range(0, 180, 5)], args=lambda r: (r.randrange(0, 60),)),
+    # ---- small leaves (RTC helpers, settings bytes, misc) ----
+    "bcd_to_bin": dict(ret=8, args=lambda r: (r.getrandbits(8),)),
+    "rtc_days_in_month": dict(ret=8, trials=2000, args=lambda r: (r.getrandbits(8), r.randrange(1, 13))),
+    "rtc_poll_second": dict(ret=None, trials=300, ram_set=lambda r: {0x2000023D: r.choice([0, 1, 0x59, r.getrandbits(8)]), 0x200080E7: r.choice([0, 1, 2])}),
+    "settings_marker_1f_missing": dict(ret=8, eeprom=lambda r: {o: r.choice([0, 1, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}),
+    "settings_read_byte": dict(ret=8, eeprom=lambda r: {o: r.choice([0, 1, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}, args=lambda r: (r.randrange(0, 0x30),)),
+    "settings_write_byte": dict(ret=None, eeprom=lambda r: {o: r.choice([0, 1, 0xA5, 0xFF, r.getrandbits(8)]) for o in range(0x30)}, args=lambda r: (r.randrange(0, 0x30), r.getrandbits(8))),
+    "beep_long": dict(ret=None),
+    "outside_limit": dict(ret=8, trials=2000, args=lambda r: (r.choice([r.randrange(-3000, 3000), r.getrandbits(32) - (1 << 31), -(1 << 31)]), r.choice([0, 1, 1000, 2000, r.getrandbits(32) - (1 << 31), -(1 << 31)]))),
+    "overload_latch": dict(ret=None, ram_set=lambda r: {0x20008046: r.choice([0, 1, 2])}),
+    "cal_setting_239_reset": dict(ret=None),
+    "show_lead_request": dict(ret=None),
+    "show_power_off": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(16)]),
+    # ---- message screens ----
+    "show_sd_cal": dict(ret=None, trials=50, extra=[(0x20007790 + 4 * i, 4) for i in range(16)]),
+    "show_sd_save": dict(ret=None, trials=50, extra=[(0x20007790 + 4 * i, 4) for i in range(16)]),
+    "show_sd_set": dict(ret=None, trials=50, extra=[(0x20007790 + 4 * i, 4) for i in range(16)]),
+    "show_saved": dict(ret=None, trials=50, extra=[(0x20007790 + 4 * i, 4) for i in range(16)]),
+    "show_error": dict(ret=None, trials=50, extra=[(0x20007790 + 4 * i, 4) for i in range(16)]),
+    "show_cal1": dict(ret=None, trials=50, extra=[(0x20007790 + 4 * i, 4) for i in range(16)]),
+    "show_version": dict(ret=None, trials=50, extra=[(0x20007790 + 4 * i, 4) for i in range(16)]),
+    "lcd_all_segments_on": dict(ret=None, trials=50, extra=[(0x20007790 + 4 * i, 4) for i in range(16)]),
+    "sym_w5_b7_blink": dict(ret=None, trials=50, extra=[(0x20007790 + 4 * i, 4) for i in range(16)], ram_set=lambda r: {0x200080E7: r.choice([0, 1, 2])}),
+    "display_recall_symbols": dict(ret=None, trials=600, extra=[(0x20007790 + 4 * i, 4) for i in range(16)], ram_set=lambda r: {0x20007FE1: r.choice([0, 1]), 0x20007FE4: r.choice([0, 0, 1]), 0x200080B7: r.choice([0, 1]), 0x200080BA: r.choice([0, 1]), 0x2000804E: r.randrange(0, 5), 0x20008050: r.choice([0, 1]), 0x2000803C: r.randrange(0, 26), 0x20007FEB: r.randrange(0, 26), 0x20007FEC: r.randrange(0, 8), 0x20007FE5: r.choice([0, 1]), 0x20007FE6: r.choice([0, 1])}),
     # ---- LCD driver ----
     "lcd_update": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
     "lcd_update_partial": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
@@ -1436,6 +1460,59 @@ SPECS = {
                       steps=100, idr_change=0.05,
                       with_globals_of=["key_scan", "key_autorepeat", "keys_dispatch_events"]),
 }
+
+
+# ---- BLE packet (reuses the display-update state generator) ----
+_UPD = SPECS["display_update"]["ram_set"]
+_BLE_RAM = lambda r: {**_UPD(r), 0x20007FB0: r.choice([0, 1, 0xE6, 0xE7]), 0x20007FB1: r.choice([0, 0, 3]),
+                      0x20008048: r.choice([0, 1]), 0x20008047: r.choice([0, 1]),
+                      **le32_at(0x20007D70, [r.randrange(-99999, 100000), r.randrange(-300000, 300000)])(r),
+                      **{0x20007F9A + i: b for i, b in enumerate(r.randrange(0, 10000).to_bytes(2, "little"))},
+                      **le32_at(0x20007D14, [r.randrange(0, 100000)])(r)}
+_BLE_EXTRA = [(0x20007AE0 + 4 * i, 4) for i in range(5)]
+SPECS.update({
+    "ble_build_packet": dict(ret=None, trials=3000, ram_set=_BLE_RAM, extra=_BLE_EXTRA),
+    "ble_send_reading": dict(ret=None, trials=300, ram_set=_BLE_RAM, extra=_BLE_EXTRA),
+    "ble_put_value": dict(ret=None, extra=_BLE_EXTRA, args=lambda r: (r.randrange(0, 17), r.getrandbits(32) - (1 << 31))),
+    "ble_field_mode10": dict(ret=None, trials=1500, ram_set=_BLE_RAM, extra=_BLE_EXTRA, args=lambda r: (9,)),
+    "ble_field_mode11": dict(ret=None, trials=1500, ram_set=_BLE_RAM, extra=_BLE_EXTRA, args=lambda r: (9,)),
+    "ble_field_frequency": dict(ret=None, trials=500, ram_set=_BLE_RAM, extra=_BLE_EXTRA,
+                                args=lambda r: (9, r.randrange(0, 5), r.choice([0, 1]), r.getrandbits(32) - (1 << 31))),
+    "ble_field_temperature": dict(ret=None, trials=500, ram_set=_BLE_RAM, extra=_BLE_EXTRA, args=lambda r: (9,)),
+})
+
+# ---- BLE commands ----
+_HEX = b"0123456789ABCDEF"
+def _ble_cmd_ram(r):
+    kind = r.choice([0xF8, 0xF8, 0xF4, 0xF4, r.getrandbits(8)])
+    vals = [r.getrandbits(8) for _ in range(6)]
+    chk = 0
+    for v in vals:
+        chk ^= v
+    if r.random() < 0.2:
+        chk ^= 1 << r.randrange(8)
+    if kind == 0xF4:
+        k = r.getrandbits(8)
+        vals = [k, k if r.random() < 0.8 else k ^ 1]
+    body = bytes([kind]) + b"".join(bytes([_HEX[v >> 4], _HEX[v & 15]]) for v in vals + ([chk] if kind == 0xF8 else []))
+    if r.random() < 0.1:
+        body = bytes(r.choice(b"0123456789ABCDEFabcz") if i else c for i, c in enumerate(body))
+    out = {0x20007B80 + i: c for i, c in enumerate(body.ljust(20, bytes(1)))}
+    out.update({0x2000802F: r.choice([len(body), len(body), 0, 3]), 0x20008033: r.choice([0, 0, 1])})
+    return out
+_USART_READY = {0x40004400: 0xC0}
+SPECS.update({
+    "ble_handle_command": dict(ret=None, trials=1500, ram_set=_ble_cmd_ram, regs=_USART_READY,
+                               extra=[(0x20007B94 + 4 * i, 4) for i in range(5)]),
+    "ble_echo_command": dict(ret=None, trials=100, ram_set=_ble_cmd_ram, regs=_USART_READY),
+    "ble_hex_byte": dict(ret=8, trials=1000, ram_set=lambda r: {0x20007B94 + i: r.choice(list(b"09AFGaf/:@") + [r.getrandbits(8)]) for i in range(20)},
+                         args=lambda r: (r.randrange(0, 18),)),
+    "usart_send_byte": dict(ret=None, regs=_USART_READY, args=lambda r: (0x40004400, r.getrandbits(8))),
+    "setting_edit_timeout": dict(ret=None, trials=1500,
+                                 ram_set=lambda r: {**_BLE_RAM(r), 0x20008070: r.choice([0, 0xEF, 0xF0, 0xF1, 0xFF]),
+                                                    0x20008037: r.choice([0, 2, 3, 5, 6, 7, 8, 10, 1, 4])},
+                                 eeprom=lambda r: {o: r.choice([0, 1, 2, 4, 0xFF]) for o in range(0x30)}),
+})
 
 
 def load_names():

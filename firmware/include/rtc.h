@@ -32,4 +32,12 @@ void rtc_write_register(uint8_t address, uint8_t value);
 uint8_t rtc_read_register(uint8_t address);
 void rtc_write_datetime(void);
 
+extern uint8_t g_rtc_last_second;   /* 0x2000023D */
+extern uint8_t g_flag_80e7;         /* 0x200080E7  toggles every second */
+extern uint8_t g_task_flag_1s;      /* 0x200080D4 */
+
+uint8_t bcd_to_bin(uint8_t bcd);
+uint8_t rtc_days_in_month(uint8_t yy, uint8_t month);
+void rtc_poll_second(void);
+
 #endif /* RTC_H */

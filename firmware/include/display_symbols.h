@@ -37,4 +37,6 @@ void sym_range_state_update(uint8_t hide);
 void sym_function_units(uint8_t function, uint8_t range, uint8_t alt, uint8_t show);
 void sym_function_units_clear(void);
 
+void sym_w5_b7_blink(void);
+
 #endif /* DISPLAY_SYMBOLS_H */

@@ -2,6 +2,7 @@
  * Calibration records in data EEPROM.
  */
 #include "calibration.h"
+#include "measure_funcs.h"
 #include "eeprom.h"
 #include "hy3131_bus.h"
 #include "hy3131_ctrl.h"
@@ -480,4 +481,10 @@ void cal_trim_requests(void)
             beep_short();
         }
     }
+}
+
+/* orig: 0x0800662C (sets 5 whatever g_flag_8098 is) */
+void cal_setting_239_reset(void)
+{
+    g_setting_239 = 5;
 }

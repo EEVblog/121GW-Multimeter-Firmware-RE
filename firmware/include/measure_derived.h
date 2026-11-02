@@ -35,4 +35,9 @@ void scaled_from_ad1(void);
 void threshold_check(uint32_t value);
 void func12_set_interval(void);
 
+extern uint8_t g_flag_8049;         /* 0x20008049  copy of g_flag_8046 */
+
+uint8_t outside_limit(int32_t value, int32_t limit);
+void overload_latch(void);
+
 #endif /* MEASURE_DERIVED_H */

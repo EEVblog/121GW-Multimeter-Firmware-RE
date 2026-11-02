@@ -2,6 +2,7 @@
  * Derived measurement values.
  */
 #include "measure_derived.h"
+#include "dual_correction.h"
 #include "buzzer.h"
 #include "calibration.h"
 #include "hy3131_bus.h"
@@ -249,4 +250,16 @@ void derived_from_average_positive(void)
     if (g_derived_value < 0) {
         g_derived_value = 0;
     }
+}
+
+/* orig: 0x0800EA24 - 1 when value is at or beyond +-limit */
+uint8_t outside_limit(int32_t value, int32_t limit)
+{
+    return (value >= limit || value <= -limit) ? 1 : 0;
+}
+
+/* orig: 0x0800E278 */
+void overload_latch(void)
+{
+    g_flag_8049 = (g_flag_8046 != 0) ? 1 : 0;
 }

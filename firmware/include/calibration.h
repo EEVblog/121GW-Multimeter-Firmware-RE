@@ -61,4 +61,6 @@ void cal_load(uint8_t function, uint8_t range);
 void cal_set_trim(uint8_t which, int32_t measured);
 void cal_trim_requests(void);
 
+void cal_setting_239_reset(void);
+
 #endif /* CALIBRATION_H */

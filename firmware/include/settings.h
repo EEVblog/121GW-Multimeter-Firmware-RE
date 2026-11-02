@@ -7,14 +7,14 @@
 #include <stdint.h>
 #include "app_globals.h"
 
-extern uint16_t g_value_7f9a;    /* 0x20007F9A  EEPROM 0x01, default 1708 */
-extern uint32_t g_saved_value;   /* 0x20007D14  EEPROM 0x03, 0..99999 */
+extern uint16_t g_serial_yymm;    /* 0x20007F9A  EEPROM 0x01: serial number prefix YYMM, default 1708 */
+extern uint32_t g_serial_number;   /* 0x20007D14  EEPROM 0x03: serial number 0..99999 */
 
 uint8_t settings_uncalibrated(void);
-void settings_load_value_7f9a(void);
-void settings_save_value_7f9a(void);
-void settings_load_saved_value(void);
-void settings_save_saved_value(void);
+void settings_load_serial_yymm(void);
+void settings_save_serial_yymm(void);
+void settings_load_serial_number(void);
+void settings_save_serial_number(void);
 void acdc_mode_enter(void);
 uint8_t settings_function_a(void);
 uint8_t settings_function_b(void);
@@ -43,5 +43,9 @@ void settings_load_beep(void);
 void settings_save_beep(uint8_t enabled);
 void cal_extra_store(uint8_t function, uint8_t skip, uint32_t value);
 void cal_extra_clear_all(void);
+
+uint8_t settings_marker_1f_missing(void);
+uint8_t settings_read_byte(uint32_t offset);
+void settings_write_byte(uint32_t offset, uint8_t value);
 
 #endif /* SETTINGS_H */

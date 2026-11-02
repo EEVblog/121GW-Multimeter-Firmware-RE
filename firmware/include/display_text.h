@@ -57,4 +57,16 @@ void show_burden_value(int32_t value, uint8_t mode);
 void show_edit_blink(void);
 void show_dbm(void);
 
+void show_lead_request(void);
+void show_power_off(void);
+
+void show_sd_cal(void);
+void show_sd_save(void);
+void show_sd_set(void);
+void show_saved(void);
+void show_error(void);
+void show_cal1(void);
+void show_version(void);
+void lcd_all_segments_on(void);
+
 #endif /* DISPLAY_TEXT_H */

@@ -713,3 +713,97 @@ void show_dbm(void)
     lcd_put_text5(1, g_digit_text);
     g_display_dirty = 1;
 }
+
+/* orig: 0x080143E4 - the main readout shows " LEAD" from now on */
+void show_lead_request(void)
+{
+    g_flag_8076 = 1;
+}
+
+/* orig: 0x08017092 - power-off screen: clear the LCD, then "-oFF-" on the main readout */
+void show_power_off(void)
+{
+    static const char txt_off[5] = { '-', 'o', 'F', 'F', '-' };   /* orig: 0x080291A8 */
+
+    lcd_clear_shadow();
+    lcd_update();
+    lcd_put_text5(0, txt_off);
+    lcd_update();
+}
+
+static const char txt_sd_cal[5] = { 'S', 'd', 'C', 'A', 'L' };
+static const char txt_sd_sav[5] = { 'S', 'd', 'S', 'A', 'v' };
+static const char txt_sd_set[5] = { 'S', 'd', 'S', 'E', 't' };
+static const char txt_saved[5] = { 'S', 'A', 'v', 'E', 'd' };
+static const char txt_err[5] = { '-', 'E', 'r', 'r', '-' };
+static const char txt_cal1[5] = { ' ', 'C', 'A', 'L', '1' };
+
+/* A message on the main readout (no minus), with its decimal point, shown at once */
+static void main_message(const char *text, uint8_t dp)
+{
+    set_minus(0, 0);
+    lcd_put_text5(0, text);
+    lcd_set_main_dp(dp);
+    lcd_update();
+}
+
+/* orig: 0x08019792 - "Sd.CAL" */
+void show_sd_cal(void)
+{
+    main_message(txt_sd_cal, 3);
+}
+
+/* orig: 0x080197B6 - "Sd.SAv" */
+void show_sd_save(void)
+{
+    main_message(txt_sd_sav, 3);
+}
+
+/* orig: 0x080197E0 - "Sd.SEt" */
+void show_sd_set(void)
+{
+    main_message(txt_sd_set, 3);
+}
+
+/* orig: 0x08019808 */
+void show_saved(void)
+{
+    main_message(txt_saved, 0);
+}
+
+/* orig: 0x0801982C */
+void show_error(void)
+{
+    main_message(txt_err, 0);
+}
+
+/* orig: 0x08019854 - " CAL1" (drawn with the next display refresh) */
+void show_cal1(void)
+{
+    set_minus(0, 0);
+    lcd_put_text5(0, txt_cal1);
+    g_display_dirty = 1;
+}
+
+/* orig: 0x0801A854 - firmware version "V-2.05" on a cleared display */
+void show_version(void)
+{
+    lcd_clear_shadow();
+    number_to_digits(205);
+    digits_to_text(0);
+    g_digit_text[0] = 'V';
+    g_digit_text[1] = '-';
+    lcd_put_text5(0, g_digit_text);
+    lcd_set_main_dp(2);
+    g_display_dirty = 1;
+}
+
+/* orig: 0x0801A89C - every segment on (display test) */
+void lcd_all_segments_on(void)
+{
+    for (unsigned com = 0; com < 4; com++) {
+        g_lcd_shadow[2 * com] = 0xFFFFFFFFu;
+        g_lcd_shadow[2 * com + 1] |= 0xFFFu;
+    }
+    g_display_dirty = 1;
+}

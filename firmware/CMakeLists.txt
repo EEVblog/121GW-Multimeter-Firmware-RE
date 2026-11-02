@@ -48,6 +48,8 @@ set(APP_SOURCES
     src/irq.c
     src/settings.c
     src/mem_records.c
+    src/ble_packet.c
+    src/ble_command.c
     ${COMMON_DIR}/fatfs/ff.c
 )
 

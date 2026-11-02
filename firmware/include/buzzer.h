@@ -29,4 +29,6 @@ void beep(uint8_t reset_apo, uint8_t count, uint16_t duration);
 void beep_short(void);
 void beep_triple(void);
 
+void beep_long(void);
+
 #endif /* BUZZER_H */

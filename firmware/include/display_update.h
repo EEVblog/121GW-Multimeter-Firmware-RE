@@ -39,4 +39,8 @@ void main_display_update(void);
 void secondary_display_update(void);
 void display_update(void);
 
+extern uint8_t g_recall_dp;          /* 0x20007FED  decimal point of the recalled reading */
+
+void display_recall_symbols(void);
+
 #endif /* DISPLAY_UPDATE_H */

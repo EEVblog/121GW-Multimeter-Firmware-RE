@@ -57,3 +57,9 @@ void beep_triple(void)
 {
     beep(1, 3, 50);
 }
+
+/* orig: 0x0800EE5E */
+void beep_long(void)
+{
+    beep(1, 1, 200);
+}

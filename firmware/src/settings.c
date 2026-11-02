@@ -1,8 +1,8 @@
 /*
  * User settings kept in the data EEPROM (offsets from 0x08080000).
  *
- *   0x01..02  g_value_7f9a (16-bit BE, default 1708)
- *   0x03..06  g_saved_value (32-bit BE, 0..99999)
+ *   0x01..02  serial number prefix YYMM (16-bit BE, default 1708)
+ *   0x03..06  serial number (32-bit BE, 0..99999)
  *   0x08..0E  last function chosen at each rotary position (see below)
  *   0x10      temperature unit (1 = Celsius)
  *   0x12      diode test voltage selection (g_flag_80b3)
@@ -30,8 +30,8 @@
 #include "measure_funcs.h"
 #include "trim_correction.h"
 
-#define EE_VALUE_7F9A    0x01u
-#define EE_SAVED_VALUE   0x03u
+#define EE_SERIAL_YYMM    0x01u
+#define EE_SERIAL_NUMBER   0x03u
 #define EE_FUNCTION_A    0x08u   /* functions 1, 2 (0x82 = 2 with AC+DC) */
 #define EE_FUNCTION_B    0x09u   /* 3..5 */
 #define EE_FUNCTION_C    0x0Au   /* 6..8 */
@@ -58,33 +58,33 @@ uint8_t settings_uncalibrated(void)
 }
 
 /* orig: 0x08010F4C */
-void settings_load_value_7f9a(void)
+void settings_load_serial_yymm(void)
 {
-    g_value_7f9a = eeprom_read_u16_be(EE_VALUE_7F9A);
-    if (g_value_7f9a == 0) {
-        g_value_7f9a = 1708;
+    g_serial_yymm = eeprom_read_u16_be(EE_SERIAL_YYMM);
+    if (g_serial_yymm == 0) {
+        g_serial_yymm = 1708;
     }
 }
 
 /* orig: 0x08010F74 */
-void settings_save_value_7f9a(void)
+void settings_save_serial_yymm(void)
 {
-    eeprom_write_u16_be(EE_VALUE_7F9A, g_value_7f9a);
+    eeprom_write_u16_be(EE_SERIAL_YYMM, g_serial_yymm);
 }
 
 /* orig: 0x08010F8C */
-void settings_load_saved_value(void)
+void settings_load_serial_number(void)
 {
-    g_saved_value = eeprom_read_u32_be(EE_SAVED_VALUE);
-    if (g_saved_value >= 100000u) {
-        g_saved_value = 0;
+    g_serial_number = eeprom_read_u32_be(EE_SERIAL_NUMBER);
+    if (g_serial_number >= 100000u) {
+        g_serial_number = 0;
     }
 }
 
 /* orig: 0x08010FB8 */
-void settings_save_saved_value(void)
+void settings_save_serial_number(void)
 {
-    eeprom_write_u32_be(EE_SAVED_VALUE, g_saved_value);
+    eeprom_write_u32_be(EE_SERIAL_NUMBER, g_serial_number);
 }
 
 /* orig: 0x0801472C - select AC+DC: clear its phase state and the frequency */
@@ -337,4 +337,22 @@ void cal_extra_clear_all(void)
     for (uint8_t f = 16; f <= 21; f++) {
         cal_extra_store(f, 0, 0);
     }
+}
+
+/* orig: 0x080104BC - 1 until EEPROM 0x1F holds 0xA5 */
+uint8_t settings_marker_1f_missing(void)
+{
+    return eeprom_read_byte(0x1Fu) != 0xA5u;
+}
+
+/* orig: 0x080104F8 */
+uint8_t settings_read_byte(uint32_t offset)
+{
+    return eeprom_read_byte(offset);
+}
+
+/* orig: 0x08010504 */
+void settings_write_byte(uint32_t offset, uint8_t value)
+{
+    eeprom_write_byte(offset, value);
 }
