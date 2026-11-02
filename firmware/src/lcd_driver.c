@@ -217,7 +217,7 @@ void lcd_reapply_pulse_duration(void)
     lcd_pulse_on_config(pon);
 }
 
-/* orig: 0x0801B4D6 - COM/SEG pins to alternate function 11 */
+/* orig: 0x0801B4D6 - COM/SEG pins to alternate function 11 (inlines: 0x0801BDEC GPIO_StructInit) */
 void lcd_gpio_init(void)
 {
     static const struct {

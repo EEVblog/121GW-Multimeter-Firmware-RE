@@ -465,14 +465,14 @@ address,ghidra_name,size,status,where
 0801bd08,iar_cfcmpeq,28,library,IAR runtime -> libgcc / firmware/include/numeric.h
 0801bd24,iar_f2uiz,36,library,IAR runtime -> libgcc / firmware/include/numeric.h
 0801bd48,GPIO_Init,164,reconstructed,firmware/src/board_io.c:20
-0801bdec,GPIO_StructInit,24,UNACCOUNTED,
+0801bdec,GPIO_StructInit,24,reconstructed,firmware/src/lcd_driver.c:220
 0801be04,gpio_set_af,90,reconstructed,firmware/src/board_io.c:42
-0801be60,FUN_0801be60,22,UNACCOUNTED,
+0801be60,FUN_0801be60,22,reconstructed,firmware/src/system_init.c:454
 0801be76,system_init,164,reconstructed,firmware/src/system_init.c:411
 0801bf1a,clock_init,120,reconstructed,firmware/src/system_init.c:144
 0801bf92,rtc_clock_init,52,reconstructed,firmware/src/system_init.c:179
 0801bfc6,enable_gpio_clocks,12,reconstructed,firmware/src/system_init.c:123
-0801bfd2,FUN_0801bfd2,12,UNACCOUNTED,
+0801bfd2,FUN_0801bfd2,12,reconstructed,firmware/src/system_init.c:448
 0801bfde,nvic_init,120,reconstructed,firmware/src/system_init.c:369
 0801c056,board_gpio_init,624,reconstructed,firmware/src/system_init.c:283
 0801c2c6,rotary_pins_config,162,reconstructed,firmware/src/system_init.c:199
@@ -488,7 +488,7 @@ address,ghidra_name,size,status,where
 0801c756,FUN_0801c756,84,UNACCOUNTED,
 0801c7aa,FUN_0801c7aa,168,UNACCOUNTED,
 0801c852,FUN_0801c852,154,UNACCOUNTED,
-0801c8ec,FUN_0801c8ec,20,UNACCOUNTED,
+0801c8ec,FUN_0801c8ec,20,reconstructed,firmware/src/hy3131_bus.c:117
 0801c908,FUN_0801c908,38,UNACCOUNTED,
 0801c92e,FUN_0801c92e,38,UNACCOUNTED,
 0801c954,FUN_0801c954,42,UNACCOUNTED,
@@ -499,7 +499,7 @@ address,ghidra_name,size,status,where
 0801ca0c,FUN_0801ca0c,22,UNACCOUNTED,
 0801ca22,FUN_0801ca22,114,UNACCOUNTED,
 0801caec,FUN_0801caec,232,UNACCOUNTED,
-0801cbdc,FUN_0801cbdc,28,UNACCOUNTED,
+0801cbdc,FUN_0801cbdc,28,reconstructed,firmware/src/ble_command.c:141
 0801cbf8,FUN_0801cbf8,8,reconstructed,firmware/src/ble_command.c:30
 0801cc00,FUN_0801cc00,8,UNACCOUNTED,
 0801cc08,FUN_0801cc08,86,UNACCOUNTED,
@@ -513,7 +513,7 @@ address,ghidra_name,size,status,where
 0801d1a8,FUN_0801d1a8,468,UNACCOUNTED,
 0801d37c,FUN_0801d37c,272,UNACCOUNTED,
 0801d48c,FUN_0801d48c,142,UNACCOUNTED,
-0801d51a,FUN_0801d51a,32,UNACCOUNTED,
+0801d51a,FUN_0801d51a,32,reconstructed,firmware/src/mem_records.c:172
 0801d53a,FUN_0801d53a,118,UNACCOUNTED,
 0801d5b0,FUN_0801d5b0,126,UNACCOUNTED,
 0801d640,FUN_0801d640,344,UNACCOUNTED,
@@ -523,10 +523,10 @@ address,ghidra_name,size,status,where
 0801d9ac,FUN_0801d9ac,142,UNACCOUNTED,
 0801da40,FUN_0801da40,114,UNACCOUNTED,
 0801dab2,FUN_0801dab2,116,UNACCOUNTED,
-0801db34,FUN_0801db34,48,UNACCOUNTED,
-0801db64,FUN_0801db64,48,UNACCOUNTED,
+0801db34,FUN_0801db34,48,reconstructed,firmware/src/mem_records.c:180
+0801db64,FUN_0801db64,48,reconstructed,firmware/src/mem_records.c:189
 0801dbf0,FUN_0801dbf0,1032,UNACCOUNTED,
-0801e010,FUN_0801e010,8,UNACCOUNTED,
+0801e010,FUN_0801e010,8,reconstructed,firmware/src/sd_card.c:1017
 0801e018,FUN_0801e018,48,UNACCOUNTED,
 0801e048,FUN_0801e048,46,UNACCOUNTED,
 0801e076,FUN_0801e076,694,UNACCOUNTED,

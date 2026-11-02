@@ -1499,6 +1499,18 @@ SPECS.update({
     "power_off_beep": dict(ret=None, trials=2, extra=[(0x20007790 + 4 * i, 4) for i in range(16)]),
 })
 
+
+SPECS.update({
+    "hy3131_bus_idle": dict(ret=None, trials=5),
+    "usart_enable": dict(ret=None, args=lambda r: (0x40004400, r.choice([0, 1, 2])), regs={0x4000440C: 0x200C}),
+    "mem_flags_801c_set": dict(ret=None),
+    "mem_recall_to_a": dict(ret=None),
+    "mem_recall_to_b": dict(ret=None),
+    "fil_tell": dict(ret=32, args=lambda r: (0x20006A60,)),
+    "gpio_clocks_disable": dict(ret=None, trials=5),
+    "nvic_enable_irq": dict(ret=None, args=lambda r: (r.choice([r.randrange(0, 60), r.getrandbits(7)]),)),
+})
+
 # ---- BLE commands ----
 _HEX = b"0123456789ABCDEF"
 def _ble_cmd_ram(r):

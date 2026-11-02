@@ -78,4 +78,17 @@ void mem_recall_record(uint16_t i);
 void mem_store(uint16_t i);
 void mem_recall(uint16_t i);
 
+extern uint8_t g_flag_801c;          /* 0x2000801C */
+extern uint8_t g_flag_8024;          /* 0x20008024 */
+extern uint16_t g_count_7fae;        /* 0x20007FAE */
+extern int32_t g_value_7d40;         /* 0x20007D40 */
+extern int32_t g_cmp_a_d54, g_cmp_b_d58;     /* 0x20007D54, 0x20007D58 */
+extern uint8_t g_cmp_a_mode, g_cmp_b_mode;   /* 0x20008027, 0x20008028 */
+extern uint8_t g_cmp_a_flags, g_cmp_b_flags; /* 0x20008029, 0x2000802A */
+extern int32_t g_cmp_a_value, g_cmp_b_value; /* 0x20007D4C, 0x20007D50 */
+
+void mem_flags_801c_set(void);
+void mem_recall_to_a(void);
+void mem_recall_to_b(void);
+
 #endif /* MEM_RECORDS_H */

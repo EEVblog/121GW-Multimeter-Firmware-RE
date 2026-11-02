@@ -30,4 +30,7 @@ void front_end_select(uint8_t function);
 void board_gpio_init(void);
 void system_init(void);
 
+void gpio_clocks_disable(void);
+void nvic_enable_irq(uint8_t irq);
+
 #endif /* SYSTEM_INIT_H */

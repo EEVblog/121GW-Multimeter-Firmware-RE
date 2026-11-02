@@ -444,3 +444,15 @@ void system_init(void)
     tim3_init();
     enable_gpio_clocks();
 }
+
+/* orig: 0x0801BFD2 - GPIO port clocks off (RCC_AHBPeriphClockCmd(0xFF, DISABLE)) */
+void gpio_clocks_disable(void)
+{
+    RCC->AHBENR &= ~0xFFu;
+}
+
+/* orig: 0x0801BE60 - enable an interrupt (irq taken as signed, as the original) */
+void nvic_enable_irq(uint8_t irq)
+{
+    NVIC->ISER[(uint32_t)(int32_t)(int8_t)irq >> 5] = 1u << (irq & 0x1Fu);
+}

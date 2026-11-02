@@ -31,4 +31,6 @@ void hy3131_write(const uint8_t *data, uint8_t reg, uint16_t count);
 void hy3131_read(uint8_t *unused, uint8_t reg, uint16_t count);
 void detect_pf8_low(void);
 
+void hy3131_bus_idle(void);
+
 #endif /* HY3131_BUS_H */

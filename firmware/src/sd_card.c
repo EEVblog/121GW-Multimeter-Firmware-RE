@@ -1013,3 +1013,9 @@ uint8_t sd_mount(void)
     (void)sd_init();
     return (f_mount(0, &g_fatfs) != FR_OK) ? 1 : 0;
 }
+
+/* orig: 0x0801E010 - current file position (FIL.fptr) */
+uint32_t fil_tell(const FIL *fp)
+{
+    return fp->fptr;
+}

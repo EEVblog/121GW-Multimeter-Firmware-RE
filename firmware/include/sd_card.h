@@ -192,4 +192,6 @@ extern FATFS g_fatfs;                    /* 0x20006830 */
 
 uint8_t sd_mount(void);
 
+uint32_t fil_tell(const FIL *fp);
+
 #endif /* SD_CARD_H */

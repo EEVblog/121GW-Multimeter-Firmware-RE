@@ -168,3 +168,29 @@ void mem_recall(uint16_t i)
 {
     mem_recall_record(i);
 }
+
+/* orig: 0x0801D51A */
+void mem_flags_801c_set(void)
+{
+    g_flag_801c = 1;
+    g_flag_8024 = 1;
+    g_count_7fae++;
+}
+
+/* orig: 0x0801DB34 - keep the recalled reading (with 0x20007D40) as comparison A */
+void mem_recall_to_a(void)
+{
+    g_cmp_a_d54 = g_value_7d40;
+    g_cmp_a_mode = g_recall_mode1;
+    g_cmp_a_flags = g_recall_flags1;
+    g_cmp_a_value = g_recall_value1;
+}
+
+/* orig: 0x0801DB64 - ... as comparison B */
+void mem_recall_to_b(void)
+{
+    g_cmp_b_d58 = g_value_7d40;
+    g_cmp_b_mode = g_recall_mode1;
+    g_cmp_b_flags = g_recall_flags1;
+    g_cmp_b_value = g_recall_value1;
+}

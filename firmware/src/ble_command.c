@@ -137,3 +137,15 @@ void setting_edit_timeout(void)
     }
     g_disp_flag_8062 = 1;
 }
+
+/* orig: 0x0801CBDC (USART_Cmd) - UE bit, with the 16-bit access of the original */
+void usart_enable(USART_TypeDef *usart, uint8_t enable)
+{
+    volatile uint16_t *cr1 = (volatile uint16_t *)&usart->CR1;
+
+    if (enable != 0) {
+        *cr1 |= 0x2000u;
+    } else {
+        *cr1 &= 0xDFFFu;
+    }
+}

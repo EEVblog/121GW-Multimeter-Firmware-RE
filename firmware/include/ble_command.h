@@ -22,4 +22,6 @@ uint8_t ble_hex_byte(uint8_t pos);
 void ble_handle_command(void);
 void setting_edit_timeout(void);
 
+void usart_enable(USART_TypeDef *usart, uint8_t enable);
+
 #endif /* BLE_COMMAND_H */

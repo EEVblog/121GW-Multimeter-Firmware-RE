@@ -113,3 +113,11 @@ void detect_pf8_low(void)
     gpio_init_pins(GPIOF, 1u << PF8, GPIO_MODE_ANALOG, GPIO_SPEED_40MHZ, GPIO_PUSH_PULL,
                    GPIO_NOPULL);
 }
+
+/* orig: 0x0801C8EC - bus idle: CS (PF1) and DI (PF2) high, CK (PF0) low */
+void hy3131_bus_idle(void)
+{
+    GPIOF->BSRR = 1u << 1;
+    GPIOF->BSRR = 1u << 2;
+    GPIOF->BSRR = 1u << (0 + 16);
+}
