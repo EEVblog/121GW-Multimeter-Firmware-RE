@@ -1,0 +1,8 @@
+# Device dumps contain this unit's calibration data - never publish
+dumps/
+# Ghidra project databases
+ghidra/*.gpr
+ghidra/*.rep/
+ghidra/*.lock*
+build/
+__pycache__/
