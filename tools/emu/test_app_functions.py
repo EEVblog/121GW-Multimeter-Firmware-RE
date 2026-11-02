@@ -11,6 +11,7 @@ peripheral write.
 """
 import argparse
 import os
+import struct
 import random
 import subprocess
 import sys
@@ -69,6 +70,14 @@ def float_bits(r):
 
 def floats_at(*addrs):
     return lambda r: {a + i: (v >> (8 * i)) & 0xFF for a in addrs for v in [float_bits(r)] for i in range(4)}
+
+
+def gains_at(*addrs):
+    """Realistic gain values (no zeros/denormals, which can make NaN; see float_bits)."""
+    import struct as _s
+    return lambda r: {a + i: b for a in addrs
+                      for b4 in [_s.pack("<f", r.choice([1.0, -1.0, 1.0, 1.0]) * 10 ** r.uniform(-3, 3))]
+                      for i, b in enumerate(b4)}
 
 
 def eeprom_words(lo, hi, width, boundary=()):
@@ -579,6 +588,283 @@ SPECS = {
                               with_globals_of=["derived_from_average", "scaled_from_ad1", "moving_average_b", "offset_stage",
                                   "gain_stage", "remove_offset", "apply_gain", "vector_magnitude",
                                   "hy3131_configure_mode", "cal_load", "dbm_from_voltage"], extra=[(0x20007238 + 4 * i, 4) for i in range(10)]),
+    "sign_offset": dict(ret=32, trials=4000,
+                        args=lambda r: (r.choice([r.randrange(-50000, 50000), 0, -1, r.getrandbits(32)]),
+                                        r.choice([2500, 2501, -2500, -2501, 0, r.randrange(-60000, 60000),
+                                                  r.getrandbits(32)])),
+                        ram_set=lambda r: {0x2000803C: r.choice([22, 23, 24, 22, 23, 24, 21, 25]),
+                                           0x2000803D: r.randrange(0, 6), 0x2000808A: r.choice([0, 0, 0, 1]),
+                                           0x20007FDF: r.choice([0, 0, 0, 1]), 0x20007FE0: r.choice([1, 1, 1, 0, 3])}),
+    "ad1_process_func17": dict(ret=None, trials=300, steps=6,
+                               ram_set=lambda r: {**floats_at(0x20007E10, 0x20007E2C, 0x20007E30)(r),
+                                                  0x2000803C: r.choice([17, 19, 21, 22, 23, 24, 16]),
+                                                  0x2000803D: r.randrange(0, 5), 0x20008081: r.choice([0, 1, 1]),
+                                                  0x20008085: r.randrange(0, 11), 0x2000808A: r.choice([0, 0, 1]),
+                                                  0x20007FDF: r.choice([0, 0, 1]), 0x20007FE0: r.choice([1, 1, 0]),
+                                                  0x20008037: r.choice([10, 10, 11])},
+                               with_globals_of=["derived_from_average", "scaled_from_ad1", "moving_average_b",
+                                                "offset_stage", "gain_stage", "sign_offset"],
+                               extra=[(0x20007238 + 4 * i, 4) for i in range(10)]),
+    "ad1_process_func17_va": dict(ret=None, trials=200, steps=14,
+                                  ram_set=lambda r: {**(lambda r: {0x2000803C: r.randrange(0, 25), 0x2000803D: r.randrange(0, 4),
+                       0x200080C6: r.randrange(0, 4), 0x200080C7: r.randrange(0, 4),
+                       0x200080B7: r.choice([0, 1]), 0x20008098: r.choice([0, 1]), 0x200080BA: r.choice([0, 1]),
+                       0x200080BD: r.choice([0, 1]), 0x2000808A: r.choice([0, 1]), 0x20007FDF: r.choice([0, 1])})(r),
+                                                     **floats_at(0x20007E10, 0x20007E2C, 0x20007E30)(r),
+                                                     0x2000803C: r.choice([17, 19, 21]),
+                                                     0x20008081: r.choice([0, 1, 1, 1]),
+                                                     0x20008085: r.randrange(0, 11),
+                                                     0x2000808A: r.choice([0, 0, 0, 1]),
+                                                     0x200080A5: r.choice([1, 1, 1, 0]),
+                                                     0x200080C4: r.choice([0, 1]), 0x200080C5: r.randrange(0, 5),
+                                                     0x20007E78: r.randrange(0, 4),
+                                                     0x20008037: r.choice([10, 11, 11])},
+                                  with_globals_of=["ad1_process_func17", "ad1_process_func1", "smooth3",
+                                                   "reconfigure_borrow_f1", "derived_from_average",
+                                                   "scaled_from_ad1", "moving_average_b"],
+                                  extra=[(0x20007238 + 4 * i, 4) for i in range(10)]),
+    "ac_response_correct": dict(ret=32, trials=5000,
+                                args=lambda r: (r.choice([r.randrange(0, 100000), r.randrange(100000, 500001),
+                                                          r.randrange(500001, 2000000), 100000, 99999, 500000,
+                                                          500001, r.getrandbits(32)]),),
+                                ram_set=lambda r: {0x2000803C: r.choice([2, 4, 2, 4, 3]),
+                                                   0x200080B9: r.choice([1, 1, 1, 0]),
+                                                   0x2000803E: r.choice([3, 3, 3, 2, 0, 4]),
+                                                   **{0x20007D84 + i: (v >> (8 * i)) & 0xFF
+                                                      for v in [r.choice([r.randrange(0, 7000), 19, 20, 21, 6000,
+                                                                          6001, r.randrange(0, 70000),
+                                                                          r.getrandbits(32)])]
+                                                      for i in range(4)}}),
+    "f2r0_freq_offset": dict(ret=32, trials=5000,
+                             args=lambda r: (r.choice([r.randrange(-1000, 60000), 5000, 5001, 56999, 57000,
+                                                       r.getrandbits(32)]),
+                                             r.choice([r.randrange(0, 200000), 50, 51, 100000, 100001,
+                                                       r.getrandbits(32)]),
+                                             r.choice([3, 3, 3, 2, 1, 0, 4]))),
+    "trim_correction_ac": dict(ret=32, trials=5000,
+                               args=lambda r: (r.choice([r.randrange(-1000, 56000), 5000, 10000, 49999]),
+                                               r.choice([r.randrange(-20000, 20001), 0, r.getrandbits(32)]),
+                                               r.choice([r.randrange(-20000, 20001), 0]),
+                                               r.choice([r.randrange(-10000, 10001), 0]),
+                                               r.choice([r.randrange(-10000, 10001), 0]),
+                                               r.choice([2, 3, 2, 3, 1]),
+                                               r.choice([r.randrange(51, 120000), 20000, 20001, 100000, 100001,
+                                                         51, 400, 1000]),
+                                               r.choice([0, 1, 7]))),
+    "trim_correction": dict(ret=32, trials=6000,
+                            args=lambda r: (r.choice([r.randrange(-1000, 62000), 5000, 5001, 6599, 6600, 54999,
+                                                      55000, 59999, 60000, r.getrandbits(32)]),
+                                            r.choice([r.randrange(-20000, 20001), 0]),
+                                            r.choice([r.randrange(-20000, 20001), 0]),
+                                            r.choice([r.randrange(-10000, 10001), 0]),
+                                            r.choice([r.randrange(-10000, 10001), 0]),
+                                            r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+                                            r.choice([r.randrange(0, 150000), 50, 51, 10000, 10001,
+                                                      100000, r.getrandbits(32)]),
+                                            r.choice([3, 3, 3, 2, 0]), r.choice([0, 1]))),
+    "trim_correction_for": dict(ret=32, trials=1500,
+                                args=lambda r: (r.choice([0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                                                r.choice([r.randrange(-1000, 60000), 5000, 5001])),
+                                ram_set=lambda r: {0x2000803C: r.choice([2, 2, 4, 16, 18, 20, 0, 0, 3]),
+                                                   0x200080BA: r.choice([0, 1]), 0x20008098: r.choice([0, 1]),
+                                                   0x2000803E: r.choice([3, 3, 2]), 0x200080A0: r.choice([3, 2]),
+                                                   0x200080A1: r.choice([3, 2]), 0x20008087: r.choice([0, 1]),
+                                                   **{a + i: (v >> (8 * i)) & 0xFF
+                                                      for a in (0x20007D84, 0x20007E60, 0x20007E64)
+                                                      for v in [r.randrange(0, 120000)] for i in range(4)},
+                                                   **{0x20007E4C + 4 * k + i: (v >> (8 * i)) & 0xFF
+                                                      for k in range(4)
+                                                      for v in [r.randrange(-20000, 20001) & 0xFFFFFFFF]
+                                                      for i in range(4)}}),
+    "trim_correct_reading": dict(ret=32, trials=2000,
+                                 args=lambda r: (r.choice([2, 2, 4, 16, 18, 20, 0, 3, 1]),
+                                                 r.choice([r.randrange(-1000, 60000), 5000, 5001])),
+                                 ram_set=lambda r: {0x2000803D: r.randrange(0, 4), 0x200080A5: r.choice([0, 0, 1]),
+                                                    0x200080B9: r.choice([0, 0, 1]), 0x2000808A: r.choice([0, 0, 1]),
+                                                    0x200080BA: r.choice([0, 1]), 0x20008098: r.choice([0, 1]),
+                                                    0x2000803E: r.choice([3, 3, 2]), 0x200080A0: r.choice([3, 2]),
+                                                    0x200080A1: r.choice([3, 2]), 0x20008087: r.choice([0, 1, 1]),
+                                                    **{a + i: (v >> (8 * i)) & 0xFF
+                                                       for a in (0x20007D84, 0x20007E60, 0x20007E64)
+                                                       for v in [r.randrange(0, 120000)] for i in range(4)},
+                                                    **{0x20007E4C + 4 * k + i: (v >> (8 * i)) & 0xFF
+                                                       for k in range(4)
+                                                       for v in [r.randrange(-20000, 20001) & 0xFFFFFFFF]
+                                                       for i in range(4)}}),
+    "ad1_process_dual_ac": dict(ret=None, trials=200, steps=6, ram_set=lambda r: {**(lambda r: {0x2000803C: r.randrange(0, 25), 0x2000803D: r.randrange(0, 4),
+                       0x200080C6: r.randrange(0, 4), 0x200080C7: r.randrange(0, 4),
+                       0x200080B7: r.choice([0, 1]), 0x20008098: r.choice([0, 1]), 0x200080BA: r.choice([0, 1]),
+                       0x200080BD: r.choice([0, 1]), 0x2000808A: r.choice([0, 1]), 0x20007FDF: r.choice([0, 1])})(r), **gains_at(0x20007E10, 0x20007E2C, 0x20007E30)(r),
+                       0x2000803C: r.choice([13, 14, 15]), 0x2000803D: r.randrange(0, 4),
+                       0x20008081: r.choice([0, 1, 1, 1]), 0x200080B7: r.choice([0, 0, 0, 1]),
+                       0x2000808C: r.choice([0, 0, 0, 1]), 0x2000808E: r.choice([0, 0, 0, 1]),
+                       0x200080A5: r.choice([0, 0, 1]), 0x200080B9: r.choice([0, 0, 1]),
+                       0x2000808A: r.choice([0, 0, 0, 1]), 0x20008087: r.choice([0, 1]),
+                       0x200080BA: r.choice([0, 0, 1]), 0x200080BD: r.choice([0, 1]),
+                       0x20008084: r.randrange(0, 11), 0x20008085: r.randrange(0, 11),
+                       0x2000803E: r.choice([3, 3, 2]), 0x200080A0: r.choice([3, 2]),
+                       0x20000239: r.choice([5, 5, 0]), 0x20008037: r.choice([10, 11, 0]),
+                       0x200080C4: r.choice([0, 1]), 0x200080C5: r.randrange(0, 8),
+                       0x20007E78: r.randrange(0, 4), 0x2000808F: r.choice([0, 1]),
+                       0x20008095: r.choice([16, 16, 1, 2]),
+                       **{a + i: (v >> (8 * i)) & 0xFF
+                          for a in (0x20007D84, 0x20007E60, 0x20007E64)
+                          for v in [r.randrange(0, 120000)] for i in range(4)},
+                       **{0x20007E4C + 4 * k + i: (v >> (8 * i)) & 0xFF
+                          for k in range(4)
+                          for v in [r.randrange(-20000, 20001) & 0xFFFFFFFF]
+                          for i in range(4)}},
+                with_globals_of=["derived_from_average", "scaled_from_ad1", "scale_reading", "moving_average",
+                                  "moving_average_b", "offset_stage", "gain_stage", "subtract_zero_offset",
+                                  "apply_gain", "average16", "calibrate_zero_and_gain", "trim_correct_reading",
+                                  "ac_response_correct", "cal_trim_requests", "holdoff_on_low_reading",
+                                  "func2_reading_done", "dbm_from_voltage"],
+                extra=[(0x200070A8 + 4 * i, 4) for i in range(10)] + [(0x20007238 + 4 * i, 4) for i in range(10)]),
+    "ad1_process_func4": dict(ret=None, trials=400, steps=6, ram_set=lambda r: {**(lambda r: {0x2000803C: r.randrange(0, 25), 0x2000803D: r.randrange(0, 4),
+                       0x200080C6: r.randrange(0, 4), 0x200080C7: r.randrange(0, 4),
+                       0x200080B7: r.choice([0, 1]), 0x20008098: r.choice([0, 1]), 0x200080BA: r.choice([0, 1]),
+                       0x200080BD: r.choice([0, 1]), 0x2000808A: r.choice([0, 1]), 0x20007FDF: r.choice([0, 1])})(r), **gains_at(0x20007E10, 0x20007E2C, 0x20007E30)(r),
+                       0x2000803C: r.choice([4, 4, 4, 13, 2]), 0x2000803D: r.randrange(0, 4),
+                       0x20008081: r.choice([0, 1, 1, 1]), 0x200080B7: r.choice([0, 0, 0, 1]),
+                       0x2000808C: r.choice([0, 0, 0, 1]), 0x2000808E: r.choice([0, 0, 0, 1]),
+                       0x200080A5: r.choice([0, 0, 1]), 0x200080B9: r.choice([0, 0, 1]),
+                       0x2000808A: r.choice([0, 0, 0, 1]), 0x20008087: r.choice([0, 1]),
+                       0x200080BA: r.choice([0, 0, 1]), 0x200080BD: r.choice([0, 1]),
+                       0x20008084: r.randrange(0, 11), 0x20008085: r.randrange(0, 11),
+                       0x2000803E: r.choice([3, 3, 2]), 0x200080A0: r.choice([3, 2]),
+                       0x20000239: r.choice([5, 5, 0]), 0x20008037: r.choice([10, 11, 0]),
+                       0x200080C4: r.choice([0, 1]), 0x200080C5: r.randrange(0, 8),
+                       0x20007E78: r.randrange(0, 4), 0x2000808F: r.choice([0, 1]),
+                       0x20008095: r.choice([16, 16, 1, 2]),
+                       **{a + i: (v >> (8 * i)) & 0xFF
+                          for a in (0x20007D84, 0x20007E60, 0x20007E64)
+                          for v in [r.randrange(0, 120000)] for i in range(4)},
+                       **{0x20007E4C + 4 * k + i: (v >> (8 * i)) & 0xFF
+                          for k in range(4)
+                          for v in [r.randrange(-20000, 20001) & 0xFFFFFFFF]
+                          for i in range(4)}},
+                with_globals_of=["derived_from_average", "scaled_from_ad1", "scale_reading", "moving_average",
+                                  "moving_average_b", "offset_stage", "gain_stage", "subtract_zero_offset",
+                                  "apply_gain", "average16", "calibrate_zero_and_gain", "trim_correct_reading",
+                                  "ac_response_correct", "cal_trim_requests", "holdoff_on_low_reading",
+                                  "func2_reading_done", "dbm_from_voltage"],
+                extra=[(0x200070A8 + 4 * i, 4) for i in range(10)] + [(0x20007238 + 4 * i, 4) for i in range(10)]),
+    "ad1_process_func2": dict(ret=None, trials=500, steps=6, ram_set=lambda r: {**(lambda r: {0x2000803C: r.randrange(0, 25), 0x2000803D: r.randrange(0, 4),
+                       0x200080C6: r.randrange(0, 4), 0x200080C7: r.randrange(0, 4),
+                       0x200080B7: r.choice([0, 1]), 0x20008098: r.choice([0, 1]), 0x200080BA: r.choice([0, 1]),
+                       0x200080BD: r.choice([0, 1]), 0x2000808A: r.choice([0, 1]), 0x20007FDF: r.choice([0, 1])})(r), **gains_at(0x20007E10, 0x20007E2C, 0x20007E30)(r),
+                       0x2000803C: r.choice([2, 2, 2, 4, 13, 16, 0, 0]), 0x2000803D: r.randrange(0, 4),
+                       0x20008081: r.choice([0, 1, 1, 1]), 0x200080B7: r.choice([0, 0, 0, 1]),
+                       0x2000808C: r.choice([0, 0, 0, 1]), 0x2000808E: r.choice([0, 0, 0, 1]),
+                       0x200080A5: r.choice([0, 0, 1]), 0x200080B9: r.choice([0, 0, 1]),
+                       0x2000808A: r.choice([0, 0, 0, 1]), 0x20008087: r.choice([0, 1]),
+                       0x200080BA: r.choice([0, 0, 1]), 0x200080BD: r.choice([0, 1]),
+                       0x20008084: r.randrange(0, 11), 0x20008085: r.randrange(0, 11),
+                       0x2000803E: r.choice([3, 3, 2]), 0x200080A0: r.choice([3, 2]),
+                       0x20000239: r.choice([5, 5, 0]), 0x20008037: r.choice([10, 11, 0]),
+                       0x200080C4: r.choice([0, 1]), 0x200080C5: r.randrange(0, 8),
+                       0x20007E78: r.randrange(0, 4), 0x2000808F: r.choice([0, 1]),
+                       0x20008095: r.choice([16, 16, 1, 2]),
+                       **{a + i: (v >> (8 * i)) & 0xFF
+                          for a in (0x20007D84, 0x20007E60, 0x20007E64)
+                          for v in [r.randrange(0, 120000)] for i in range(4)},
+                       **{0x20007E4C + 4 * k + i: (v >> (8 * i)) & 0xFF
+                          for k in range(4)
+                          for v in [r.randrange(-20000, 20001) & 0xFFFFFFFF]
+                          for i in range(4)}},
+                with_globals_of=["derived_from_average", "scaled_from_ad1", "scale_reading", "moving_average",
+                                  "moving_average_b", "offset_stage", "gain_stage", "subtract_zero_offset",
+                                  "apply_gain", "average16", "calibrate_zero_and_gain", "trim_correct_reading",
+                                  "ac_response_correct", "cal_trim_requests", "holdoff_on_low_reading",
+                                  "func2_reading_done", "dbm_from_voltage"],
+                extra=[(0x200070A8 + 4 * i, 4) for i in range(10)] + [(0x20007238 + 4 * i, 4) for i in range(10)]),
+    "ad1_process_func16": dict(ret=None, trials=500, steps=6, ram_set=lambda r: {**(lambda r: {0x2000803C: r.randrange(0, 25), 0x2000803D: r.randrange(0, 4),
+                       0x200080C6: r.randrange(0, 4), 0x200080C7: r.randrange(0, 4),
+                       0x200080B7: r.choice([0, 1]), 0x20008098: r.choice([0, 1]), 0x200080BA: r.choice([0, 1]),
+                       0x200080BD: r.choice([0, 1]), 0x2000808A: r.choice([0, 1]), 0x20007FDF: r.choice([0, 1])})(r), **gains_at(0x20007E10, 0x20007E2C, 0x20007E30)(r),
+                       0x2000803C: r.choice([16, 18, 20, 16, 13, 17]), 0x2000803D: r.randrange(0, 4),
+                       0x20008081: r.choice([0, 1, 1, 1]), 0x200080B7: r.choice([0, 0, 0, 1]),
+                       0x2000808C: r.choice([0, 0, 0, 1]), 0x2000808E: r.choice([0, 0, 0, 1]),
+                       0x200080A5: r.choice([0, 0, 1]), 0x200080B9: r.choice([0, 0, 1]),
+                       0x2000808A: r.choice([0, 0, 0, 1]), 0x20008087: r.choice([0, 1]),
+                       0x200080BA: r.choice([0, 0, 1]), 0x200080BD: r.choice([0, 1]),
+                       0x20008084: r.randrange(0, 11), 0x20008085: r.randrange(0, 11),
+                       0x2000803E: r.choice([3, 3, 2]), 0x200080A0: r.choice([3, 2]),
+                       0x20000239: r.choice([5, 5, 0]), 0x20008037: r.choice([10, 11, 0]),
+                       0x200080C4: r.choice([0, 1]), 0x200080C5: r.randrange(0, 8),
+                       0x20007E78: r.randrange(0, 4), 0x2000808F: r.choice([0, 1]),
+                       0x20008095: r.choice([16, 16, 1, 2]),
+                       **{a + i: (v >> (8 * i)) & 0xFF
+                          for a in (0x20007D84, 0x20007E60, 0x20007E64)
+                          for v in [r.randrange(0, 120000)] for i in range(4)},
+                       **{0x20007E4C + 4 * k + i: (v >> (8 * i)) & 0xFF
+                          for k in range(4)
+                          for v in [r.randrange(-20000, 20001) & 0xFFFFFFFF]
+                          for i in range(4)}},
+                with_globals_of=["derived_from_average", "scaled_from_ad1", "scale_reading", "moving_average",
+                                  "moving_average_b", "offset_stage", "gain_stage", "subtract_zero_offset",
+                                  "apply_gain", "average16", "calibrate_zero_and_gain", "trim_correct_reading",
+                                  "ac_response_correct", "cal_trim_requests", "holdoff_on_low_reading",
+                                  "func2_reading_done", "dbm_from_voltage"],
+                extra=[(0x200070A8 + 4 * i, 4) for i in range(10)] + [(0x20007238 + 4 * i, 4) for i in range(10)]),
+    "ad1_process_func16_va": dict(ret=None, trials=200, steps=16, ram_set=lambda r: {**(lambda r: {0x2000803C: r.randrange(0, 25), 0x2000803D: r.randrange(0, 4),
+                       0x200080C6: r.randrange(0, 4), 0x200080C7: r.randrange(0, 4),
+                       0x200080B7: r.choice([0, 1]), 0x20008098: r.choice([0, 1]), 0x200080BA: r.choice([0, 1]),
+                       0x200080BD: r.choice([0, 1]), 0x2000808A: r.choice([0, 1]), 0x20007FDF: r.choice([0, 1])})(r), **gains_at(0x20007E10, 0x20007E2C, 0x20007E30)(r),
+                       0x2000803C: r.choice([16, 18, 20]), 0x2000803D: r.randrange(0, 4),
+                       0x20008081: r.choice([0, 1, 1, 1]), 0x200080B7: r.choice([0, 0, 0, 1]),
+                       0x2000808C: r.choice([0, 0, 0, 1]), 0x2000808E: r.choice([0, 0, 0, 1]),
+                       0x200080A5: r.choice([0, 0, 1]), 0x200080B9: r.choice([0, 0, 1]),
+                       0x2000808A: r.choice([0, 0, 0, 1]), 0x20008087: r.choice([0, 1]),
+                       0x200080BA: r.choice([0, 0, 1]), 0x200080BD: r.choice([0, 1]),
+                       0x20008084: r.randrange(0, 11), 0x20008085: r.randrange(0, 11),
+                       0x2000803E: r.choice([3, 3, 2]), 0x200080A0: r.choice([3, 2]),
+                       0x20000239: r.choice([5, 5, 0]), 0x20008037: r.choice([10, 11, 0]),
+                       0x200080C4: r.choice([0, 1]), 0x200080C5: r.randrange(0, 8),
+                       0x20007E78: r.randrange(0, 4), 0x2000808F: r.choice([0, 1]),
+                       0x20008095: r.choice([16, 16, 1, 2]),
+                       **{a + i: (v >> (8 * i)) & 0xFF
+                          for a in (0x20007D84, 0x20007E60, 0x20007E64)
+                          for v in [r.randrange(0, 120000)] for i in range(4)},
+                       **{0x20007E4C + 4 * k + i: (v >> (8 * i)) & 0xFF
+                          for k in range(4)
+                          for v in [r.randrange(-20000, 20001) & 0xFFFFFFFF]
+                          for i in range(4)}},
+                with_globals_of=["derived_from_average", "scaled_from_ad1", "scale_reading", "moving_average",
+                                  "moving_average_b", "offset_stage", "gain_stage", "subtract_zero_offset",
+                                  "apply_gain", "average16", "calibrate_zero_and_gain", "trim_correct_reading",
+                                  "ac_response_correct", "cal_trim_requests", "holdoff_on_low_reading",
+                                  "func2_reading_done", "dbm_from_voltage", "ad1_process_func16", "ad1_process_func2", "smooth3", "reconfigure_borrow_f2"],
+                extra=[(0x200070A8 + 4 * i, 4) for i in range(10)] + [(0x20007238 + 4 * i, 4) for i in range(10)]),
+    "hy3131_on_ad1_ready@deep": dict(ret=None, trials=600, steps=8, ram_set=lambda r: {**(lambda r: {0x2000803C: r.randrange(0, 25), 0x2000803D: r.randrange(0, 4),
+                       0x200080C6: r.randrange(0, 4), 0x200080C7: r.randrange(0, 4),
+                       0x200080B7: r.choice([0, 1]), 0x20008098: r.choice([0, 1]), 0x200080BA: r.choice([0, 1]),
+                       0x200080BD: r.choice([0, 1]), 0x2000808A: r.choice([0, 1]), 0x20007FDF: r.choice([0, 1])})(r), **gains_at(0x20007E10, 0x20007E2C, 0x20007E30)(r),
+                       0x2000803C: r.randrange(0, 26), 0x2000803D: r.randrange(0, 4),
+                       0x20008081: r.choice([0, 1, 1, 1]), 0x200080B7: r.choice([0, 0, 0, 1]),
+                       0x2000808C: r.choice([0, 0, 0, 1]), 0x2000808E: r.choice([0, 0, 0, 1]),
+                       0x200080A5: r.choice([0, 0, 1]), 0x200080B9: r.choice([0, 0, 1]),
+                       0x2000808A: r.choice([0, 0, 0, 1]), 0x20008087: r.choice([0, 1]),
+                       0x200080BA: r.choice([0, 0, 1]), 0x200080BD: r.choice([0, 1]),
+                       0x20008084: r.randrange(0, 11), 0x20008085: r.randrange(0, 11),
+                       0x2000803E: r.choice([3, 3, 2]), 0x200080A0: r.choice([3, 2]),
+                       0x20000239: r.choice([5, 5, 0]), 0x20008037: r.choice([10, 11, 0]),
+                       0x200080C4: r.choice([0, 1]), 0x200080C5: r.randrange(0, 8),
+                       0x20007E78: r.randrange(0, 4), 0x2000808F: r.choice([0, 1]),
+                       0x20008095: r.choice([16, 16, 1, 2]),
+                       **{a + i: (v >> (8 * i)) & 0xFF
+                          for a in (0x20007D84, 0x20007E60, 0x20007E64)
+                          for v in [r.randrange(0, 120000)] for i in range(4)},
+                       **{0x20007E4C + 4 * k + i: (v >> (8 * i)) & 0xFF
+                          for k in range(4)
+                          for v in [r.randrange(-20000, 20001) & 0xFFFFFFFF]
+                          for i in range(4)}},
+                with_globals_of=["derived_from_average", "scaled_from_ad1", "scale_reading", "moving_average",
+                                  "moving_average_b", "offset_stage", "gain_stage", "subtract_zero_offset",
+                                  "apply_gain", "average16", "calibrate_zero_and_gain", "trim_correct_reading",
+                                  "ac_response_correct", "cal_trim_requests", "holdoff_on_low_reading",
+                                  "func2_reading_done", "dbm_from_voltage", "ad1_read_value", "ad1_average", "thermocouple_to_celsius", "threshold_check", "sign_offset", "smooth3", "f9r6_correction"],
+                extra=[(0x200077D0 + i, 1) for i in range(3)] + [(0x200070A8 + 4 * i, 4) for i in range(10)] + [(0x20007238 + 4 * i, 4) for i in range(10)]),
     # ---- LCD driver ----
     "lcd_update": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
     "lcd_update_partial": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
@@ -757,6 +1043,12 @@ def main():
                 problems = compare_step(spec, mo, mn, ro, rn, ram_o, ram_n)
                 if problems:
                     problems.insert(0, "step %d of %d" % (s, steps))
+                    # DUMP=0x20007C5C:0x30 prints that RAM range from both runs
+                    if os.environ.get("DUMP"):
+                        lo, n = (int(x, 0) for x in os.environ["DUMP"].split(":"))
+                        for tag, img in (("orig", ram_o), ("new ", ram_n)):
+                            words = struct.unpack_from("<%dI" % (n // 4), img, lo - RAM_BASE)
+                            problems.append("%s %s" % (tag, " ".join("%08X" % w for w in words)))
                     break
             if problems:
                 bad = (t, a, idr, problems)

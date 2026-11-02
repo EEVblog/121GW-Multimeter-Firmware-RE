@@ -2,6 +2,7 @@
  * HY3131 AD1 (high-resolution ADC) results and per-function dispatch.
  */
 #include "measure_ad1.h"
+#include "measure_funcs.h"
 #include "hy3131_bus.h"
 #include "hy3131_ctrl.h"
 #include "orig_calls.h"
@@ -58,9 +59,9 @@ uint8_t ad1_average(int32_t value)
 void ad1_process_func0(void)
 {
     if (g_flag_8098 == 0) {
-        FUN_08007714();
+        ad1_process_func1();
     } else {
-        FUN_08006aec();
+        ad1_process_func2();
     }
 }
 
@@ -82,38 +83,38 @@ void hy3131_on_ad1_ready(void)
         ad1_process_func0();
         break;
     case 1:
-        FUN_08007714();
+        ad1_process_func1();
         break;
     case 2:
         if (g_flag_80ba == 0 || g_flag_80bd == 0) {
-            FUN_08006aec();
+            ad1_process_func2();
         } else {
-            FUN_08007714();
+            ad1_process_func1();
         }
         break;
     case 3:
-        FUN_080077f0();
+        ad1_process_func3();
         break;
     case 4:
-        FUN_080069b4();
+        ad1_process_func4();
         break;
     case 5:
-        FUN_08007840();
+        ad1_process_func5();
         break;
     case 9:
-        FUN_080079c4();
+        ad1_process_func9();
         break;
     case 10:
-        FUN_080078b8();
+        ad1_process_func10();
         break;
     case 11:
-        FUN_08007e84();
+        ad1_process_func11();
         break;
     case 16: case 18: case 20:
-        FUN_0800664a();
+        ad1_process_func16_va();
         break;
     case 17: case 19: case 21:
-        FUN_08007fa8();
+        ad1_process_func17_va();
         break;
     default:
         break;

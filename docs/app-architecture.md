@@ -108,19 +108,21 @@ When every function is reconstructed, the globals are defined normally and the h
 | Data EEPROM access (read, program with retries, BE reads/writes, markers) | `firmware/src/eeprom.c` | 14 | equivalent, including EEPROM write traces |
 | Calibration storage and zero/gain calibration | `firmware/src/calibration.c` | 5 | equivalent |
 | Calibration loading (records, trims, extra offsets, dual-gain pairs), trim capture | `firmware/src/calibration.c` | 10 | equivalent on randomised EEPROM contents |
-| AD1 results (24-bit read, running mean, per-function dispatch) | `firmware/src/measure_ad1.c` | 4 | equivalent; per-function processing still calls the original |
+| AD1 results (24-bit read, running mean, per-function dispatch) | `firmware/src/measure_ad1.c` | 4 | equivalent; dispatch uses the rebuilt handlers except functions 13–15 and 22–24 |
 | Front-end switching per function | `firmware/src/front_end.c` | 8 | equivalent |
 | Buzzer (PE7), beep presets, auto power-off reset | `firmware/src/buzzer.c` | 6 | equivalent |
 | Measurement helpers, calibration stages | `firmware/src/measure_scale.c`, `firmware/src/calibration.c` | 7 | equivalent |
 | Derived values (power/VA product, vector magnitude, thresholds, hold-off, dBm, AD1 staging, function 12 interval) | `firmware/src/measure_derived.c` | 10 | equivalent (dBm for ranges 0–3) |
 | Reading filters (3-sample smoother, two moving-average instances) | `firmware/src/filters.c` | 3 | equivalent for in-range counters |
 | Function/range change (HY3131 + calibration reload, decimal point, display mode, VA borrow) | `firmware/src/range_select.c` | 8 | equivalent for valid table rows |
-| Per-function AD1 processing: functions 1, 2 (incl. AC+DC phases), 3, 5, 9, 10, 11 | `firmware/src/measure_funcs.c` | 12 | equivalent |
+| Per-function AD1 processing: functions 0–5, 9–11, 16–21 (incl. AC+DC and VA phase alternation) | `firmware/src/measure_funcs.c` | 22 | equivalent; also tested through the dispatcher over all functions |
+| AC frequency response (functions 2/4) and function 2 range 0 frequency offset | `firmware/src/ac_response.c` | 2 | equivalent |
+| Trim-based AC correction (functions 2, 4, 16, 18, 20) | `firmware/src/trim_correction.c` | 4 | equivalent |
 | Type K thermocouple table, °C → °F | `firmware/src/temperature.c` | 2 | equivalent |
 | IAR `log10`, reproduced bit-for-bit | `firmware/src/iar_math.c` | 1 | equivalent on 4000 inputs incl. NaN/inf/zero/subnormal/negative and errno |
 
 Known deviations, all for inputs that valid firmware state never produces:
-- **NaN results:** IAR's soft-float runtime produces a *negative* default NaN (0xFFC00000) where GCC's libgcc produces a positive one, and that changes sign-dependent saturation later. NaN needs corrupt calibration data; an erased STM32L1 EEPROM reads as zeros.
+- **NaN results:** IAR's soft-float runtime produces a *negative* default NaN (0xFFC00000) where GCC's libgcc produces a positive one, and that changes sign-dependent saturation later. NaN needs corrupt calibration data. A zero gain is handled explicitly; a NaN takes a gain below about 1e-44 (for example 0/0 in `apply_gain` with g_flag_80b9 set). The composite handler tests therefore use realistic gains, and the edge-case floats are covered by the `apply_gain` tests.
 - **Float divide near FLT_MAX:** IAR's `fdiv` returns ±infinity for quotients just below FLT_MAX in magnitude (dividend within ~3% of FLT_MAX), where IEEE and libgcc give the finite value. Measurement values are many orders of magnitude smaller.
 - `lcd_reapply_pulse_duration()` with a contrast outside 10–17 uses 0 where the original passes an uninitialised register.
 - `hy3131_write_mode_registers()` / `hy3131_set_irq_enables()` with a function index above 0x18 use zeros / AD1 where the original uses an uninitialised stack buffer.
@@ -159,6 +161,10 @@ In the rebuild, the basic IEEE operations are left to GCC's libgcc, which gives 
 - **Function 5 (temperature):** the thermocouple voltage plus a cold-junction offset (0x20007E7C) is converted to 0.01 °C, or to °F when 0x200080AB is 0, and then to 0.1°. The original rounds up when the last digit of the already-divided value is 5 or more, not the discarded digit. This is reproduced.
 - **Function 9 (and 10, which adds the threshold beeper):** negative readings are clipped except in range 0. Range 5 subtracts a correction (0 to 15 counts) that rises and falls with the reading. Range 6 subtracts `g_cal_e14 × curve / 100`, where the curve is a 13-point table of percentages. A reading of exactly 0 makes the original interpolate from the word before that table; the rebuild keeps that word, so the result is identical.
 - **Function 11:** a reading within ±999 keeps the buzzer on. A change of more than 1000 gives one triple beep until 0x200080B4 is cleared.
+- **Functions 2 and 4 with g_flag_80b9:** the reading is scaled by a gain (1000 = unity) for the measured frequency (20 Hz–6 kHz, 216 points). There are separate tables for low (< 100000) and high (> 500000) readings, blended linearly between them. Below 20 Hz the reading is unchanged; above 6 kHz it becomes 0. At exactly 20 Hz the original interpolates from the word before the frequency table; the rebuild keeps the tables contiguous, so the result is identical.
+- **Trim correction** (functions 2, 4, 16, 18, 20, outside calibration and without g_flag_80b9): the four 16-bit trims give offsets at two levels. Percentage tables per frequency point scale them for the measured frequency (above 50 Hz), and the result is interpolated in level between the knee (low offset + 5000 counts, or + 600 for selection 5, which is function 2 range 3 or function 4 range 5) and 50000. Function 2 range 0 can add a further frequency-dependent offset (g_flag_8087).
+- **Functions 16–21 (VA):** outside calibration with g_flag_80a5 set, the meter alternates between the main measurement and a borrowed function, function 2 for 16/18/20 and function 1 for 17/19/21. It switches on the 7th or 4th new reading respectively. The borrowed reading is smoothed into 0x20007E6C, and 0x200080A7 records whether it is above 5000.
+- **Functions 22–24:** a fixed offset by range and by the signs of a reference value and the reading is added when |reading| > 2500 (PF8 high, g_flag_7fe0 set).
 - The second moving average is used with up to 20 samples (function 9 range 6). Its buffer at 0x20007238 has 400 bytes free before the next variable, so the rebuild declares 20 entries.
 
 ## Start-up summary

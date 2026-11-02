@@ -33,6 +33,8 @@ set(APP_SOURCES
     src/temperature.c
     src/range_select.c
     src/measure_funcs.c
+    src/ac_response.c
+    src/trim_correction.c
 )
 
 add_library(app_modules STATIC ${APP_SOURCES})

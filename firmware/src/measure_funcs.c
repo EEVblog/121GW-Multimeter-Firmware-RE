@@ -13,6 +13,9 @@
 #include "measure_scale.h"
 #include "hy3131_ctrl.h"
 #include "numeric.h"
+#include "ac_response.h"
+#include "trim_correction.h"
+#include "system_init.h"
 #include "range_select.h"
 #include "temperature.h"
 
@@ -305,4 +308,287 @@ void ad1_process_func1(void)
         break;
     }
     scaled_from_ad1();
+}
+
+/*
+ * Offsets for functions 22..24 by range (0..3) and sign quadrant
+ * [ref >= 0, reading >= 0], [ref < 0, reading >= 0], [ref >= 0, reading < 0],
+ * [ref < 0, reading < 0].
+ */
+static const int16_t sign_offset_tab[3][4][4] = {
+    { { 200, 200, -200, -300 }, { 2100, 2100, -2100, -2100 },
+      { 130, 130, -170, -170 }, { 2110, 2110, -2130, -2140 } },
+    { { 130, 132, -71, -70 }, { 1583, 1605, -1548, -1529 },
+      { 82, 83, -120, -120 }, { 1537, 1566, -1606, -1578 } },
+    { { 128, 131, -65, -65 }, { 1559, 1581, -1517, -1499 },
+      { 5, 12, -16, -18 }, { 156, 160, -161, -159 } },
+};
+
+#define SIGN_OFFSET_DEADBAND 2500
+
+/*
+ * orig: 0x080087F8
+ * Functions 22..24 outside calibration, with PF8 high and g_flag_7fe0 set:
+ * an offset chosen by range and the signs of `ref` and `reading`, for
+ * |reading| > 2500 (else 0). Ranges above 3 give 0.
+ */
+int32_t sign_offset(int32_t ref, int32_t reading)
+{
+    if (g_flag_808a != 0) {
+        return 0;
+    }
+    if (!(g_function == 22 || g_function == 23 || g_function == 24)) {
+        return 0;
+    }
+    if ((uint8_t)(g_pf8_detected_low | (g_flag_7fe0 ^ 1u)) != 0) {
+        return 0;
+    }
+    if (reading <= SIGN_OFFSET_DEADBAND && reading >= -SIGN_OFFSET_DEADBAND) {
+        return 0;
+    }
+    if (g_range > 3) {
+        return 0;
+    }
+    return sign_offset_tab[g_function - 22][g_range][(ref < 0) | ((reading < 0) << 1)];
+}
+
+/*
+ * orig: 0x08008138 - functions 17, 19, 21 (main phase) and 22..24
+ * Range 0 also removes the extra offset loaded for functions 16..21.
+ */
+void ad1_process_func17(void)
+{
+    if (g_ad1_average_ready != 0) {
+        derived_from_average();
+        g_derived_value = moving_average_b(g_derived_value, 10, 10);
+        g_derived_value = sign_offset(g_ref_7d7c, g_derived_value) + g_derived_value;
+        if (g_range == 0) {
+            g_derived_value = g_derived_value - g_cal_extra_offset;
+        }
+        g_new_reading = 1;
+    }
+    scaled_from_ad1();
+    if ((g_function == 16 || g_function == 18 || g_function == 20
+         || g_function == 17 || g_function == 19 || g_function == 21) && g_mode_8037 == 10) {
+        g_disp_flag_8062 = 1;
+    }
+}
+
+/*
+ * VA functions alternate between the main measurement and a borrowed
+ * function (g_flag_80c4). The first `readings` new readings of a phase are
+ * discarded; the next one switches phase. Leaving the borrowed phase
+ * smooths its reading into g_va_aux, and g_flag_80a7 records whether that
+ * exceeds 5000.
+ */
+static void va_phase_step(uint8_t readings, void (*reconfigure)(uint8_t borrow))
+{
+    if (g_new_reading == 0) {
+        return;
+    }
+    g_flag_80c5++;
+    if (g_flag_80c5 <= readings) {
+        g_scaled_ready = 0;
+        g_new_reading = 0;
+        return;
+    }
+    if (g_flag_80c4 != 0) {
+        g_va_aux = smooth3(g_va_aux);
+        g_flag_80a7 = 0;
+        if (g_va_aux > 5000) {
+            g_flag_80a7 = 1;
+        }
+        g_scaled_ready = 0;
+        g_new_reading = 0;
+        if (g_mode_8037 == 11) {
+            g_disp_flag_8062 = 1;
+        }
+    }
+    g_flag_80c5 = 0;
+    g_flag_80c4 ^= 1u;
+    reconfigure(g_flag_80c4 != 0);
+}
+
+/*
+ * orig: 0x08007FA8 - functions 17, 19, 21
+ * With g_flag_80a5 set (outside calibration) alternates between the main
+ * measurement and function 1 (borrowed), switching on every 4th reading.
+ */
+void ad1_process_func17_va(void)
+{
+    if ((uint8_t)(g_flag_808a | (g_flag_80a5 ^ 1u)) != 0) {
+        ad1_process_func17();
+        return;
+    }
+    if (g_flag_80c4 != 0) {
+        ad1_process_func1();
+        if (g_ad1_average_ready != 0) {
+            g_va_aux = g_derived_value;
+        }
+    } else {
+        ad1_process_func17();
+    }
+    va_phase_step(3, reconfigure_borrow_f1);
+}
+
+static int dual_gain_function(void)
+{
+    return g_function == 13 || g_function == 14 || g_function == 15;
+}
+
+static int va_function(void)
+{
+    return g_function == 16 || g_function == 18 || g_function == 20
+        || g_function == 17 || g_function == 19 || g_function == 21;
+}
+
+/* Zero offset (clipped at 0), gain, optional frequency response, trims. */
+static int32_t corrected_average(int use_ac_response)
+{
+    int32_t v = subtract_zero_offset(g_ad1_average);
+
+    if (v < 0) {
+        v = 0;
+    }
+    g_derived_value = v;
+    g_derived_value = apply_gain(g_derived_value);
+    if (use_ac_response) {
+        g_derived_value = ac_response_correct(g_derived_value);
+    }
+    g_derived_value = trim_correct_reading(g_function, g_derived_value);
+    return g_derived_value;
+}
+
+/*
+ * The averaging / calibration branch shared by functions 2, 4 and 16..21:
+ * returns 1 when it produced a new corrected reading in g_derived_value.
+ */
+static int average_or_calibrate(int use_ac_response)
+{
+    if (g_avg_flag_808c != 0) {
+        g_avg16_result = average16(g_ad1_average);
+        return 0;
+    }
+    if (g_cal_flag_808e != 0 && !dual_gain_function()) {
+        calibrate_zero_and_gain(g_ad1_average, g_avg16_result);
+        return 0;
+    }
+    corrected_average(use_ac_response);
+    return 1;
+}
+
+/* orig: 0x08006A9E - functions 13..15 within the function 2/4 handlers */
+void ad1_process_dual_ac(void)
+{
+    derived_from_average();
+    if (g_derived_value < 0) {
+        g_derived_value = 0;
+    }
+    g_derived_value = moving_average(g_derived_value, 20, 10);
+    func2_reading_done();
+}
+
+/* orig: 0x080069B4 - function 4 */
+void ad1_process_func4(void)
+{
+    if (g_ad1_average_ready != 0 && g_flag_80b7 == 0) {
+        if (dual_gain_function()) {
+            ad1_process_dual_ac();
+        } else if (g_avg_flag_808c != 0) {
+            g_avg16_result = average16(g_ad1_average);
+        } else if (g_cal_flag_808e != 0) {
+            calibrate_zero_and_gain(g_ad1_average, g_avg16_result);
+        } else {
+            corrected_average(1);
+            g_derived_value = moving_average(g_derived_value, 20, 10);
+            cal_trim_requests();
+            g_new_reading = 1;
+        }
+    }
+    scale_reading(g_ad1_value);
+    g_scaled_value = trim_correct_reading(g_function, g_scaled_value);
+}
+
+/* orig: 0x08006AEC - function 2 (AC with the RMS converter off) */
+void ad1_process_func2(void)
+{
+    if (g_ad1_average_ready != 0 && g_flag_80b7 == 0) {
+        if (dual_gain_function()) {
+            ad1_process_dual_ac();
+        } else if (average_or_calibrate(1)) {
+            g_derived_value = moving_average(g_derived_value, 20, 10);
+            cal_trim_requests();
+            func2_reading_done();
+        }
+        holdoff_on_low_reading();
+    }
+    if (dual_gain_function() || va_function()) {
+        return;
+    }
+    if (g_function == 2 && g_flag_80ba != 0) {
+        return;
+    }
+    if (g_function == 0 && g_setting_239 != 5) {
+        return;
+    }
+    scale_reading(g_ad1_value);
+    g_scaled_value = trim_correct_reading(g_function, g_scaled_value);
+    if ((g_function == 2 || g_function == 4) && g_flag_80b9 == 1) {
+        g_scaled_value = ac_response_correct((int32_t)((uint32_t)g_scaled_value * 10u));
+    }
+}
+
+/* orig: 0x080067D6 - functions 16, 18, 20 (main phase) */
+void ad1_process_func16(void)
+{
+    if (g_ad1_average_ready != 0) {
+        if (dual_gain_function()) {
+            derived_from_average_positive();
+        } else {
+            average_or_calibrate(0);
+            if (g_range == 0) {
+                g_derived_value = (int32_t)((uint32_t)g_derived_value - (uint32_t)g_cal_extra_offset);
+                if (g_derived_value < 0) {
+                    g_derived_value = 0;
+                }
+            }
+        }
+        g_derived_value = moving_average(g_derived_value, 20, 10);
+        cal_trim_requests();
+        if ((g_function == 16 || g_function == 18 || g_function == 20)
+            && g_range == 0 && g_derived_value < 31) {
+            g_derived_value = 0;
+        }
+        g_new_reading = 1;
+        holdoff_on_low_reading();
+    }
+    if (!dual_gain_function()) {
+        scale_reading(g_ad1_value);
+        g_scaled_value = trim_correct_reading(g_function, g_scaled_value);
+    }
+    if (va_function() && g_mode_8037 == 10) {
+        g_disp_flag_8062 = 1;
+    }
+}
+
+/*
+ * orig: 0x0800664A - functions 16, 18, 20
+ * As ad1_process_func17_va() but borrowing function 2, switching on every
+ * 7th reading.
+ */
+void ad1_process_func16_va(void)
+{
+    if ((uint8_t)(g_flag_808a | (g_flag_80a5 ^ 1u)) != 0) {
+        ad1_process_func16();
+        return;
+    }
+    if (g_flag_80c4 != 0) {
+        ad1_process_func2();
+        if (g_ad1_average_ready != 0) {
+            g_va_aux = g_derived_value;
+        }
+    } else {
+        ad1_process_func16();
+    }
+    va_phase_step(6, reconfigure_borrow_f2);
 }
