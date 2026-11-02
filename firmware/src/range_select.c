@@ -1,6 +1,6 @@
 /*
  * Function/range change: HY3131 reconfiguration, calibration reload,
- * secondary display decimal point and display mode.
+ * main display decimal point and display mode.
  */
 #include "range_select.h"
 #include "calibration.h"
@@ -45,7 +45,7 @@ void range_select(uint8_t load_cal)
     func12_set_interval();
 }
 
-/* Secondary display decimal point position per range (index = range). */
+/* Main display decimal point position per range (index = range). */
 static const uint8_t dp_a[] = { 3, 2, 4, 3, 2, 4, 3 };   /* functions 3, 4, 6, 9, 16, 17 */
 static const uint8_t dp_b[] = { 4, 3, 2, 1, 2 };         /* functions 1, 2, 7, 18, 19 */
 static const uint8_t dp_c[] = { 3, 2, 4, 3, 2 };         /* function 12 */
@@ -59,10 +59,10 @@ static const uint8_t dp_g[] = { 2, 4, 3 };               /* functions 20, 21 */
 
 /*
  * orig: 0x0800D920
- * Secondary display decimal point for a function/range (0 = none).
+ * Main display decimal point for a function/range (0 = none).
  * Ranges past the end of a function's list give 0.
  */
-uint8_t sub_dp_for_range(uint8_t function, uint8_t range)
+uint8_t main_dp_for_range(uint8_t function, uint8_t range)
 {
     switch (function) {
     case 0: case 5: case 8: case 25:
@@ -91,10 +91,10 @@ uint8_t sub_dp_for_range(uint8_t function, uint8_t range)
 }
 
 /* orig: 0x080171FA */
-void sub_dp_update(void)
+void main_dp_update(void)
 {
-    g_sub_dp = sub_dp_for_range(g_function, g_range);
-    lcd_set_sub_dp(g_sub_dp);
+    g_main_dp = main_dp_for_range(g_function, g_range);
+    lcd_set_main_dp(g_main_dp);
     lcd_update();
 }
 
@@ -148,7 +148,7 @@ void range_change(void)
     front_end_pe5(g_function, g_range);
     mode_238_select();
     lcd_bar_flag_dual(g_function, g_range);
-    sub_dp_update();
+    main_dp_update();
 }
 
 /* Reconfigure for the current function/range, or for `function` range 0. */

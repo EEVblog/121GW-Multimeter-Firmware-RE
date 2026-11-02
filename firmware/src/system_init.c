@@ -141,7 +141,7 @@ static int rcc_wait_for_hse_startup(void)
 }
 
 /*
- * orig: 0x0801BF1A
+ * orig: 0x0801BF1A; inlines: 0x0801FFF8 (RCC_GetFlagStatus)
  * use_hse == 0 (the only use in the application): MSI at 4.194 MHz, HSI on
  * (for the ADC), LSE and HSE off. Hangs if the HSE refuses to stop.
  */
@@ -175,7 +175,11 @@ void clock_init(uint8_t use_hse)
     RCC->APB2ENR |= RCC_APB2ENR_APP;
 }
 
-/* orig: 0x0801BF92 - RTC domain (and LCD) clocked from LSI; as the bootloader's */
+/*
+ * orig: 0x0801BF92 - RTC domain (and LCD) clocked from LSI; as the bootloader's.
+ * inlines: 0x0801FDFC (RCC_LSICmd), 0x0801FF34 (RCC_RTCCLKConfig), 0x0801FF70
+ * (RCC_RTCCLKCmd), 0x0801FF78 (RCC_RTCResetCmd), 0x0802079C (PWR_RTCAccessCmd)
+ */
 void rtc_clock_init(void)
 {
     PWR->CR |= PWR_CR_DBP_BIT;
@@ -332,7 +336,7 @@ void board_gpio_init(void)
 /* ---- ADC, NVIC, timers --------------------------------------------------------- */
 
 /*
- * orig: 0x08013DD4
+ * orig: 0x08013DD4; inlines: 0x08020094 (ADC_DeInit), 0x080200B4 (ADC_Init)
  * 12-bit, single conversion, software trigger, right-aligned, one channel.
  * The original leaves the external-trigger-edge field of its init struct
  * uninitialised; in the start-up sequence that stack slot always holds 0
@@ -362,7 +366,7 @@ static void nvic_enable(unsigned irq, uint32_t preempt, uint32_t sub)
     NVIC->ISER[irq >> 5] = 1u << (irq & 0x1F);
 }
 
-/* orig: 0x0801BFDE - priority group 2 */
+/* orig: 0x0801BFDE - priority group 2; inlines: 0x0802086C (NVIC_PriorityGroupConfig) */
 void nvic_init(void)
 {
     SCB->AIRCR = 0x05FA0000u | 0x500u;
@@ -388,7 +392,7 @@ static void timer_start(TIM_TypeDef *tim, uint32_t period)
     tim->CR1 |= TIM_CR1_CEN;
 }
 
-/* orig: 0x0801C486 - ~99.8 Hz scheduler tick */
+/* orig: 0x0801C486 - ~99.8 Hz scheduler tick; inlines: 0x08020908 (TIM_TimeBaseInit), 0x08020988 (TIM_ITConfig) */
 void tim2_init(void)
 {
     RCC->APB1ENR |= RCC_APB1ENR_TIM2_BIT;
@@ -404,7 +408,7 @@ void tim3_init(void)
 
 /* ---- Top level ------------------------------------------------------------------ */
 
-/* orig: 0x0801BE76 */
+/* orig: 0x0801BE76; inlines: 0x08020848 (DBGMCU_Config) */
 void system_init(void)
 {
     int woke = (PWR->CSR & PWR_FLAG_WU) != 0;

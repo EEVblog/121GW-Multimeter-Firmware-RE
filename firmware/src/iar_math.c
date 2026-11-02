@@ -32,7 +32,10 @@ static uint64_t to_bits(double d)
 #define FRAC_MASK 0x000FFFFFFFFFFFFFull
 #define SIGN_BIT  0x8000000000000000ull
 
-/* orig: 0x0801BB5C (log10 entry, mode 1) -> 0x080204C4 */
+/*
+ * orig: 0x0801BB5C (log10 entry, mode 1) -> 0x080204C4
+ * inlines: 0x08023EE8 (subnormal normalisation), 0x08023F2C (double compare flags)
+ */
 double iar_log10(double x)
 {
     uint64_t bits = to_bits(x);

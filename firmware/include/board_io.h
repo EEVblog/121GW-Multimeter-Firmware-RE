@@ -23,6 +23,7 @@
 #define GPIO_PULLDOWN     2u
 
 void delay_loop(uint32_t count);
+void gpio_set_af(GPIO_TypeDef *port, uint16_t pin, uint8_t af);
 void gpio_init_pins(GPIO_TypeDef *port, uint16_t pins, uint32_t mode, uint32_t speed,
                     uint32_t otype, uint32_t pupd);
 

@@ -38,3 +38,13 @@ void gpio_init_pins(GPIO_TypeDef *port, uint16_t pins, uint32_t mode, uint32_t s
         port->PUPDR = (port->PUPDR & ~(3u << shift)) | (pupd << shift);
     }
 }
+
+/* orig: 0x0801BE04 (GPIO_PinAFConfig) - alternate function `af` for one pin */
+void gpio_set_af(GPIO_TypeDef *port, uint16_t pin, uint8_t af)
+{
+    volatile uint32_t *afr = &port->AFR[(pin & 0xFFFFu) >> 3];
+    unsigned shift = (pin & 7u) * 4u;
+
+    *afr &= ~(0xFu << shift);
+    *afr |= (uint32_t)af << shift;
+}

@@ -14,6 +14,9 @@
 #include "system_init.h"
 #include "temperature.h"
 #include "measure_funcs.h"
+#include "measure_peak.h"
+#include "dual_correction.h"
+#include "ac_response.h"
 
 #define REFRESH 1u
 
@@ -66,21 +69,21 @@ static void set_bits(volatile uint32_t *word, uint32_t bits, int on)
     }
 }
 
-/* orig: 0x0801801E - secondary digit count from range bit 0x200080C6 */
-void sub_digits_from_sel_c6(void)
+/* orig: 0x0801801E - decimal point from range bit 0x200080C6 */
+void dp_from_sel_c6(void)
 {
-    g_sub_digits = (g_sel_80c6 == 0) ? 4 : 3;
+    g_dp_position = (g_sel_80c6 == 0) ? 4 : 3;
 }
 
-/* orig: 0x0801803C - secondary digit count for the dual-readout functions */
-void sub_digits_for_dual(void)
+/* orig: 0x0801803C - decimal point for the dual-readout functions */
+void dp_for_dual(void)
 {
     if (g_function == 13 || g_function == 22) {
-        g_sub_digits = 4;
+        g_dp_position = 4;
     } else if (g_function == 14 || g_function == 23) {
-        g_sub_digits = (g_sel_80c7 == 0) ? 4 : 3;
+        g_dp_position = (g_sel_80c7 == 0) ? 4 : 3;
     } else {
-        g_sub_digits = (g_sel_80c7 == 0) ? 2 : 3;
+        g_dp_position = (g_sel_80c7 == 0) ? 2 : 3;
     }
 }
 
@@ -211,7 +214,7 @@ void sym_w5_b7_update(uint8_t refresh)
     if (g_apo_warning_active != 0) {
         return;
     }
-    set_bits(&g_lcd_shadow[5], 0x80u, g_flag_8039 == 0 && g_logging_active == 0 && g_apo_long == 0);
+    set_bits(&g_lcd_shadow[5], 0x80u, g_apo_disabled == 0 && g_logging_active == 0 && g_apo_long == 0);
     maybe_refresh(refresh);
 }
 
@@ -263,4 +266,266 @@ void sym_w6_b0_b16_update(uint8_t refresh)
 
     set_bits(&g_lcd_shadow[6], 0x10001u, on != 0);
     maybe_refresh(refresh);
+}
+
+/* orig: 0x08019D68 - shadow[7] bit 0 while autorange_shown() */
+void sym_w7_b0_update(uint8_t refresh)
+{
+    set_bits(&g_lcd_shadow[7], 0x1u, autorange_shown() != 0);
+    maybe_refresh(refresh);
+}
+
+/* orig: 0x08019FA2 - shadow[2]/[4] bit 16 from display_partial_mode() */
+void sym_w2_w4_b16_update(uint8_t refresh)
+{
+    uint8_t mode = display_partial_mode();
+
+    set_bits(&g_lcd_shadow[2], 0x10000u, mode == 1);
+    set_bits(&g_lcd_shadow[4], 0x10000u, mode == 1 || mode == 2);
+    maybe_refresh(refresh);
+}
+
+/*
+ * orig: 0x08019E24 - bit 30 of shadow[2]/[4]/[6]: with g_flag_80b7 by
+ * g_peak_select, otherwise by g_apo_long 1..4; none while logging or in
+ * the menu.
+ */
+void sym_b30_update(uint8_t refresh)
+{
+    const uint32_t b30 = 0x40000000u;
+
+    g_lcd_shadow[6] &= ~b30;
+    g_lcd_shadow[4] &= ~b30;
+    g_lcd_shadow[2] &= ~b30;
+    if (g_logging_active == 0 && g_menu_active == 0) {
+        if (g_flag_80b7 != 0) {
+            if (g_peak_select != 0) {
+                g_lcd_shadow[6] |= b30;
+            } else {
+                g_lcd_shadow[4] |= b30;
+            }
+        } else {
+            switch (g_apo_long) {
+            case 1: g_lcd_shadow[4] |= b30; break;
+            case 2: g_lcd_shadow[6] |= b30; break;
+            case 3: g_lcd_shadow[2] |= b30; break;
+            case 4:
+                g_lcd_shadow[6] |= b30;
+                g_lcd_shadow[4] |= b30;
+                g_lcd_shadow[2] |= b30;
+                break;
+            default: break;
+            }
+        }
+    }
+    maybe_refresh(refresh);
+}
+
+/*
+ * orig: 0x0801A17C - bit 0 of shadow[1]/[3]/[5]: all with g_flag_80ba, else
+ * [1] for functions 2, 4, 16, 18, 20 and [5] for 1, 3, 17, 19, 21. The menu
+ * uses its copies of the flag and the function.
+ */
+void sym_w1_w3_w5_b0_update(void)
+{
+    uint8_t all = (g_menu_active == 0) ? g_flag_80ba : g_flag_7fe9;
+    uint8_t f = (g_menu_active == 0) ? g_function : g_function_7feb;
+
+    if (all != 0) {
+        g_lcd_shadow[5] |= 1u;
+        g_lcd_shadow[3] |= 1u;
+        g_lcd_shadow[1] |= 1u;
+        return;
+    }
+    g_lcd_shadow[5] &= ~1u;
+    g_lcd_shadow[3] &= ~1u;
+    g_lcd_shadow[1] &= ~1u;
+    if (f == 16 || f == 18 || f == 20 || f == 2 || f == 4) {
+        g_lcd_shadow[1] |= 1u;
+    }
+    if (f == 17 || f == 19 || f == 21 || f == 1 || f == 3) {
+        g_lcd_shadow[5] |= 1u;
+    }
+}
+
+/* orig: 0x0801776E - range marks for functions 6, 9 and 12 */
+void sym_range_marks_update(void)
+{
+    g_flag_8061 = 0;
+    if (g_function == 6) {
+        sym_b8_b11_row2(g_range);
+    } else if (g_function == 9) {
+        sym_b8_b11_row1(g_range);
+    } else if (g_function == 12) {
+        sym_b9_for_range(g_range);
+    }
+    g_display_dirty = 1;
+}
+
+/* orig: 0x080180AA - secondary decimal point from the frequency decade (functions 2, 4, 16, 18, 20) */
+void secondary_dp_for_freq(void)
+{
+    g_dp_position = 0;
+    if (g_function == 16 || g_function == 18 || g_function == 20 ||
+        g_function == 2 || g_function == 4) {
+        g_dp_position = dp_for_range(g_freq_decimal);
+    }
+    lcd_set_secondary_dp(g_dp_position);
+}
+
+/*
+ * orig: 0x0801912C - shadow[6] bit 8 when hide == 1 (state 3), otherwise
+ * shadow[4] bit 7 and the 0x2000804D state for the function and range.
+ */
+void sym_range_state_update(uint8_t hide)
+{
+    if (hide == 1) {
+        g_lcd_shadow[6] |= 0x100u;
+        g_flag_804d = 3;
+        g_lcd_shadow[4] &= ~0x80u;
+        g_lcd_shadow[6] &= ~0x80u;
+        g_lcd_shadow[2] &= ~0x800u;
+        return;
+    }
+    g_lcd_shadow[6] &= ~0x100u;
+    g_lcd_shadow[4] |= 0x80u;
+    g_flag_804d = 0;
+    switch (g_function) {
+    case 1: case 2: case 11: case 18: case 19:
+        sym_state_804d(g_range);
+        break;
+    case 3: case 4: case 16: case 17:
+        sym_state_804d((uint8_t)(g_range + 1));
+        break;
+    case 9:
+        if (g_range < 2) {
+            sym_state_804d((uint8_t)(g_range + 1));
+        } else if (g_range < 5) {
+            sym_state_804d((uint8_t)(g_range - 2));
+        } else {
+            sym_state_804d((uint8_t)(g_range - 5));
+        }
+        break;
+    case 10:
+        sym_state_804d(2);
+        break;
+    case 20: case 21:
+        sym_state_804d((g_range == 0) ? 2 : 0);
+        break;
+    default:
+        break;
+    }
+}
+
+/*
+ * orig: 0x080172A8 - unit symbols for a function. Function 0 also shows
+ * shadow[5] or [1] bit 0 (by alt) when show is set.
+ */
+void sym_function_units(uint8_t function, uint8_t range, uint8_t alt, uint8_t show)
+{
+    g_flag_804c = 0;
+    switch (function) {
+    case 0:
+        g_lcd_shadow[3] &= ~1u;
+        if (show == 0) {
+            g_lcd_shadow[5] &= ~1u;
+            g_lcd_shadow[1] &= ~1u;
+        } else if (alt == 0) {
+            g_lcd_shadow[5] |= 1u;
+        } else {
+            g_lcd_shadow[1] |= 1u;
+        }
+        g_lcd_shadow[0] |= 0x40000000u;
+        g_lcd_shadow[4] |= 0x400u;
+        break;
+    case 1:
+    case 2:
+        g_lcd_shadow[4] |= 0x400u;
+        break;
+    case 3:
+    case 4:
+        g_lcd_shadow[2] |= 0x400u;
+        g_lcd_shadow[4] |= 0x400u;
+        break;
+    case 6:
+        sym_b8_b11_row2(range);
+        break;
+    case 7:
+        g_lcd_shadow[6] |= 1u;
+        break;
+    case 8:
+        g_lcd_shadow[0] |= 0x20000u;
+        break;
+    case 9:
+        sym_b8_b11_row1(range);
+        break;
+    case 10:
+        g_lcd_shadow[4] |= 0x80000000u;
+        g_lcd_shadow[2] |= 0x100u;
+        break;
+    case 11:
+        g_lcd_shadow[6] |= 0x80000000u;
+        g_lcd_shadow[4] |= 0x400u;
+        break;
+    case 12:
+        sym_b9_for_range(range);
+        break;
+    case 13:
+    case 22:
+        g_lcd_shadow[0] |= 0x200u;
+        g_lcd_shadow[4] |= 0x400u;
+        g_lcd_shadow[6] |= 0x400u;
+        g_lcd_shadow[(function == 13) ? 1 : 5] |= 1u;
+        break;
+    case 14:
+    case 23:
+        g_lcd_shadow[2] |= 0x400u;
+        g_lcd_shadow[4] |= 0x400u;
+        g_lcd_shadow[6] |= 0x400u;
+        g_lcd_shadow[(function == 14) ? 1 : 5] |= 1u;
+        break;
+    case 15:
+    case 24:
+        if (range < 2) {
+            g_lcd_shadow[2] |= 0x400u;
+        }
+        g_lcd_shadow[4] |= 0x400u;
+        g_lcd_shadow[6] |= 0x400u;
+        g_lcd_shadow[(function == 15) ? 1 : 5] |= 1u;
+        break;
+    case 16:
+    case 17:
+        g_lcd_shadow[0] |= 0x200u;
+        g_lcd_shadow[6] |= 0x400u;
+        break;
+    case 18:
+    case 19:
+        g_lcd_shadow[2] |= 0x400u;
+        g_lcd_shadow[6] |= 0x400u;
+        break;
+    case 20:
+    case 21:
+        if (range == 0) {
+            g_lcd_shadow[2] |= 0x400u;
+        }
+        g_lcd_shadow[6] |= 0x400u;
+        break;
+    default:
+        break;
+    }
+}
+
+/*
+ * orig: 0x08019B48 - clear the unit symbols sym_function_units() sets
+ * (shadow[6] bit 0 only without g_flag_80b7, which also drives it).
+ */
+void sym_function_units_clear(void)
+{
+    g_lcd_shadow[0] &= ~(0x60000000u | 0x00020000u | 0x00000B00u);
+    g_lcd_shadow[4] &= ~(0x80000000u | 0x00000700u);
+    g_lcd_shadow[6] &= ~(0x80000000u | 0x00000400u);
+    if (g_flag_80b7 == 0) {
+        g_lcd_shadow[6] &= ~1u;
+    }
+    g_lcd_shadow[2] &= ~0x00000700u;
 }

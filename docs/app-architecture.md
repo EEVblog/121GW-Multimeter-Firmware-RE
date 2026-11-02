@@ -124,9 +124,18 @@ When every function is reconstructed, the globals are defined normally and the h
 | Peak-hold results (max/min peak registers, held peak) | `firmware/src/measure_peak.c` | 1 | equivalent |
 | Counter results (capture, frequency with auto/manual range, functions 6, 7, 8, 12, counter calibration) | `firmware/src/measure_counter.c` | 15 | equivalent below the 10^9-count frequency overload (see deviations) |
 | Secondary-display unit annunciators | `firmware/src/annunciators.c` | 4 | equivalent |
-| Display: 7-segment font, LCD symbol setters, small display selectors | `firmware/src/display_symbols.c` | 19 | equivalent; symbol setters named by shadow word/bit until the glass map is known |
+| Display: 7-segment font, LCD symbol setters, unit symbols per function, small display selectors | `firmware/src/display_symbols.c` | 28 | equivalent; symbol setters named by shadow word/bit until the glass map is known |
+| Display: characters on both readouts, numbers, fixed texts, setup screens, temperature, burden value, dBm | `firmware/src/display_text.c` | 38 | equivalent |
+| Display: 26-segment bar graph | `firmware/src/display_bargraph.c` | 7 | equivalent |
+| Display: periodic update of both readouts, bar graph and symbols (`display_update`) | `firmware/src/display_update.c` | 5 | equivalent; the whole display tree is rebuilt |
 | Function 12 measurement timeout (polled) | `firmware/src/measure_counter.c` | 1 | equivalent |
 | Type K thermocouple table, °C → °F | `firmware/src/temperature.c` | 2 | equivalent |
+| SD card driver (SDIO + DMA2, SPL structures in RAM, bounded waits) | `firmware/src/sd_card.c` | 31 incl. inlined SPL helpers | equivalent with an emulated SD card (standard/high capacity, v1, absent), including multi-block writes |
+| FatFs disk I/O glue | `firmware/src/diskio.c` | 6 | equivalent |
+| FatFs R0.08a | `common/fatfs/ff.c` (upstream, unmodified) | 33 | library; every API function used by the app (`f_mount`, `f_open`, `f_read`, `f_write`, `f_lseek`, `f_sync`, `f_close`, `f_opendir`, `f_readdir`, `f_stat`, `f_utime`) checked against the original on a FAT16 image |
+| Interrupt handlers (faults, SysTick, SDIO/DMA, RTC wake-up, EXTI, ADC, TIM3 buzzer tick) | `firmware/src/irq.c` | 23 | equivalent (TIM2 and USART2 pending) |
+| User settings in data EEPROM (function per rotary position, contrast, APO, units, beep, log interval, VA extra offsets) | `firmware/src/settings.c` | 33 | equivalent on randomised EEPROM contents |
+| MEM records (60 stored readings with clock) and clock snapshots | `firmware/src/mem_records.c` | 13 | equivalent |
 | IAR `log10`, reproduced bit-for-bit | `firmware/src/iar_math.c` | 1 | equivalent on 4000 inputs incl. NaN/inf/zero/subnormal/negative and errno |
 
 Known deviations, all for inputs that valid firmware state never produces:
@@ -186,6 +195,45 @@ In the rebuild, the basic IEEE operations are left to GCC's libgcc, which gives 
 - Function 7 = reference·100000/(gain/1000·CTB) · (CTA per ms of reference)/1000, over ranges 0–2.
 - Function 8 = CTA per ms of reference.
 - Function 12 = CTA/CTB (×100 for the higher ranges), less the zero offset, divided by the gain. It is averaged with a window of 1/50 of the value (at least 20). Readings below 21 in ranges 2–4 read 0. In range 4 with manual range, 0x200080A4 readings are held back.
+
+## Data EEPROM settings (found so far)
+
+Offsets are from 0x08080000. Out-of-range contents fall back to the defaults shown.
+
+| Offset | Contents |
+|---|---|
+| 0x01–0x02 | 16-bit value at 0x20007F9A (default 1708; role unknown) |
+| 0x03–0x06 | 32-bit value at 0x20007D14 (0–99999; copied to the edited value) |
+| 0x08 | function at rotary position A: 1 or 2, 0x82 = 2 with AC+DC |
+| 0x09 / 0x0A / 0x0B | functions 3–5 / 6–8 / 9–12 |
+| 0x0C | 15 or 24 |
+| 0x0D | 13, 16, 17 or 22 |
+| 0x0E | 18–21, read back as 18 (18/20) or 19 |
+| 0x10 | temperature unit (1 = °C) |
+| 0x12 | diode test voltage (0 = 3 V, 1 = 15 V) |
+| 0x14 | 0x200080B6 selection (0–3; "DN 30"/"UP 30"/"DN300"/"UP300") |
+| 0x16 | auto power-off disabled |
+| 0x18–0x19 | log interval, seconds (1–999) |
+| 0x1A | LCD contrast (12–17, default 14) |
+| 0x1B | 0x200080A8 flag |
+| 0x1E | beep enabled |
+| 0x26 | 0xA5 once calibrated |
+
+## Display (found so far)
+
+- The LCD has ten 7-segment digits. Digits 0–4 are the **secondary** readout and digits 5–9 the **main** readout; the manual confirms this, since the internal temperature, burden voltage, diode test voltage and log count all appear on the secondary display. Each digit's segment code holds two segment columns per COM row (bits 7–6 COM0 … 1–0 COM3). In COM0 the bit-6 column is the decimal point to the left of the digit, which the font never sets. `lcd_set_secondary_dp()` (0x08017FB4) and `lcd_set_main_dp()` (0x0801717E) drive the decimal points. Earlier parts had these two names the other way round.
+- Minus signs: shadow[4] bit 29 (secondary), shadow[3] bit 7 (main).
+- The bar graph has 26 segments in SEG1–SEG7 (rows zig-zag). Its length is |value|/400 or /2000 depending on the range, and it is full on overload.
+- `display_update()` (0x08016D34) runs from the main loop. It redraws whatever was flagged: the main readout on a new reading (`g_new_reading`), the secondary readout (`g_disp_flag_8062`), the bar graph (`g_scaled_ready`), the symbol groups (`g_flag_8060`, `g_flag_8061`, `g_flag_804c`) and the secondary annunciators when `g_mode_8037` changes. It then calls `lcd_update()` once. Nothing is drawn while the setup menu is active.
+- `g_mode_8037` selects what the secondary readout shows: 0 temperature, 1 battery ("BATnn"), 2 APO setting, 3 beep setting, 4 LCD contrast, 5 year, 6 date pair, 7 time pair, 8 an edited value, 9 log interval ("Innn"), 10/11/12 per-function auxiliary values (burden value, dBm, frequency, dual readings, diode voltage, "bd" settings), and 100 the log count.
+- Texts found: " LEAD", "-----", " OFL ", " OPEN", " CAL ", "LoBAt", "SdEnd", "SdEnn", "burdn", "Lcd-n", "APO.oN/oF", "b-On/b-OFF", "bd.On/bd.OFF", "DN 30/UP 30/DN300/UP300", "OFF-E", "G-END", "400-E", "5KEND", and "-x-nn" (averaging/calibration step counters).
+
+## Test harness notes
+
+- `tools/emu/test_app_functions.py --shard i/n` runs every n-th spec; the full suite is run as 16 parallel shards.
+- Spec keys added for the SD/FatFs work: `prep` (original functions run on both machines first, for example card initialisation and `f_mount`), `regs` (peripheral registers preset in the model, for example NVIC enables and VTOR so the original SDIO/DMA interrupt handlers run), `ignore` (RAM that legitimately differs, such as a FatFs `DIR.fn` pointer into the caller's stack) and stack arguments beyond r0–r3.
+- The emulator now models SD multi-block writes (ACMD23, CMD25, CMD12 and DMA to the card) and compares the card contents of both runs.
+- FatFs is linked into the hybrid image unmodified; its two static variables (`FatFs[]`, `Fsid`) are placed at the original addresses 0x20007C58 and 0x20007F98 by `firmware/hybrid.ld`.
 
 ## Start-up summary
 

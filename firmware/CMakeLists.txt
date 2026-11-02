@@ -40,6 +40,15 @@ set(APP_SOURCES
     src/measure_counter.c
     src/annunciators.c
     src/display_symbols.c
+    src/display_text.c
+    src/display_bargraph.c
+    src/display_update.c
+    src/sd_card.c
+    src/diskio.c
+    src/irq.c
+    src/settings.c
+    src/mem_records.c
+    ${COMMON_DIR}/fatfs/ff.c
 )
 
 add_library(app_modules STATIC ${APP_SOURCES})
@@ -47,9 +56,14 @@ target_include_directories(app_modules PUBLIC
     include
     ${COMMON_DIR}/cmsis/core
     ${COMMON_DIR}/cmsis/device
+    ${COMMON_DIR}/fatfs
 )
 target_compile_definitions(app_modules PUBLIC STM32L152xD)
 target_compile_options(app_modules PRIVATE -std=c11 -Wall -Wextra)
+# FatFs R0.08a, unmodified. Its two file-scope variables get sections of
+# their own so the hybrid image can place them at the original addresses.
+set_source_files_properties(${COMMON_DIR}/fatfs/ff.c PROPERTIES
+    COMPILE_OPTIONS "-Wno-unused-parameter;-fdata-sections")
 
 # ---- Hybrid test image -----------------------------------------------------
 # Rebuilt modules + bindings of everything else to the original image, for

@@ -63,6 +63,7 @@ class SdCard:
         self.acmd41_tries = 0
         self.app_cmd = False
         self.pending_read = None
+        self.pending_write = None
         self.scr_words = []
 
     def status(self):
@@ -117,6 +118,16 @@ class SdCard:
             addr = arg * 512 if self.hc else arg
             self.pending_read = bytes(self.image[addr:addr + 512])
             return "short", [self.status()], 17
+        if app and index == 23:
+            return "short", [self.status()], 23
+        if index == 25:
+            self.pending_write = arg * 512 if self.hc else arg
+            self.state = 6       # receive-data
+            return "short", [self.status()], 25
+        if index == 12:
+            st = self.status()
+            self.state = 4
+            return "short", [st], 12
         raise RuntimeError("unmodelled SD command %d (app=%s)" % (index, app))
 
 
@@ -405,7 +416,17 @@ class Stm32l1:
         if cpar != SDIO + 0x80:
             return
         if ccr & 0x10:
-            raise RuntimeError("DMA to card not modelled")
+            addr = self.sd.pending_write
+            if addr is None:
+                raise RuntimeError("DMA to card with no pending SD write")
+            data = bytes(self.uc.mem_read(cmar, cndtr * 4))
+            self.sd.image[addr:addr + len(data)] = data
+            self.sd.pending_write = None
+            self.regs[DMA2 + 0x48] = 0
+            self.regs[DMA2] = self._get(DMA2) | 0x3000          # TCIF4 | GIF4
+            self.regs["sdio_sta"] = self.regs.get("sdio_sta", 0) | 0x500
+            self.events.append(("sd_write", addr, len(data)))
+            return
         data = self.sd.pending_read
         if data is None:
             raise RuntimeError("DMA started with no pending SD read")
@@ -518,6 +539,10 @@ class Stm32l1:
         regs = [UC_ARM_REG_R0, UC_ARM_REG_R1, UC_ARM_REG_R2, UC_ARM_REG_R3]
         for r, v in zip(regs, args):
             uc.reg_write(r, v & 0xFFFFFFFF)
+        if len(args) > 4:            # AAPCS: further arguments on the stack
+            sp = (sp - 4 * (len(args) - 4)) & ~7
+            for i, v in enumerate(args[4:]):
+                uc.mem_write(sp + 4 * i, struct.pack("<I", v & 0xFFFFFFFF))
         uc.reg_write(UC_ARM_REG_SP, sp)
         uc.reg_write(UC_ARM_REG_LR, RET_MAGIC | 1)
         pc = func | 1

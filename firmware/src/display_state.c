@@ -29,5 +29,5 @@ void measure_display_reset(void)
     g_disp_flag_80c1 = 1;
     g_new_reading = 1;
     g_disp_flag_8062 = 1;
-    lcd_set_main_dp(0);
+    lcd_set_secondary_dp(0);
 }

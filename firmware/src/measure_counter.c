@@ -282,7 +282,7 @@ void freq_process(uint8_t dest, uint8_t range)
     }
     if (dest == 0) {
         g_new_reading = 1;
-        g_sub_dp = sub_dp_for_range(g_function, g_range);
+        g_main_dp = main_dp_for_range(g_function, g_range);
     }
 }
 
@@ -332,7 +332,7 @@ void counter_process_func7(void)
         counter_set_range_func7(func7_auto_selector(g_ctr_value7));
     }
     g_new_reading = 1;
-    g_sub_dp = sub_dp_for_range(g_function, g_range);
+    g_main_dp = main_dp_for_range(g_function, g_range);
 }
 
 /*

@@ -33,6 +33,23 @@ LIBRARY = {
         0x08004EB6: "IAR exit thunk -> startup.c", 0x08004EBC: "IAR exit -> startup.c",
         0x08004EC8: "IAR __exit (semihosting BKPT loop) -> startup.c",
     },
+    "app": {
+        # FatFs R0.08a (common/fatfs/ff.c, unmodified); API functions are checked
+        # against the original in tools/emu/test_app_functions.py
+        **{a: "FatFs " + n for a, n in (
+            (0x08020B84, "mem_cpy"), (0x08020BA0, "mem_set"), (0x08020BB6, "mem_cmp"),
+            (0x08020BDA, "chk_chr"), (0x08020BEE, "move_window"), (0x08020C66, "sync"),
+            (0x08020D3E, "clust2sect"), (0x08020D58, "get_fat"), (0x08020E3A, "put_fat"),
+            (0x08020F7C, "remove_chain"), (0x08020FEE, "create_chain"), (0x080210CA, "dir_sdi"),
+            (0x08021180, "dir_next"), (0x080212B2, "dir_find"), (0x0802131A, "dir_read"),
+            (0x0802137E, "dir_register"), (0x08021400, "create_name"), (0x0802156E, "get_fileinfo"),
+            (0x08021612, "follow_path"), (0x080216B2, "check_fs"), (0x0802172C, "chk_mounted"),
+            (0x08021B50, "validate"), (0x08021B80, "f_mount"), (0x08021BCC, "f_open"),
+            (0x08021D72, "f_read"), (0x08021F60, "f_write"), (0x08022188, "f_sync"),
+            (0x0802224C, "f_close"), (0x08022268, "f_lseek"), (0x0802242C, "f_opendir"),
+            (0x080224B6, "f_readdir"), (0x08022526, "f_stat"), (0x0802256E, "f_utime"))},
+        0x08023CA0: "IAR strlen -> newlib/libgcc strlen",
+    },
 }
 
 

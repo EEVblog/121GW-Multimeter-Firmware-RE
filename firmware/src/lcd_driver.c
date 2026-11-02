@@ -154,8 +154,8 @@ void digits_to_text(uint8_t blank_mode)
     }
 }
 
-/* orig: 0x08017FB4 - main display decimal point, position 1..4 (0 = none) */
-void lcd_set_main_dp(uint8_t position)
+/* orig: 0x08017FB4 - secondary display (digits 0..4) decimal point, position 1..4 (0 = none) */
+void lcd_set_secondary_dp(uint8_t position)
 {
     g_lcd_shadow[0] &= 0xF55FFFFFu;
     switch (position) {
@@ -168,11 +168,11 @@ void lcd_set_main_dp(uint8_t position)
 }
 
 /*
- * orig: 0x0801717E - secondary display decimal point, position 1..4.
+ * orig: 0x0801717E - main display (digits 5..9) decimal point, position 1..4.
  * Note: the mask on word 1 also clears bits 12..31 (SEG44+ do not exist, so
  * this has no visible effect).
  */
-void lcd_set_sub_dp(uint8_t position)
+void lcd_set_main_dp(uint8_t position)
 {
     g_lcd_shadow[0] &= ~0x00004000u;
     g_lcd_shadow[1] &= 0x00000FD5u;
@@ -190,7 +190,7 @@ static void lcd_pulse_on_config(uint32_t pon)
     lcd_field(&LCD->FCR, 0xFFFFE3FFu, pon);
 }
 
-/* orig: 0x0801B708 - other contrast values leave FCR unchanged */
+/* orig: 0x0801B708 - other contrast values leave FCR unchanged; inlines: 0x08020472 (LCD_PulseOnDurationConfig) */
 void lcd_set_pulse_duration(uint8_t contrast)
 {
     if (contrast >= LCD_CONTRAST_MIN && contrast <= LCD_CONTRAST_MAX) {
@@ -244,7 +244,10 @@ void lcd_gpio_init(void)
     }
 }
 
-/* orig: 0x0801B450 */
+/*
+ * orig: 0x0801B450; inlines: 0x080203B4 (LCD_Init), 0x0802041E (LCD_MuxSegmentCmd),
+ * 0x08020426 (LCD_ContrastConfig), 0x0802043E (LCD_DeadTimeConfig), 0x08020456 (LCD_BlinkConfig)
+ */
 void lcd_init(uint8_t contrast, uint8_t clear)
 {
     lcd_gpio_init();
