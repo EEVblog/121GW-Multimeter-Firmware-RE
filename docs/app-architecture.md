@@ -104,7 +104,12 @@ When every function is reconstructed, the globals are defined normally and the h
 | Flash/option-byte helpers | `firmware/src/flash_ob.c` | 8 | equivalent (tested directly or via `system_init`) |
 | HY3131 control (mode registers, IRQ enables, counter, service, poll) | `firmware/src/hy3131_ctrl.c`, generated `hy3131_tables.c` | 6 | equivalent for valid function/range indices |
 
+| RMS results | `firmware/src/measure_rms.c` | 7 | equivalent |
+| Measurement scaling (zero offset, gain, 16-sample mean, gain divisors) | `firmware/src/measure_scale.c`, `firmware/include/numeric.h` | 11 | equivalent for finite, realistic float values |
+
 Known deviations, all for inputs that valid firmware state never produces:
+- **NaN results:** IAR's soft-float runtime produces a *negative* default NaN (0xFFC00000) where GCC's libgcc produces a positive one, and that changes sign-dependent saturation later. NaN needs corrupt calibration data; an erased STM32L1 EEPROM reads as zeros.
+- **Float divide near FLT_MAX:** IAR's `fdiv` returns ±infinity for quotients just below FLT_MAX in magnitude (dividend within ~3% of FLT_MAX), where IEEE and libgcc give the finite value. Measurement values are many orders of magnitude smaller.
 - `lcd_reapply_pulse_duration()` with a contrast outside 10–17 uses 0 where the original passes an uninitialised register.
 - `hy3131_write_mode_registers()` / `hy3131_set_irq_enables()` with a function index above 0x18 use zeros / AD1 where the original uses an uninitialised stack buffer.
 - Table rows beyond the end of the original's register-table blocks read code in the original. Every function has at most 4 rows in its smallest table, and real ranges stay inside the blocks.
@@ -112,6 +117,18 @@ Known deviations, all for inputs that valid firmware state never produces:
 Original quirks that are reproduced deliberately:
 - `adc_init()`: the external-trigger-edge field of the original's init struct is uninitialised. It is always 0 in the start-up sequence (checked in emulation with different RAM fills).
 - `rotary_pins_config()`: for a non-one-hot code the pin mask is whatever the caller left in r2. In the only non-trivial call that is `RCC->AHBENR`, which the C caller passes explicitly.
+
+## Runtime library (identified by behaviour)
+
+`tools/emu/identify_math.py` calls helpers in the original with test operands and compares the results with reference IEEE/integer operations. The IAR routines found are float add/sub/mul/div, int/unsigned→float, float↔double, double add/mul/div, double/float→int and float→unsigned (all saturating; see `numeric.h`), unsigned→double, signed/unsigned 64-bit divide, int64→float, flag-setting float compares, double `sqrt` and double `log10`.
+
+In the rebuild, the basic IEEE operations are left to GCC's libgcc, which gives bit-identical results for finite operands. Truncating conversions use `iar_d2i()`/`iar_f2i()`, which reproduce IAR's saturation. `(int)sqrt((double)n)` on 32-bit integers is replaced by an exact integer square root, which gives identical results. `log10` isn't required to be correctly rounded, so IAR's routine will be reconstructed itself when its users are.
+
+## Calibration (found so far)
+
+- `calibrate_zero_and_gain` (0x0800F7B8, not yet rebuilt) averages 16 samples. It derives the zero offset as `p2 − (mean − p2)/9` and the gain as span / divisor, where the divisor depends on function and range (50000, 30000, 10000, 6000, 1000, or 30000·√2 for AC peak). It stores both through `cal_store_value` (0x08011B40).
+- Calibration data lives in data EEPROM: byte reads at 0x08080000 + offset; byte writes with up to 10 retries; big-endian 16/32-bit helpers; and 0xA5 "valid" markers at offsets 0x1F and 0x26.
+- `cal_address_for_range` (0x0801159C) gives the address as `table[g_function] + g_range·16`, with the table at 0x08028EE8.
 
 ## Start-up summary
 

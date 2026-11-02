@@ -47,6 +47,29 @@ def pin_pattern(port, pin):
 
 SCRATCH_BYTES = [(SCRATCH + i, 1) for i in range(64)]
 
+
+def float_bits(r):
+    """Realistic float values plus edge cases (zeros, negatives, denormals, huge
+    values). NaN, infinity and magnitudes near FLT_MAX are excluded: IAR's
+    runtime produces negative default NaNs where libgcc produces positive
+    ones, and IAR's fdiv overflows early for dividends within a factor ~1.03
+    of FLT_MAX (documented deviations; real values are many orders smaller)."""
+    import struct as _s
+    choice = r.random()
+    if choice < 0.6:
+        v = r.choice([1.0, 0.25, 1.5e-3, 3.3, 12.5, 1e6, -2.0, 0.1]) * r.uniform(0.5, 2.0)
+        return _s.unpack("<I", _s.pack("<f", v))[0]
+    if choice < 0.75:
+        return r.choice([0x00000000, 0x80000000, 0x00000001, 0x80000001, 0x00800000])
+    while True:
+        b = r.getrandbits(32)
+        if (b >> 23) & 0xFF <= 0xF0:
+            return b
+
+
+def floats_at(*addrs):
+    return lambda r: {a + i: (v >> (8 * i)) & 0xFF for a in addrs for v in [float_bits(r)] for i in range(4)}
+
 # Per-function test specs:
 #   ret   - return width in bits (None for void)
 #   args  - generator of argument tuples
@@ -115,6 +138,36 @@ SPECS = {
                          "hy3131_restart_counter"]),
     "hy3131_service": dict(ret=None, trials=40, idr=pin_pattern("F", 3)),
     "hy3131_poll": dict(ret=None, trials=40, idr=pin_pattern("F", 3)),
+    # ---- measurement: RMS ----
+    "rms_read_value": dict(ret=32, trials=2000, extra=[(0x200077D9 + i, 1) for i in range(5)]),
+    "rms_average": dict(ret=8, args=lambda r: (r.getrandbits(32),), trials=150, steps=12),
+    "rms_post_func0": dict(ret=None, trials=10),
+    "rms_post_func2": dict(ret=None, trials=10),
+    "rms_post_func4": dict(ret=None, trials=10),
+    "rms_post_func16": dict(ret=None, trials=10),
+    "hy3131_on_rms_ready": dict(ret=None, trials=150, steps=6,
+                                extra=[(0x200077D9 + i, 1) for i in range(5)],
+                                with_globals_of=["rms_read_value", "rms_average"]),
+    # ---- measurement: scaling ----
+    "subtract_zero_offset": dict(ret=32, args=lambda r: (r.choice([0, 1, -1, 5000, -5000, r.getrandbits(32)]),),
+                                 extra=[(0x20007E00, 4)]),
+    "select_gain": dict(ret=32, ram_set=floats_at(0x20007E10, 0x20007E2C, 0x20007E30), trials=300),
+    "apply_gain": dict(ret=32, trials=1500, ram_set=floats_at(0x20007E10, 0x20007E2C, 0x20007E30),
+                       args=lambda r: (r.choice([0, 1, -1, 12345, -12345, 0x7FFFFFFF, r.getrandbits(32)]),),
+                       with_globals_of=["select_gain"]),
+    "average16": dict(ret=32, args=lambda r: (r.getrandbits(20) - (1 << 19),), trials=40, steps=40,
+                      ram_set=lambda r: {0x20008095: r.choice([16, 16, 1, 2, 0])}),
+    "gain_set_divisor": dict(ret=None, ram_set=floats_at(0x20007E20), trials=300,
+                             args=lambda r: (0, float_bits(r))),
+    "gain_set_50000": dict(ret=None, ram_set=floats_at(0x20007E20), args=lambda r: (0,)),
+    "gain_set_30000": dict(ret=None, ram_set=floats_at(0x20007E20), args=lambda r: (0,)),
+    "gain_set_10000": dict(ret=None, ram_set=floats_at(0x20007E20), args=lambda r: (0,)),
+    "gain_set_6000": dict(ret=None, ram_set=floats_at(0x20007E20), args=lambda r: (0,)),
+    "gain_set_ac_peak": dict(ret=None, ram_set=floats_at(0x20007E20)),
+    "gain_select_for_range": dict(ret=None, trials=800, args=lambda r: (r.choice([0, 1]),),
+                                  ram_set=lambda r: {**floats_at(0x20007E20)(r),
+                                                     0x2000803C: r.randrange(0, 0x1A),
+                                                     0x2000803D: r.randrange(0, 7)}),
     # ---- LCD driver ----
     "lcd_update": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
     "lcd_update_partial": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),

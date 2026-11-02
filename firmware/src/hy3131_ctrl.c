@@ -6,6 +6,7 @@
 #include "hy3131_tables.h"
 #include "board_io.h"
 #include "system_init.h"
+#include "measure_rms.h"
 #include "orig_calls.h"
 
 #define HY_CFG_REGS        20u     /* registers 0x20..0x33 */

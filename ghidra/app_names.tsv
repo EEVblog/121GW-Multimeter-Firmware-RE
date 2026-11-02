@@ -3,6 +3,12 @@
 0800614e	func	hy3131_service	Reads regs 0x00-0x33, clears INTF, dispatches AD1/RMS/peak/counter handlers
 080061e4	func	hy3131_on_ad1_ready
 08008208	func	hy3131_on_rms_ready
+0800827c	func	rms_read_value
+080082d4	func	rms_average
+0800a5b2	func	rms_post_func0
+0800a5ba	func	rms_post_func2
+0800a7f8	func	rms_post_func4
+0800a7fa	func	rms_post_func16
 0800a7fc	func	hy3131_on_peak_hold
 0800aa00	func	hy3131_on_counter_ready
 0800b974	func	hy3131_configure_mode
@@ -16,6 +22,18 @@
 0800c1bc	func	hy3131_clock_pulse
 0800c28c	func	detect_pf8_low
 0800ecf6	func	delay_loop
+0800f0ac	func	average16
+0800f368	func	subtract_zero_offset
+0800f3b8	func	apply_gain
+0800f648	func	select_gain
+0800f7b8	func	calibrate_zero_and_gain	averages 16 samples, derives offset and gain, stores calibration
+0800f9f0	func	gain_select_for_range
+0800fb1e	func	gain_set_divisor
+0800fb38	func	gain_set_50000
+0800fb58	func	gain_set_30000
+0800fb78	func	gain_set_10000
+0800fb98	func	gain_set_6000
+0800fbb8	func	gain_set_ac_peak
 0800fc60	func	front_end_select
 0801013e	func	bin_to_bcd
 0801016c	func	rtc_write_datetime	registers 2,4,6,10,12,14 from g_rtc_set_reg*
@@ -28,7 +46,34 @@
 0801031e	func	rtc_deselect
 0801033c	func	rtc_data_pin_output
 08010378	func	rtc_data_pin_input
+0801159c	func	cal_address_for_range
+08011b40	func	cal_store_value	calibration write (index, value)
+0801203a	func	eeprom_read_byte	data EEPROM byte at offset
+0801204c	func	eeprom_read_byte_raw
+08012068	func	eeprom_write_u32_be
+080120a8	func	eeprom_write_u16_be
+080120d0	func	eeprom_write_byte
+080120f0	func	eeprom_program_byte
+08012148	func	eeprom_write_byte_retry
+08012f60	func	iar_i2f	IAR soft-float: int -> float
+08012f74	func	iar_ui2f	unsigned -> float
+08012f78	func	iar_ui2f_core
+08012f94	func	iar_fdiv	float divide
+08013090	func	iar_fmul	float multiply
+08013168	func	iar_f2d	float -> double
+080131b8	func	iar_dadd	double add
+080132a0	func	iar_d2iz	double -> int (truncate)
+080132cc	func	iar_d2iz_core
+080132ec	func	iar_fadd	float add
+08013370	func	iar_f2iz	float -> int (truncate)
+080133b4	func	iar_fsub	float subtract
 08013dd4	func	adc_init
+08013ed8	func	iar_ui2d	unsigned -> double
+08013ef4	func	iar_sqrt	double sqrt
+08013fe4	func	iar_ldivmod	signed 64-bit divide
+08014028	func	iar_uldivmod	unsigned 64-bit divide
+08014118	func	iar_l2f	int64 -> float
+08014140	func	iar_ul2f	uint64 -> float
 08014a14	func	rotary_read_raw
 08014c3c	func	key_short_press_handler
 0801622c	func	key_long_press_handler
@@ -51,7 +96,12 @@
 0801b4d6	func	lcd_gpio_init
 0801b708	func	lcd_set_pulse_duration
 0801b77a	func	lcd_reapply_pulse_duration
-0801bb5c	func	log_entry_stub
+0801b874	func	iar_ddiv	double divide
+0801bacc	func	iar_d2f	double -> float
+0801bb5c	func	iar_log10	double log10 (core at 0x080204C4)
+0801bb64	func	iar_dmul	double multiply
+0801bd08	func	iar_cfcmpeq	float equality compare (flags)
+0801bd24	func	iar_f2uiz	float -> unsigned (truncate)
 0801bd48	func	GPIO_Init
 0801bdec	func	GPIO_StructInit
 0801be76	func	system_init
@@ -77,13 +127,14 @@
 0801fdca	func	RCC_MSIRangeConfig
 0801fe06	func	RCC_SYSCLKConfig
 0801ff34	func	RCC_RTCCLKConfig
+0802035c	func	iar_cfrcmple	float compare, reversed operands (flags)
 080203b4	func	LCD_Init
 08020402	func	lcd_wait_fcr_sync
 08020426	func	LCD_ContrastConfig
 0802043e	func	LCD_DeadTimeConfig
 08020456	func	LCD_BlinkConfig
 08020472	func	LCD_PulseOnDurationConfig
-080204c4	func	__iar_log_core
+080204c4	func	iar_log10_core
 080207b4	func	PWR_VoltageScalingConfig
 0802086c	func	NVIC_PriorityGroupConfig
 080208e0	func	NVIC_SetVectorTable
@@ -138,8 +189,21 @@
 200077d0	label	hy3131_rx_buffer
 20007c30	label	g_digit_text	5 chars
 20007d0c	label	g_bor_level
+20007d78	label	g_rms_value
 20007db0	label	g_digits	5 x u32
 20007dc4	label	g_hy_scratch
+20007dd8	label	g_rms_raw_low
+20007ddc	label	g_rms_raw
+20007de0	label	g_rms_value_copy
+20007de4	label	g_rms_sum
+20007de8	label	g_rms_average
+20007e00	label	g_zero_offset
+20007e04	label	g_average16
+20007e10	label	g_gain
+20007e1c	label	g_avg_sum
+20007e20	label	g_span
+20007e2c	label	g_gain_e2c
+20007e30	label	g_gain_e30
 20007fa8	label	g_log_tick_count
 20007fde	label	g_woke_from_standby
 20007fdf	label	g_pf8_detected_low
@@ -155,6 +219,7 @@
 20008050	label	g_flag_8050	selects partial LCD updates; role unknown
 20008053	label	g_flag_8053	forces a full LCD update
 2000805b	label	g_display_dirty
+2000805d	label	g_new_reading
 20008066	label	g_rotary_raw
 20008067	label	g_key_short_pending
 20008068	label	g_key_long_pending
@@ -169,6 +234,11 @@
 2000807d	label	g_hy_r20
 2000807e	label	g_hy_r29
 2000807f	label	g_hy_irq_pending
+20008082	label	g_rms_average_ready
+20008083	label	g_rms_count
+2000808c	label	g_avg_flag_808c
+2000808d	label	g_avg_done_808d
+20008095	label	g_avg_count
 20008098	label	g_flag_8098
 200080b7	label	g_flag_80b7
 200080b9	label	g_flag_80b9

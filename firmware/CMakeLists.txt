@@ -19,6 +19,8 @@ set(APP_SOURCES
     src/system_init.c
     src/hy3131_tables.c
     src/hy3131_ctrl.c
+    src/measure_rms.c
+    src/measure_scale.c
 )
 
 add_library(app_modules STATIC ${APP_SOURCES})
