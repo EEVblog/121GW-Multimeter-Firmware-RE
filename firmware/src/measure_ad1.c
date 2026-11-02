@@ -3,6 +3,7 @@
  */
 #include "measure_ad1.h"
 #include "measure_funcs.h"
+#include "dual_correction.h"
 #include "hy3131_bus.h"
 #include "hy3131_ctrl.h"
 #include "orig_calls.h"
@@ -74,10 +75,10 @@ void hy3131_on_ad1_ready(void)
 
     switch (g_function) {
     case 22: case 23: case 24:
-        FUN_080084e0();
+        ad1_process_func22();
         break;
     case 13: case 14: case 15:
-        FUN_08008b8c();
+        ad1_process_func13();
         break;
     case 0:
         ad1_process_func0();

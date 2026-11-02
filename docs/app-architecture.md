@@ -108,16 +108,17 @@ When every function is reconstructed, the globals are defined normally and the h
 | Data EEPROM access (read, program with retries, BE reads/writes, markers) | `firmware/src/eeprom.c` | 14 | equivalent, including EEPROM write traces |
 | Calibration storage and zero/gain calibration | `firmware/src/calibration.c` | 5 | equivalent |
 | Calibration loading (records, trims, extra offsets, dual-gain pairs), trim capture | `firmware/src/calibration.c` | 10 | equivalent on randomised EEPROM contents |
-| AD1 results (24-bit read, running mean, per-function dispatch) | `firmware/src/measure_ad1.c` | 4 | equivalent; dispatch uses the rebuilt handlers except functions 13–15 and 22–24 |
+| AD1 results (24-bit read, running mean, per-function dispatch) | `firmware/src/measure_ad1.c` | 4 | equivalent; the whole AD1 processing tree is rebuilt |
 | Front-end switching per function | `firmware/src/front_end.c` | 8 | equivalent |
 | Buzzer (PE7), beep presets, auto power-off reset | `firmware/src/buzzer.c` | 6 | equivalent |
 | Measurement helpers, calibration stages | `firmware/src/measure_scale.c`, `firmware/src/calibration.c` | 7 | equivalent |
 | Derived values (power/VA product, vector magnitude, thresholds, hold-off, dBm, AD1 staging, function 12 interval) | `firmware/src/measure_derived.c` | 10 | equivalent (dBm for ranges 0–3) |
 | Reading filters (3-sample smoother, two moving-average instances) | `firmware/src/filters.c` | 3 | equivalent for in-range counters |
-| Function/range change (HY3131 + calibration reload, decimal point, display mode, VA borrow) | `firmware/src/range_select.c` | 8 | equivalent for valid table rows |
+| Function/range change (HY3131 + calibration reload, decimal point, display mode, VA borrow), dual-readout auto-range | `firmware/src/range_select.c` | 10 | equivalent for valid table rows |
 | Per-function AD1 processing: functions 0–5, 9–11, 16–21 (incl. AC+DC and VA phase alternation) | `firmware/src/measure_funcs.c` | 22 | equivalent; also tested through the dispatcher over all functions |
 | AC frequency response (functions 2/4) and function 2 range 0 frequency offset | `firmware/src/ac_response.c` | 2 | equivalent |
 | Trim-based AC correction (functions 2, 4, 16, 18, 20) | `firmware/src/trim_correction.c` | 4 | equivalent |
+| Dual-readout functions 13–15, 22–24 (phase alternation, in-cycle calibration, 2-D grid correction) | `firmware/src/dual_correction.c` | 4 | equivalent over 24-step sequences |
 | Type K thermocouple table, °C → °F | `firmware/src/temperature.c` | 2 | equivalent |
 | IAR `log10`, reproduced bit-for-bit | `firmware/src/iar_math.c` | 1 | equivalent on 4000 inputs incl. NaN/inf/zero/subnormal/negative and errno |
 
@@ -165,6 +166,8 @@ In the rebuild, the basic IEEE operations are left to GCC's libgcc, which gives 
 - **Trim correction** (functions 2, 4, 16, 18, 20, outside calibration and without g_flag_80b9): the four 16-bit trims give offsets at two levels. Percentage tables per frequency point scale them for the measured frequency (above 50 Hz), and the result is interpolated in level between the knee (low offset + 5000 counts, or + 600 for selection 5, which is function 2 range 3 or function 4 range 5) and 50000. Function 2 range 0 can add a further frequency-dependent offset (g_flag_8087).
 - **Functions 16–21 (VA):** outside calibration with g_flag_80a5 set, the meter alternates between the main measurement and a borrowed function, function 2 for 16/18/20 and function 1 for 17/19/21. It switches on the 7th or 4th new reading respectively. The borrowed reading is smoothed into 0x20007E6C, and 0x200080A7 records whether it is above 5000.
 - **Functions 22–24:** a fixed offset by range and by the signs of a reference value and the reading is added when |reading| > 2500 (PF8 high, g_flag_7fe0 set).
+- **Functions 13–15 and 22–24 (two readings):** these alternate between a reference reading and a level reading (phase 0x200080C4). Functions 13–15 take them via functions 2 and 16, and functions 22–24 via functions 1 and 17. Each phase discards 3 or 6 readings after a switch. Each reading auto-ranges independently with its own range bit (0x200080C6/C7): up above 55000, down below 3200 or 4000 (11000/400 for functions 15/24 in the upper range). The range is then `sel_code()` of the two bits. The product of the two readings is computed after every pair. In calibration the two offsets or gains are averaged over 3 cycles inside the dispatcher.
+- **Reference correction for those functions:** a bilinear interpolation in 9×8 grids (one per function, range and PF8 state), indexed by level band and reference band. Level band 8, used when 0x200080CC doesn't match the function, reads row 9, which is the first row of the next grid. Function 15 ranges 2/3 (PF8 high) use 7-word rows at offsets inside another grid. The rebuild keeps all grids as one block addressed by flash offset, so these reads are identical.
 - The second moving average is used with up to 20 samples (function 9 range 6). Its buffer at 0x20007238 has 400 bytes free before the next variable, so the rebuild declares 20 entries.
 
 ## Start-up summary

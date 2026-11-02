@@ -9,6 +9,9 @@
 #include "hy3131_ctrl.h"
 #include "lcd_driver.h"
 #include "measure_derived.h"
+#include "buzzer.h"
+#include "measure_funcs.h"
+#include "measure_scale.h"
 
 /*
  * orig: 0x0800D81E
@@ -178,4 +181,103 @@ void reconfigure_borrow_f2(uint8_t borrow)
 void reconfigure_borrow_f1(uint8_t borrow)
 {
     reconfigure(borrow, 1);
+}
+
+#define AUTORANGE_UP       55000
+#define AUTORANGE_DOWN_A   3200
+#define AUTORANGE_DOWN_B   4000
+#define AUTORANGE_UP_LOW   11000   /* functions 15/24 while in the upper range */
+#define AUTORANGE_DOWN_LOW 400
+
+static int autorange_allowed(void)
+{
+    return (uint8_t)(g_flag_808a | g_flag_8042) == 0 && g_apo_long == 0;
+}
+
+/* |value| for functions 22..24 (wrapping, as the original), else value. */
+static int32_t magnitude_for_function(int32_t value)
+{
+    if ((g_function == 22 || g_function == 23 || g_function == 24) && value < 0) {
+        return (int32_t)(0u - (uint32_t)value);
+    }
+    return value;
+}
+
+/*
+ * orig: 0x0800A260
+ * Auto-range on the first reading of a dual-readout function: above
+ * 55000 sets range bit 0x200080C6 (and flags the overload), below 3200
+ * clears it; the range then becomes sel_code() and is applied.
+ */
+void autorange_primary(int32_t value)
+{
+    int32_t mag;
+
+    g_disp_flag_80ca = 0;
+    g_disp_flag_80c0 = 0;
+    mag = magnitude_for_function(value);
+    if (mag > AUTORANGE_UP) {
+        g_disp_flag_80ca = 1;
+        if (autorange_allowed() && g_sel_80c6 == 0) {
+            g_sel_80c6 = 1;
+            g_flag_80c8 = 1;
+            g_range = sel_code();
+            range_change();
+        }
+    } else if (mag < AUTORANGE_DOWN_A && autorange_allowed() && g_sel_80c6 != 0) {
+        g_sel_80c6 = 0;
+        g_range = sel_code();
+        range_change();
+    }
+    g_disp_eac = value;
+    if (g_mode_8037 == 10) {
+        g_disp_flag_8062 = 1;
+    }
+}
+
+/*
+ * orig: 0x0800A358
+ * Auto-range on the second reading (range bit 0x200080C7): up above 55000
+ * and down below 4000, or 11000/400 for functions 15 and 24 while the bit
+ * is set. Functions 13 and 22 show the reading divided by 100 (bit clear)
+ * or 10 (bit set).
+ */
+void autorange_secondary(int32_t value)
+{
+    int32_t up = AUTORANGE_UP;
+    int32_t down = AUTORANGE_DOWN_B;
+    int32_t mag;
+
+    if ((g_function == 15 || g_function == 24) && g_sel_80c7 != 0) {
+        up = AUTORANGE_UP_LOW;
+        down = AUTORANGE_DOWN_LOW;
+    }
+    mag = magnitude_for_function(value);
+    g_disp_flag_80cb = 0;
+    g_disp_flag_80c1 = 0;
+    if (mag > up) {
+        g_disp_flag_80cb = 1;
+        if (autorange_allowed() && g_sel_80c7 == 0) {
+            g_sel_80c7 = 1;
+            g_range = sel_code();
+            range_change();
+        }
+    } else if (mag < down && autorange_allowed() && g_sel_80c7 != 0) {
+        g_sel_80c7 = 0;
+        g_range = sel_code();
+        range_change();
+    }
+    if (g_function == 13 || g_function == 22) {
+        if (g_sel_80c7 == 0) {
+            g_disp_eb0 = value / 100;
+        } else if (g_sel_80c7 == 1) {
+            g_disp_eb0 = value / 10;
+        }
+        g_disp_eb4 = value;
+    } else {
+        g_disp_eb0 = value;
+    }
+    if (g_mode_8037 == 11) {
+        g_disp_flag_8062 = 1;
+    }
 }

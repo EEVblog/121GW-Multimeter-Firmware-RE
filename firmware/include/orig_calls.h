@@ -17,8 +17,4 @@ void hy3131_on_peak_hold(void);      /* 0x0800A7FC */
 void hy3131_on_counter_ready(void);  /* 0x0800AA00 */
 void FUN_0800b540(void);             /* polled in function 12, ranges 0..4 */
 
-/* AD1 per-function processing */
-void FUN_080084e0(void);   /* functions 22-24 */
-void FUN_08008b8c(void);   /* functions 13-15 */
-
 #endif /* ORIG_CALLS_H */
