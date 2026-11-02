@@ -5,6 +5,8 @@
 #include "hy3131_ctrl.h"
 #include "system_init.h"
 #include "numeric.h"
+#include "calibration.h"
+#include "orig_calls.h"
 
 #define AVERAGE_SAMPLES 16u
 
@@ -167,4 +169,60 @@ void gain_select_for_range(uint8_t alternate)
     default:
         return;
     }
+}
+
+/* orig: 0x0800F2FC - dual offsets for functions 13..15 and 22..24 */
+int32_t remove_offset(int32_t value)
+{
+    switch (g_function) {
+    case 13: case 14: case 15: case 22: case 23: case 24:
+        return value - (g_flag_80c4 == 0 ? g_cal_dual_offset_a : g_cal_dual_offset_b);
+    default:
+        return value - g_zero_offset;
+    }
+}
+
+/* orig: 0x0800EEF0 - function 11 is passed through unchanged */
+int32_t offset_stage(int32_t value)
+{
+    if (g_function != 11) {
+        value = (g_avg_flag_808c == 0) ? remove_offset(value) : FUN_0800ef44(value);
+    }
+    return value;
+}
+
+/* orig: 0x0800F37E */
+int32_t gain_stage(int32_t value)
+{
+    if (g_flag_8090 == 0 && g_cal_flag_808e == 0) {
+        return apply_gain(value);
+    }
+    return FUN_0800f470(value);
+}
+
+/* orig: 0x08012F28 - 0: /1000, 1: /100, 2: /10, 4: *10, other: unchanged */
+int32_t scale_by_decimal(uint8_t mode, int32_t value)
+{
+    switch (mode) {
+    case 0: return value / 1000;
+    case 1: return value / 100;
+    case 2: return value / 10;
+    case 4: return (int32_t)((uint32_t)value * 10u);   /* wraps, as the original */
+    default: return value;
+    }
+}
+
+/* orig: 0x080148F6 - 1: only 80C6 set, 2: only 80C7 set, 3: both, 0: neither */
+uint8_t sel_code(void)
+{
+    if (g_sel_80c6 != 0 && g_sel_80c7 == 0) {
+        return 1;
+    }
+    if (g_sel_80c6 == 0 && g_sel_80c7 != 0) {
+        return 2;
+    }
+    if (g_sel_80c6 != 0 && g_sel_80c7 != 0) {
+        return 3;
+    }
+    return 0;
 }

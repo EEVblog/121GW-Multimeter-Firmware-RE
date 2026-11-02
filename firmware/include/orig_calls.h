@@ -17,6 +17,10 @@ void hy3131_on_peak_hold(void);      /* 0x0800A7FC */
 void hy3131_on_counter_ready(void);  /* 0x0800AA00 */
 void FUN_0800b540(void);             /* polled in function 12, ranges 0..4 */
 
+/* measurement stages not yet rebuilt */
+int32_t FUN_0800ef44(int32_t value);   /* offset stage while 0x2000808C is set */
+int32_t FUN_0800f470(int32_t value);   /* gain stage alternative */
+
 /* AD1 per-function processing */
 void FUN_08006aec(void);
 void FUN_08007714(void);

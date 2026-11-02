@@ -18,6 +18,7 @@ extern uint8_t g_new_reading;       /* 0x2000805D  a new value is ready for disp
 extern uint8_t g_avg_flag_808c;     /* 0x2000808C */
 extern uint8_t g_avg_done_808d;     /* 0x2000808D */
 extern uint8_t g_avg_count;         /* 0x20008095  counts down from 16 */
+extern uint8_t g_flag_8090;         /* 0x20008090  route readings through FUN_0800f470 */
 
 int32_t subtract_zero_offset(int32_t value);
 float select_gain(void);
@@ -30,5 +31,10 @@ void gain_set_10000(uint32_t unused);
 void gain_set_6000(uint32_t unused);
 void gain_set_ac_peak(void);
 void gain_select_for_range(uint8_t alternate);
+int32_t remove_offset(int32_t value);
+int32_t offset_stage(int32_t value);
+int32_t gain_stage(int32_t value);
+int32_t scale_by_decimal(uint8_t mode, int32_t value);
+uint8_t sel_code(void);
 
 #endif /* MEASURE_SCALE_H */

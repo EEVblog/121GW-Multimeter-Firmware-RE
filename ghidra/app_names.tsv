@@ -8,6 +8,7 @@
 08008208	func	hy3131_on_rms_ready
 0800827c	func	rms_read_value
 080082d4	func	rms_average
+0800a560	func	measure_display_reset
 0800a5b2	func	rms_post_func0
 0800a5ba	func	rms_post_func2
 0800a7f8	func	rms_post_func4
@@ -25,8 +26,17 @@
 0800c1bc	func	hy3131_clock_pulse
 0800c28c	func	detect_pf8_low
 0800ecf6	func	delay_loop
+0800ed26	func	apo_reset
+0800ee50	func	beep_short
+0800ee6c	func	beep_triple
+0800ee7a	func	beep
+0800eea8	func	buzzer_start
+0800eed0	func	buzzer_start_forced
+0800eef0	func	offset_stage
 0800f0ac	func	average16
+0800f2fc	func	remove_offset
 0800f368	func	subtract_zero_offset
+0800f37e	func	gain_stage
 0800f3b8	func	apply_gain
 0800f648	func	select_gain
 0800f7b8	func	calibrate_zero_and_gain	averages 16 samples, derives offset and gain, stores calibration
@@ -37,7 +47,15 @@
 0800fb78	func	gain_set_10000
 0800fb98	func	gain_set_6000
 0800fbb8	func	gain_set_ac_peak
+0800fbe8	func	front_end_configure
 0800fc60	func	front_end_select
+0800fd30	func	front_end_pe15_pf6
+0800fd80	func	front_end_pa11
+0800fdb0	func	front_end_ph2
+0800fdd0	func	front_end_pa12
+0800fe00	func	front_end_pd1_set
+0800fe14	func	front_end_pe12
+0800fe74	func	front_end_pe5
 0801013e	func	bin_to_bcd
 0801016c	func	rtc_write_datetime	registers 2,4,6,10,12,14 from g_rtc_set_reg*
 080101ac	func	rtc_write_register	address+1 then BCD value
@@ -62,6 +80,7 @@
 080120d0	func	eeprom_write_byte
 080120f0	func	eeprom_program_byte
 08012148	func	eeprom_write_byte_retry
+08012f28	func	scale_by_decimal
 08012f60	func	iar_i2f	IAR soft-float: int -> float
 08012f74	func	iar_ui2f	unsigned -> float
 08012f78	func	iar_ui2f_core
@@ -81,6 +100,7 @@
 08014028	func	iar_uldivmod	unsigned 64-bit divide
 08014118	func	iar_l2f	int64 -> float
 08014140	func	iar_ul2f	uint64 -> float
+080148f6	func	sel_code
 08014a14	func	rotary_read_raw
 08014c3c	func	key_short_press_handler
 0801622c	func	key_long_press_handler
@@ -93,6 +113,7 @@
 08016bb8	func	key_is_update_combo
 08016bca	func	keys_read_raw
 0801717e	func	lcd_set_sub_dp
+08017700	func	lcd_bar_flag_dual
 08017fb4	func	lcd_set_main_dp
 0801a81c	func	lcd_clear_shadow
 0801b090	func	number_to_digits
@@ -224,7 +245,11 @@
 20007e2c	label	g_gain_e2c
 20007e30	label	g_gain_e30
 20007e68	label	g_cal_ref_e68
+20007eac	label	g_disp_eac
+20007eb0	label	g_disp_eb0
 20007fa8	label	g_log_tick_count
+20007fb4	label	g_buzzer_ticks
+20007fb6	label	g_beep_duration
 20007fbe	label	g_cal_fbe
 20007fde	label	g_woke_from_standby
 20007fdf	label	g_pf8_detected_low
@@ -237,10 +262,12 @@
 2000803a	label	g_power_off_request
 2000803c	label	g_function	current measurement function index
 2000803d	label	g_range	current range within the function
+2000804e	label	g_apo_long
 20008050	label	g_flag_8050	selects partial LCD updates; role unknown
 20008053	label	g_flag_8053	forces a full LCD update
 2000805b	label	g_display_dirty
 2000805d	label	g_new_reading
+20008062	label	g_disp_flag_8062
 20008066	label	g_rotary_raw
 20008067	label	g_key_short_pending
 20008068	label	g_key_long_pending
@@ -252,6 +279,9 @@
 2000806e	label	g_flag_806e
 20008072	label	g_key_hold_ticks
 20008073	label	g_key_lockout_ticks
+20008078	label	g_beep_enabled
+20008079	label	g_buzzer_on
+2000807a	label	g_beep_count
 2000807d	label	g_hy_r20
 2000807e	label	g_hy_r29
 2000807f	label	g_hy_irq_pending
@@ -263,15 +293,22 @@
 2000808d	label	g_avg_done_808d
 2000808e	label	g_cal_flag_808e
 2000808f	label	g_cal_done_808f
+20008090	label	g_flag_8090
 20008095	label	g_avg_count
 20008098	label	g_flag_8098
+200080b3	label	g_flag_80b3
 200080b7	label	g_flag_80b7
 200080b9	label	g_flag_80b9
 200080ba	label	g_flag_80ba
 200080bd	label	g_flag_80bd
+200080bf	label	g_disp_flag_80bf
+200080c0	label	g_disp_flag_80c0
+200080c1	label	g_disp_flag_80c1
 200080c4	label	g_flag_80c4
 200080c6	label	g_sel_80c6
 200080c7	label	g_sel_80c7
+200080ca	label	g_disp_flag_80ca
+200080cb	label	g_disp_flag_80cb
 200080ce	label	g_flag_80ce
 200080d0	label	g_task_flag_a
 200080d1	label	g_task_flag_b
@@ -284,6 +321,9 @@
 200080da	label	g_rtc_set_reg10
 200080db	label	g_rtc_set_reg12
 200080dc	label	g_rtc_set_reg14
+200080e6	label	g_apo_warning_active
+200080e8	label	g_apo_warn_request
+200080e9	label	g_apo_warn_beeps
 200080ee	label	g_key_release_armed
 200080ef	label	g_key_stable_count
 200080f0	label	g_key_prev_sample

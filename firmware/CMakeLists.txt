@@ -24,6 +24,9 @@ set(APP_SOURCES
     src/eeprom.c
     src/calibration.c
     src/measure_ad1.c
+    src/front_end.c
+    src/buzzer.c
+    src/display_state.c
 )
 
 add_library(app_modules STATIC ${APP_SOURCES})
