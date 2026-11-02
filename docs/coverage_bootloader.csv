@@ -1,0 +1,235 @@
+address,ghidra_name,size,status,where
+08000124,FUN_08000124,178,reconstructed,bootloader/src/sd_card.c:721
+080001d6,FUN_080001d6,34,reconstructed,bootloader/src/sd_card.c:782
+080001f8,FUN_080001f8,42,reconstructed,bootloader/src/sd_card.c:768
+08000222,FUN_08000222,16,reconstructed,bootloader/src/sd_card.c:231
+08000232,FUN_08000232,588,reconstructed,bootloader/src/sd_card.c:396
+0800047e,FUN_0800047e,16,reconstructed,bootloader/src/sd_card.c:225
+0800048e,FUN_0800048e,418,reconstructed,bootloader/src/sd_card.c:455
+08000630,FUN_08000630,976,reconstructed,bootloader/src/sd_card.c:501
+08000a00,FUN_08000a00,200,reconstructed,bootloader/src/sd_card.c:693
+08000ac8,FUN_08000ac8,56,reconstructed,bootloader/src/sd_card.c:605
+08000b00,FUN_08000b00,286,reconstructed,bootloader/src/sd_card.c:798
+08000c34,FUN_08000c34,472,reconstructed,bootloader/src/sd_card.c:830
+08000e10,FUN_08000e10,142,reconstructed,bootloader/src/sd_card.c:881
+08000ea4,FUN_08000ea4,68,reconstructed,bootloader/src/sd_card.c:874
+08000eec,FUN_08000eec,110,reconstructed,bootloader/src/sd_card.c:752
+08000f5a,FUN_08000f5a,174,reconstructed,bootloader/src/sd_card.c:911
+08001008,FUN_08001008,32,reconstructed,bootloader/src/sd_card.c:938
+08001028,FUN_08001028,56,reconstructed,bootloader/src/sd_card.c:239
+08001060,FUN_08001060,88,reconstructed,bootloader/src/sd_card.c:254
+080010cc,FUN_080010cc,274,reconstructed,bootloader/src/sd_card.c:284
+080011de,FUN_080011de,62,reconstructed,bootloader/src/sd_card.c:329
+0800121c,FUN_0800121c,82,reconstructed,bootloader/src/sd_card.c:342
+0800126e,FUN_0800126e,166,reconstructed,bootloader/src/sd_card.c:359
+08001320,FUN_08001320,408,reconstructed,bootloader/src/sd_card.c:666
+080014bc,FUN_080014bc,468,reconstructed,bootloader/src/sd_card.c:612
+080016b0,FUN_080016b0,162,reconstructed,bootloader/src/sd_card.c:207
+08001752,FUN_08001752,182,reconstructed,bootloader/src/sd_card.c:190
+08001808,FUN_08001808,112,reconstructed,bootloader/src/sd_card.c:173
+08001878,FUN_08001878,112,reconstructed,bootloader/src/sd_card.c:173
+080018fc,FUN_080018fc,24,reconstructed,bootloader/src/sd_card.c:155
+08001914,FUN_08001914,42,reconstructed,bootloader/src/sd_card.c:118
+0800193e,FUN_0800193e,8,reconstructed,bootloader/src/sd_card.c:119
+08001946,FUN_08001946,6,reconstructed,bootloader/src/sd_card.c:119
+0800194c,FUN_0800194c,10,reconstructed,bootloader/src/sd_card.c:120
+08001956,FUN_08001956,8,reconstructed,bootloader/src/sd_card.c:120
+0800195e,FUN_0800195e,40,reconstructed,bootloader/src/sd_card.c:130
+08001986,FUN_08001986,8,reconstructed,bootloader/src/sd_card.c:121
+0800198e,FUN_0800198e,22,reconstructed,bootloader/src/sd_card.c:121
+080019a4,FUN_080019a4,46,reconstructed,bootloader/src/sd_card.c:137
+080019d2,FUN_080019d2,6,reconstructed,bootloader/src/sd_card.c:122
+080019d8,FUN_080019d8,30,reconstructed,bootloader/src/sd_card.c:145
+080019f6,FUN_080019f6,26,reconstructed,bootloader/src/sd_card.c:122
+08001a10,FUN_08001a10,6,reconstructed,bootloader/src/sd_card.c:123
+08001a16,FUN_08001a16,26,reconstructed,bootloader/src/sd_card.c:123
+08001a30,FUN_08001a30,6,reconstructed,bootloader/src/sd_card.c:124
+08001a78,FUN_08001a78,62,reconstructed,bootloader/src/sd_card.c:174
+08001ab6,FUN_08001ab6,28,reconstructed,bootloader/src/sd_card.c:174
+08001ad2,FUN_08001ad2,22,reconstructed,bootloader/src/sd_card.c:174
+08001ae8,FUN_08001ae8,16,reconstructed,bootloader/src/sd_card.c:163
+08001b00,FUN_08001b00,16,reconstructed,bootloader/src/sys_init.c:70
+08001b10,FUN_08001b10,64,reconstructed,bootloader/src/sys_init.c:55
+08001b50,FUN_08001b50,24,reconstructed,bootloader/src/sys_init.c:70
+08001b68,FUN_08001b68,10,reconstructed,bootloader/src/sys_init.c:70
+08001b72,FUN_08001b72,10,reconstructed,bootloader/src/sys_init.c:103
+08001b7c,FUN_08001b7c,24,reconstructed,bootloader/src/sys_init.c:71
+08001b94,FUN_08001b94,60,reconstructed,bootloader/src/sys_init.c:104
+08001bd0,FUN_08001bd0,8,reconstructed,bootloader/src/sys_init.c:104
+08001bd8,FUN_08001bd8,8,reconstructed,bootloader/src/sys_init.c:103
+08001be0,FUN_08001be0,30,reconstructed,bootloader/src/sys_init.c:72
+08001bfe,FUN_08001bfe,30,reconstructed,bootloader/src/sys_init.c:72
+08001c1c,FUN_08001c1c,30,reconstructed,bootloader/src/sys_init.c:72
+08001c3a,FUN_08001c3a,30,reconstructed,bootloader/src/sd_card.c:156
+08001c58,FUN_08001c58,68,reconstructed,bootloader/src/sys_init.c:71
+08001cd0,FUN_08001cd0,168,reconstructed,bootloader/src/gpio.c:10
+08001d78,FUN_08001d78,24,reconstructed,bootloader/src/lcd.c:89
+08001d90,FUN_08001d90,90,reconstructed,bootloader/src/gpio.c:34
+08001dea,FUN_08001dea,46,library,IAR __iar_copy_init3 -> startup.c
+08001e18,FUN_08001e18,28,library,FatFs mem_cpy
+08001e34,FUN_08001e34,22,library,FatFs mem_set
+08001e4a,FUN_08001e4a,36,library,FatFs mem_cmp
+08001e6e,FUN_08001e6e,20,library,FatFs chk_chr
+08001e82,FUN_08001e82,120,library,FatFs move_window
+08001efa,FUN_08001efa,216,library,FatFs sync
+08001fd2,FUN_08001fd2,26,library,FatFs clust2sect
+08001fec,FUN_08001fec,254,library,FatFs get_fat
+080020ea,FUN_080020ea,356,library,FatFs put_fat
+0800224e,FUN_0800224e,114,library,FatFs remove_chain
+080022c0,FUN_080022c0,220,library,FatFs create_chain
+0800239c,FUN_0800239c,182,library,FatFs dir_sdi
+08002452,FUN_08002452,320,library,FatFs dir_next
+08002592,FUN_08002592,104,library,FatFs dir_find
+080025fa,FUN_080025fa,130,library,FatFs dir_register
+0800267c,FUN_0800267c,358,library,FatFs create_name
+080027e2,FUN_080027e2,160,library,FatFs follow_path
+08002882,FUN_08002882,122,library,FatFs check_fs
+080028fc,FUN_080028fc,1038,library,FatFs chk_mounted
+08002d0a,FUN_08002d0a,46,library,FatFs validate
+08002d38,FUN_08002d38,50,library,FatFs f_mount
+08002d84,FUN_08002d84,422,library,FatFs f_open
+08002f2a,FUN_08002f2a,524,library,FatFs f_read
+08003136,FUN_08003136,196,library,FatFs f_sync
+080031fa,FUN_080031fa,28,library,FatFs f_close
+08003216,FUN_08003216,34,library,IAR __iar_zero_init3 -> startup.c
+08003238,FUN_08003238,18,reconstructed,bootloader/src/diskio.c:17
+0800324a,FUN_0800324a,16,reconstructed,bootloader/src/diskio.c:24
+0800325a,FUN_0800325a,38,reconstructed,bootloader/src/diskio.c:30
+08003280,FUN_08003280,98,reconstructed,bootloader/src/diskio.c:42
+080032e2,FUN_080032e2,4,reconstructed,bootloader/src/diskio.c:77
+080032ec,FUN_080032ec,60,reconstructed,bootloader/src/diskio.c:57
+08003328,FUN_08003328,96,reconstructed,bootloader/src/lcd.c:243
+08003388,FUN_08003388,42,reconstructed,bootloader/src/lcd.c:253
+080033b2,FUN_080033b2,586,reconstructed,bootloader/src/lcd.c:263
+080035fc,FUN_080035fc,52,reconstructed,bootloader/src/lcd.c:233
+08003630,FUN_08003630,46,reconstructed,bootloader/src/lcd.c:162
+0800365e,FUN_0800365e,112,reconstructed,bootloader/src/lcd.c:173
+080036ce,FUN_080036ce,1516,reconstructed,bootloader/src/lcd.c:205
+08003cba,FUN_08003cba,126,reconstructed,bootloader/src/lcd.c:183
+08003d38,FUN_08003d38,82,reconstructed,bootloader/src/lcd.c:150
+08003da0,FUN_08003da0,118,reconstructed,bootloader/src/lcd.c:121
+08003e16,FUN_08003e16,524,reconstructed,bootloader/src/lcd.c:88
+08004068,FUN_08004068,70,reconstructed,bootloader/src/lcd.c:122
+080040ae,FUN_080040ae,8,reconstructed,bootloader/src/lcd.c:124
+080040b6,FUN_080040b6,10,reconstructed,bootloader/src/lcd.c:81
+080040c0,FUN_080040c0,8,reconstructed,bootloader/src/lcd.c:122
+080040c8,FUN_080040c8,24,reconstructed,bootloader/src/lcd.c:124
+080040e0,FUN_080040e0,24,reconstructed,bootloader/src/lcd.c:123
+080040f8,FUN_080040f8,28,reconstructed,bootloader/src/lcd.c:124
+08004114,FUN_08004114,24,reconstructed,bootloader/src/lcd.c:123
+0800412c,FUN_0800412c,8,reconstructed,bootloader/src/lcd.c:151
+08004134,FUN_08004134,26,reconstructed,bootloader/src/lcd.c:75
+08004168,FUN_08004168,98,reconstructed,bootloader/src/sys_init.c:205
+080041ca,FUN_080041ca,112,reconstructed,bootloader/src/sys_init.c:69
+0800423a,FUN_0800423a,52,reconstructed,bootloader/src/sys_init.c:102
+0800426e,FUN_0800426e,12,reconstructed,bootloader/src/sys_init.c:73
+0800427a,FUN_0800427a,90,reconstructed,bootloader/src/sys_init.c:165
+080042d4,FUN_080042d4,412,reconstructed,bootloader/src/sys_init.c:118
+080044a0,FUN_080044a0,78,reconstructed,bootloader/src/sys_init.c:185
+080044f0,FUN_080044f0,38,reconstructed,bootloader/src/flash_if.c:35
+08004516,FUN_08004516,106,reconstructed,bootloader/src/flash_if.c:91
+08004580,FUN_08004580,32,reconstructed,bootloader/src/flash_if.c:26
+080045a0,FUN_080045a0,38,reconstructed,bootloader/src/flash_if.c:45
+080045c6,FUN_080045c6,18,reconstructed,bootloader/src/flash_if.c:126
+080045d8,FUN_080045d8,78,reconstructed,bootloader/src/flash_if.c:113
+08004626,FUN_08004626,12,reconstructed,bootloader/src/flash_if.c:107
+08004632,FUN_08004632,6,reconstructed,bootloader/src/flash_if.c:55
+08004638,FUN_08004638,54,reconstructed,bootloader/src/flash_if.c:61
+080046a4,FUN_080046a4,60,reconstructed,bootloader/src/flash_if.c:76
+080046e0,FUN_080046e0,8,reconstructed,bootloader/src/sys_init.c:103
+080046e8,FUN_080046e8,24,reconstructed,bootloader/src/sys_init.c:206
+08004700,FUN_08004700,26,reconstructed,bootloader/src/sys_init.c:206
+08004728,FUN_08004728,10,reconstructed,bootloader/src/sys_init.c:166
+08004732,FUN_08004732,106,reconstructed,bootloader/src/sys_init.c:155
+080047b0,FUN_080047b0,78,reconstructed,bootloader/src/sys_init.c:186
+08004814,FUN_08004814,28,reconstructed,bootloader/src/sys_init.c:175
+08004830,FUN_08004830,22,reconstructed,bootloader/src/sys_init.c:187
+08004846,FUN_08004846,8,reconstructed,bootloader/src/sys_init.c:186
+08004850,FUN_08004850,386,reconstructed,bootloader/src/main.c:196
+080049d2,FUN_080049d2,200,reconstructed,bootloader/src/main.c:86
+08004a9a,FUN_08004a9a,46,reconstructed,bootloader/src/main.c:74
+08004ac8,FUN_08004ac8,60,reconstructed,bootloader/src/main.c:42
+08004b04,FUN_08004b04,26,reconstructed,bootloader/src/main.c:34
+08004b84,FUN_08004b84,2,reconstructed,bootloader/src/main.c:28
+08004b88,FUN_08004b88,4,reconstructed,bootloader/src/flash_if.c:145
+08004b90,FUN_08004b90,16,reconstructed,bootloader/src/main.c:197
+08004ba0,FUN_08004ba0,36,reconstructed,bootloader/src/flash_if.c:132
+08004bc8,FUN_08004bc8,156,reconstructed,bootloader/src/flash_if.c:144
+08004c64,FUN_08004c64,82,reconstructed,bootloader/src/system_stm32l1xx.c:75
+08004cb6,FUN_08004cb6,248,reconstructed,bootloader/src/system_stm32l1xx.c:32
+08004dd8,NMI_Handler,2,reconstructed,bootloader/src/startup.c:22
+08004dda,HardFault_Handler,2,reconstructed,bootloader/src/startup.c:31
+08004ddc,MemManage_Handler,2,reconstructed,bootloader/src/startup.c:31
+08004dde,BusFault_Handler,2,reconstructed,bootloader/src/startup.c:31
+08004de0,UsageFault_Handler,2,reconstructed,bootloader/src/startup.c:31
+08004de2,SVC_Handler,2,reconstructed,bootloader/src/startup.c:22
+08004de4,DebugMon_Handler,2,reconstructed,bootloader/src/startup.c:22
+08004de6,PendSV_Handler,2,reconstructed,bootloader/src/startup.c:22
+08004de8,TIM2_IRQHandler,20,reconstructed,bootloader/src/irq.c:8
+08004e00,SysTick_Handler,2,reconstructed,bootloader/src/startup.c:23
+08004e02,SDIO_IRQHandler,8,reconstructed,bootloader/src/irq.c:15
+08004e0a,DMA2_CH4_IRQHandler,8,reconstructed,bootloader/src/irq.c:21
+08004e14,FUN_08004e14,32,library,IAR __iar_data_init3 -> startup.c
+08004e98,FUN_08004e98,26,reconstructed,bootloader/src/startup.c:179
+08004eb2,FUN_08004eb2,4,library,IAR __low_level_init (returns 1) -> startup.c
+08004eb6,thunk_FUN_08004ebc,4,library,IAR exit thunk -> startup.c
+08004ebc,FUN_08004ebc,10,library,IAR exit -> startup.c
+08004ec8,FUN_08004ec8,16,library,IAR __exit (semihosting BKPT loop) -> startup.c
+08004eec,Reset_Handler,8,reconstructed,bootloader/src/startup.c:179
+08004f64,WWDG_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f68,PVD_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f6c,TAMPER_STAMP_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f70,RTC_WKUP_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f74,FLASH_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f78,RCC_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f7c,EXTI0_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f80,EXTI1_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f84,EXTI2_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f88,EXTI3_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f8c,EXTI4_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f90,DMA1_Channel1_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f94,DMA1_Channel2_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f98,DMA1_Channel3_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004f9c,DMA1_Channel4_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fa0,DMA1_Channel5_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fa4,DMA1_Channel6_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fa8,DMA1_Channel7_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fac,ADC1_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fb0,USB_HP_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fb4,USB_LP_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fb8,DAC_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fbc,COMP_CA_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fc0,EXTI9_5_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fc4,LCD_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fc8,TIM9_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fcc,TIM10_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fd0,TIM11_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fd8,TIM3_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fdc,TIM4_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fe0,I2C1_EV_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fe4,I2C1_ER_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fe8,I2C2_EV_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004fec,I2C2_ER_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004ff0,SPI1_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004ff4,SPI2_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004ff8,USART1_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08004ffc,USART2_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005000,USART3_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005004,EXTI15_10_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005008,RTC_Alarm_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+0800500c,USB_FS_WKUP_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005010,TIM6_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005014,TIM7_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+0800501c,TIM5_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005020,SPI3_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005024,UART4_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005028,UART5_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+0800502c,DMA2_CH1_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005030,DMA2_CH2_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005034,DMA2_CH3_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+0800503c,DMA2_CH5_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005040,AES_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005044,COMP_ACQ_IRQHandler,4,default handler,bootloader/src/startup.c Default_Handler
+08005048,FUN_08005048,130,reconstructed,bootloader/src/flash_ramfunc.c:48
+080050ca,FUN_080050ca,54,reconstructed,bootloader/src/flash_ramfunc.c:18
+08005110,FUN_08005110,60,reconstructed,bootloader/src/flash_ramfunc.c:33
