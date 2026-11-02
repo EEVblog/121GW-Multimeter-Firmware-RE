@@ -1,4 +1,14 @@
 # address	kind	name	comment
+08006124	func	hy3131_poll	Polls PF3 (HY3131 DO = IRQ while CS high); runs hy3131_service
+0800614e	func	hy3131_service	Reads regs 0x00-0x33, clears INTF, dispatches AD1/RMS/peak/counter handlers
+080061e4	func	hy3131_on_ad1_ready
+08008208	func	hy3131_on_rms_ready
+0800a7fc	func	hy3131_on_peak_hold
+0800aa00	func	hy3131_on_counter_ready
+0800b974	func	hy3131_configure_mode
+0800b994	func	hy3131_write_mode_registers
+0800beac	func	hy3131_set_irq_enables
+0800bf8c	func	hy3131_restart_counter
 0800c03c	func	hy3131_write
 0800c0c0	func	hy3131_read
 0800c138	func	hy3131_read_byte
@@ -13,9 +23,21 @@
 0801031e	func	rtc_deselect
 0801033c	func	rtc_data_pin_output
 08010378	func	rtc_data_pin_input
+08014a14	func	rotary_read_raw
+08014c3c	func	key_short_press_handler
+0801622c	func	key_long_press_handler
+0801680c	func	keys_task
+0801682c	func	keys_dispatch_events
+0801688c	func	key_scan
+08016a64	func	key_autorepeat
+08016b4c	func	key_can_long_press
+08016b7c	func	key_is_single_key
+08016bb8	func	key_is_update_combo
+08016bca	func	keys_read_raw
 0801bb5c	func	log_entry_stub
 0801bd48	func	GPIO_Init
 0801bdec	func	GPIO_StructInit
+0801be76	func	system_init
 0801bf92	func	rtc_clock_init
 0801f87e	func	sd_open
 0801fa8e	func	flash_ob_launch
@@ -32,10 +54,13 @@
 080204c4	func	__iar_log_core
 080207b4	func	PWR_VoltageScalingConfig
 0802086c	func	NVIC_PriorityGroupConfig
+080208e0	func	NVIC_SetVectorTable
 08020908	func	TIM_TimeBaseInit
 0802096c	func	tim2_enable
 08020988	func	TIM_ITConfig
 0802099e	func	TIM_ClearITPendingBit
+08020b50	func	EXTI_GetITStatus
+08020b6a	func	EXTI_ClearITPendingBit
 08020b84	func	mem_cpy
 08020ba0	func	mem_set
 08020bb6	func	mem_cmp
@@ -65,42 +90,58 @@
 0802424a	func	DMA_ITConfig
 08024260	func	dma_clear_flags
 08024b40	func	main
+08024eca	func	power_off
 08025f70	func	SystemInit
 08025fc2	func	set_sys_clock
 080287c0	func	__iar_lz77_init_single3
 08028d12	func	__iar_zero_init3
 08028fe4	func	__iar_data_init3
 08029174	func	Reset_Handler
-200077d0	label	hy3131_rx_buffer
-20007fdf	label	g_pf8_detected_low
-08006124	func	hy3131_poll	Polls PF3 (HY3131 DO = IRQ while CS high); runs hy3131_service
-0800614e	func	hy3131_service	Reads regs 0x00-0x33, clears INTF, dispatches AD1/RMS/peak/counter handlers
-080061e4	func	hy3131_on_ad1_ready
-08008208	func	hy3131_on_rms_ready
-0800a7fc	func	hy3131_on_peak_hold
-0800aa00	func	hy3131_on_counter_ready
-0800b974	func	hy3131_configure_mode
-0800b994	func	hy3131_write_mode_registers
-0800beac	func	hy3131_set_irq_enables
-0800bf8c	func	hy3131_restart_counter
-08014a14	func	read_rotary_switch	PG0..PG7 -> g_rotary_raw (pressed/low = 1)
-20008066	label	g_rotary_raw
-080208e0	func	NVIC_SetVectorTable
-0801be76	func	system_init
-08024eca	func	power_off
-08020b50	func	EXTI_GetITStatus
-08020b6a	func	EXTI_ClearITPendingBit
-20000230	label	g_apo_seconds_left	Auto power-off countdown (beeps at 60 s, off at 0)
 2000022c	label	g_log_interval_s
+2000022e	label	g_cfg_022e	u16 setting, default 500; role unknown (key timing)
+20000230	label	g_apo_seconds_left	Auto power-off countdown (beeps at 60 s, off at 0)
+200077d0	label	hy3131_rx_buffer
 20007fa8	label	g_log_tick_count
+20007fdf	label	g_pf8_detected_low
 20007fe1	label	g_logging_active
 20007fe2	label	g_log_due
+20007fe4	label	g_menu_active	tentative: setup menu open
+2000801b	label	g_flag_801b
+2000801d	label	g_flag_801d
 2000803a	label	g_power_off_request
+20008066	label	g_rotary_raw
+20008067	label	g_key_short_pending
+20008068	label	g_key_long_pending
+20008069	label	g_input_event_pending
+2000806a	label	g_keys_raw	PG8..PG15 pressed bits
+2000806b	label	g_key_short_code
+2000806c	label	g_key_long_code
+2000806d	label	g_input_event_code
+2000806e	label	g_flag_806e
+20008072	label	g_key_hold_ticks
+20008073	label	g_key_lockout_ticks
+2000807d	label	g_hy_r20
+2000807e	label	g_hy_r29
+2000807f	label	g_hy_irq_pending
+200080ce	label	g_flag_80ce
 200080d0	label	g_task_flag_a
 200080d1	label	g_task_flag_b
 200080d2	label	g_task_flag_c
 200080d3	label	g_task_flag_d
 200080d4	label	g_task_flag_1s
-2000807d	label	g_hy_r20
-2000807e	label	g_hy_r29
-2000807f	label	g_hy_irq_pending
+200080ee	label	g_key_release_armed
+200080ef	label	g_key_stable_count
+200080f0	label	g_key_prev_sample
+200080f1	label	g_key_armed_code
+200080f2	label	g_key_repeat_stage
+200080f3	label	g_key_repeat_ticks
+0801013e	func	bin_to_bcd
+080101ac	func	rtc_write_register	address+1 then BCD value
+080101e2	func	rtc_read_register
+0801016c	func	rtc_write_datetime	registers 2,4,6,10,12,14 from g_rtc_set_reg*
+200080d7	label	g_rtc_set_reg2
+200080d8	label	g_rtc_set_reg4
+200080d9	label	g_rtc_set_reg6
+200080da	label	g_rtc_set_reg10
+200080db	label	g_rtc_set_reg12
+200080dc	label	g_rtc_set_reg14

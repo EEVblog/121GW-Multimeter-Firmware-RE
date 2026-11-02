@@ -121,13 +121,20 @@ class SdCard:
 class Stm32l1:
     def __init__(self, flash_image, *, keys_idr=0xFFFF, obr=0x00F000AA, hse_ok=True,
                  sd_image=None, sd_high_capacity=False, sd_v2=True, sd_absent=False,
-                 tick_blocks=0, corrupt_flash_at=None):
+                 tick_blocks=0, corrupt_flash_at=None, extra_code=None,
+                 stop_on_app_entry=True):
         self.uc = Uc(UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS)
         self.uc.ctl_set_cpu_model(UC_CPU_ARM_CORTEX_M3)
         uc = self.uc
         uc.mem_map(FLASH_BASE, FLASH_SIZE, UC_PROT_ALL)
         uc.mem_write(FLASH_BASE, bytes(flash_image).ljust(FLASH_SIZE, b"\x00"))
         uc.mem_map(RAM_BASE, RAM_SIZE, UC_PROT_ALL)
+        # Rebuilt code under test lives outside real flash (emulator only).
+        if extra_code is not None:
+            base, code = extra_code
+            uc.mem_map(base, (len(code) + 0xFFFF) & ~0xFFFF, UC_PROT_ALL)
+            uc.mem_write(base, bytes(code))
+        self.stop_on_app_entry = stop_on_app_entry
         uc.mem_map(RET_MAGIC, 0x1000, UC_PROT_ALL)
         uc.mem_write(RET_MAGIC, b"\xFE\xE7")   # b .
         uc.mmio_map(PERIPH_BASE, PERIPH_SIZE, self._mmio_read, PERIPH_BASE,
@@ -140,6 +147,9 @@ class Stm32l1:
         # keys_idr: a constant IDR value, or a list of (reads_before, value) steps
         self.keys_schedule = keys_idr if isinstance(keys_idr, list) else [(0, keys_idr)]
         self.keys_reads = 0
+        # Per-port IDR source: constant, or callable(model) -> value (port letter keys).
+        self.idr = {}
+        self.idr_reads = {}
         self.hse_ok = hse_ok
         self.trace = []
         self.lcd_frames = []
@@ -223,9 +233,17 @@ class Stm32l1:
         elif word == LCD + 0x08:
             en = self._get(LCD) & 1
             r = (r & 0x4) | 0x20 | (en * 0x11)
-        elif word == GPIO["G"] + 0x10:
+        elif word == GPIO["G"] + 0x10 and "G" not in self.idr:
             r = [v for n, v in self.keys_schedule if self.keys_reads >= n][-1]
             self.keys_reads += 1
+        elif (word & 0x3FF) == 0x10 and (word & ~0x3FF) in GPIO.values():
+            port = next(k for k, v in GPIO.items() if v == word - 0x10)
+            src = self.idr.get(port)
+            if callable(src):
+                r = src(self) & 0xFFFF
+            elif src is not None:
+                r = src & 0xFFFF
+            self.idr_reads[port] = self.idr_reads.get(port, 0) + 1
         elif word == SDIO + 0x34:
             r = self._sdio_status()
         elif word == SDIO + 0x80 or (SDIO + 0x80 <= word < SDIO + 0x100):
@@ -405,7 +423,8 @@ class Stm32l1:
             if (self._get(TIM2) & 1):
                 self.regs[TIM2 + 0x10] = self._get(TIM2 + 0x10) | 1
                 self._update_irqs()
-        if APP_BASE <= address < FLASH_BASE + FLASH_SIZE and not self.irq_stack:
+        if self.stop_on_app_entry and APP_BASE <= address < FLASH_BASE + FLASH_SIZE \
+                and not self.irq_stack:
             self._stop("jump to application")
             return
         if not self.irq_stack and any(self._irq_enabled(i) for i in self.pending_irqs):
@@ -472,6 +491,39 @@ class Stm32l1:
         self.final_pc = uc.reg_read(UC_ARM_REG_PC)
         self.final_sp = uc.reg_read(UC_ARM_REG_SP)
         return self
+
+    def call(self, func, args=(), sp=0x20001240, max_blocks=2_000_000):
+        """Calls one function (Thumb address) and returns r0, stopping when it
+        returns to RET_MAGIC. Interrupts are delivered as in run()."""
+        uc = self.uc
+        regs = [UC_ARM_REG_R0, UC_ARM_REG_R1, UC_ARM_REG_R2, UC_ARM_REG_R3]
+        for r, v in zip(regs, args):
+            uc.reg_write(r, v & 0xFFFFFFFF)
+        uc.reg_write(UC_ARM_REG_SP, sp)
+        uc.reg_write(UC_ARM_REG_LR, RET_MAGIC | 1)
+        pc = func | 1
+        while self.stop_reason is None and self.blocks < max_blocks:
+            try:
+                uc.emu_start(pc, 0xFFFFFFFF, count=1_000_000)
+            except UcError as e:
+                self.stop_reason = "emulator error %s at 0x%08X" % (e, uc.reg_read(UC_ARM_REG_PC))
+                break
+            pc = uc.reg_read(UC_ARM_REG_PC)
+            if self.stop_reason:
+                break
+            if (pc & ~1) == RET_MAGIC:
+                if self.irq_stack:
+                    pc = self._leave_irq()
+                    continue
+                self.stop_reason = "returned"
+                break
+            if not self.irq_stack and any(self._irq_enabled(i) for i in self.pending_irqs):
+                pc = self._enter_irq()
+            else:
+                pc |= 1
+        if self.stop_reason is None:
+            self.stop_reason = "budget exhausted"
+        return uc.reg_read(UC_ARM_REG_R0)
 
     def flash(self, start=FLASH_BASE, length=FLASH_SIZE):
         return bytes(self.uc.mem_read(start, length))
