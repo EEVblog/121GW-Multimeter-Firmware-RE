@@ -5,12 +5,18 @@
 080062f8	func	ad1_read_value
 08006342	func	ad1_average
 08006540	func	ad1_process_func0
+08006c7a	func	holdoff_on_low_reading
+08007940	func	range_threshold
 08008208	func	hy3131_on_rms_ready
 0800827c	func	rms_read_value
 080082d4	func	rms_average
+08008468	func	scale_reading
+0800a4ac	func	product_scaled
 0800a560	func	measure_display_reset
 0800a5b2	func	rms_post_func0
 0800a5ba	func	rms_post_func2
+0800a6a8	func	vector_magnitude
+0800a74c	func	dbm_from_voltage	10*log10(v^2/0.6); needs IAR log10
 0800a7f8	func	rms_post_func4
 0800a7fa	func	rms_post_func16
 0800a7fc	func	hy3131_on_peak_hold
@@ -213,6 +219,7 @@
 08028fe4	func	__iar_data_init3
 08029174	func	Reset_Handler
 2000001c	label	g_counter_preset	u32, default 0xE000; preset written to CTA
+20000228	label	g_errno	IAR errno
 2000022c	label	g_log_interval_s
 2000022e	label	g_cfg_022e	u16 setting, default 500; role unknown (key timing)
 20000230	label	g_apo_seconds_left	Auto power-off countdown (beeps at 60 s, off at 0)
@@ -224,6 +231,8 @@
 20007c38	label	g_cal_sum64
 20007d0c	label	g_bor_level
 20007d5c	label	g_cal_address
+20007d64	label	g_derived_value
+20007d68	label	g_scaled_value
 20007d74	label	g_ad1_value
 20007d78	label	g_rms_value
 20007db0	label	g_digits	5 x u32
@@ -249,12 +258,18 @@
 20007e2c	label	g_gain_e2c
 20007e30	label	g_gain_e30
 20007e68	label	g_cal_ref_e68
+20007e94	label	g_dbm
+20007e9c	label	g_vec_a
+20007ea0	label	g_vec_b
+20007ea4	label	g_vec_a_sq
+20007ea8	label	g_vec_b_sq
 20007eac	label	g_disp_eac
 20007eb0	label	g_disp_eb0
 20007fa8	label	g_log_tick_count
 20007fb4	label	g_buzzer_ticks
 20007fb6	label	g_beep_duration
 20007fbe	label	g_cal_fbe
+20007fc0	label	g_holdoff
 20007fde	label	g_woke_from_standby
 20007fdf	label	g_pf8_detected_low
 20007fe0	label	g_flag_7fe0
@@ -271,6 +286,7 @@
 20008053	label	g_flag_8053	forces a full LCD update
 2000805b	label	g_display_dirty
 2000805d	label	g_new_reading
+2000805e	label	g_scaled_ready
 20008062	label	g_disp_flag_8062
 20008066	label	g_rotary_raw
 20008067	label	g_key_short_pending
@@ -301,6 +317,8 @@
 20008095	label	g_avg_count
 20008098	label	g_flag_8098
 200080b3	label	g_flag_80b3
+200080b5	label	g_flag_80b5
+200080b6	label	g_sel_80b6
 200080b7	label	g_flag_80b7
 200080b9	label	g_flag_80b9
 200080ba	label	g_flag_80ba

@@ -16,7 +16,7 @@ address,ghidra_name,size,status,where
 080069b4,FUN_080069b4,234,UNACCOUNTED,
 08006a9e,FUN_08006a9e,42,UNACCOUNTED,
 08006aec,FUN_08006aec,398,UNACCOUNTED,
-08006c7a,FUN_08006c7a,126,UNACCOUNTED,
+08006c7a,FUN_08006c7a,126,reconstructed,firmware/src/measure_derived.c:16
 08006d40,FUN_08006d40,856,UNACCOUNTED,
 080070cc,FUN_080070cc,850,UNACCOUNTED,
 0800742c,FUN_0800742c,262,UNACCOUNTED,
@@ -28,7 +28,7 @@ address,ghidra_name,size,status,where
 08007840,FUN_08007840,120,UNACCOUNTED,
 080078b8,FUN_080078b8,18,UNACCOUNTED,
 080078d8,FUN_080078d8,90,UNACCOUNTED,
-08007940,FUN_08007940,104,UNACCOUNTED,
+08007940,FUN_08007940,104,reconstructed,firmware/src/measure_derived.c:43
 080079c4,FUN_080079c4,360,UNACCOUNTED,
 08007b70,FUN_08007b70,430,UNACCOUNTED,
 08007d1e,FUN_08007d1e,292,UNACCOUNTED,
@@ -40,7 +40,7 @@ address,ghidra_name,size,status,where
 0800827c,rms_read_value,82,reconstructed,firmware/src/measure_rms.c:37
 080082d4,rms_average,106,reconstructed,firmware/src/measure_rms.c:48
 08008344,FUN_08008344,284,UNACCOUNTED,
-08008468,FUN_08008468,90,UNACCOUNTED,
+08008468,FUN_08008468,90,reconstructed,firmware/src/measure_derived.c:64
 080084e0,FUN_080084e0,732,UNACCOUNTED,
 080087f8,FUN_080087f8,858,UNACCOUNTED,
 08008b8c,FUN_08008b8c,716,UNACCOUNTED,
@@ -48,14 +48,14 @@ address,ghidra_name,size,status,where
 08009364,FUN_08009364,3676,UNACCOUNTED,
 0800a260,FUN_0800a260,228,UNACCOUNTED,
 0800a358,FUN_0800a358,332,UNACCOUNTED,
-0800a4ac,FUN_0800a4ac,176,UNACCOUNTED,
+0800a4ac,FUN_0800a4ac,176,reconstructed,firmware/src/measure_derived.c:76
 0800a560,FUN_0800a560,82,reconstructed,firmware/src/display_state.c:20
 0800a5b2,rms_post_func0,8,reconstructed,firmware/src/measure_rms.c:73
 0800a5ba,rms_post_func2,2,reconstructed,firmware/src/measure_rms.c:68
 0800a5bc,FUN_0800a5bc,74,UNACCOUNTED,
 0800a608,FUN_0800a608,158,UNACCOUNTED,
-0800a6a8,FUN_0800a6a8,164,UNACCOUNTED,
-0800a74c,FUN_0800a74c,172,UNACCOUNTED,
+0800a6a8,FUN_0800a6a8,164,reconstructed,firmware/src/measure_derived.c:101
+0800a74c,FUN_0800a74c,172,reconstructed,firmware/src/measure_derived.c:124
 0800a7f8,rms_post_func4,2,reconstructed,firmware/src/measure_rms.c:79
 0800a7fa,rms_post_func16,2,reconstructed,firmware/src/measure_rms.c:84
 0800a7fc,hy3131_on_peak_hold,514,UNACCOUNTED,
@@ -460,7 +460,7 @@ address,ghidra_name,size,status,where
 0801b77a,lcd_reapply_pulse_duration,136,reconstructed,firmware/src/lcd_driver.c:195
 0801b874,iar_ddiv,598,UNACCOUNTED,
 0801bacc,iar_d2f,144,UNACCOUNTED,
-0801bb5c,iar_log10,6,UNACCOUNTED,
+0801bb5c,iar_log10,6,reconstructed,firmware/src/iar_math.c:35
 0801bb64,iar_dmul,418,UNACCOUNTED,
 0801bd08,iar_cfcmpeq,28,UNACCOUNTED,
 0801bd24,iar_f2uiz,36,UNACCOUNTED,
@@ -598,7 +598,7 @@ address,ghidra_name,size,status,where
 08020472,LCD_PulseOnDurationConfig,24,UNACCOUNTED,
 0802048a,FUN_0802048a,8,UNACCOUNTED,
 08020492,FUN_08020492,26,UNACCOUNTED,
-080204c4,iar_log10_core,594,UNACCOUNTED,
+080204c4,iar_log10_core,594,reconstructed,firmware/src/iar_math.c:35
 0802079c,FUN_0802079c,8,UNACCOUNTED,
 080207a4,FUN_080207a4,8,UNACCOUNTED,
 080207ac,FUN_080207ac,8,UNACCOUNTED,

@@ -109,6 +109,11 @@ When every function is reconstructed, the globals are defined normally and the h
 | Data EEPROM access (read, program with retries, BE writes, markers) | `firmware/src/eeprom.c` | 11 | equivalent, including EEPROM write traces |
 | Calibration storage and zero/gain calibration | `firmware/src/calibration.c` | 5 | equivalent |
 | AD1 results (24-bit read, running mean, per-function dispatch) | `firmware/src/measure_ad1.c` | 4 | equivalent; per-function processing still calls the original |
+| Front-end switching per function | `firmware/src/front_end.c` | 8 | equivalent |
+| Buzzer (PE7), beep presets, auto power-off reset | `firmware/src/buzzer.c` | 6 | equivalent |
+| Measurement helpers, calibration stages | `firmware/src/measure_scale.c`, `firmware/src/calibration.c` | 7 | equivalent |
+| Derived values (power/VA product, vector magnitude, thresholds, hold-off, dBm) | `firmware/src/measure_derived.c` | 6 | equivalent (dBm for ranges 0–3) |
+| IAR `log10`, reproduced bit-for-bit | `firmware/src/iar_math.c` | 1 | equivalent on 4000 inputs incl. NaN/inf/zero/subnormal/negative and errno |
 
 Known deviations, all for inputs that valid firmware state never produces:
 - **NaN results:** IAR's soft-float runtime produces a *negative* default NaN (0xFFC00000) where GCC's libgcc produces a positive one, and that changes sign-dependent saturation later. NaN needs corrupt calibration data; an erased STM32L1 EEPROM reads as zeros.

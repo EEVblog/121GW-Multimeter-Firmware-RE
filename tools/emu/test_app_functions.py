@@ -70,6 +70,25 @@ def float_bits(r):
 def floats_at(*addrs):
     return lambda r: {a + i: (v >> (8 * i)) & 0xFF for a in addrs for v in [float_bits(r)] for i in range(4)}
 
+def double_args(r):
+    """A double argument (r0, r1): ordinary values, powers of ten, edge cases."""
+    import struct as _s
+    roll = r.random()
+    if roll < 0.5:
+        v = 10.0 ** r.uniform(-12, 12)
+    elif roll < 0.7:
+        v = r.choice([1.0, 10.0, 0.1, 2.0, 0.5, 0.7071067811865476, 0.7071067811865475, 1e-300, 1e300])
+    elif roll < 0.85:
+        u = r.choice([0, 0x8000000000000000, 0x7FF0000000000000, 0xFFF0000000000000,
+                      0x7FF8000000000000, 0x0000000000000001, 0x000FFFFFFFFFFFFF, 0xBFF0000000000000])
+        return (u & 0xFFFFFFFF, u >> 32)
+    else:
+        u = r.getrandbits(64)
+        return (u & 0xFFFFFFFF, u >> 32)
+    u = _s.unpack("<Q", _s.pack("<d", v))[0]
+    return (u & 0xFFFFFFFF, u >> 32)
+
+
 # Per-function test specs:
 #   ret   - return width in bits (None for void)
 #   args  - generator of argument tuples
@@ -251,6 +270,31 @@ SPECS = {
                                               0x2000803C: r.choice([9, 9, 2, 13]), 0x2000803D: r.randrange(3, 8)},
                            extra=[(0x20007C38, 4), (0x20007C3C, 4)],
                            with_globals_of=["cal_store_value", "gain_select_for_range"]),
+    # ---- derived values ----
+    "holdoff_on_low_reading": dict(ret=None, trials=400,
+                                   ram_set=lambda r: {0x2000803C: r.choice([2, 4, 16, 18, 20, 3, 9]),
+                                                      0x2000803D: r.randrange(0, 5)}),
+    "range_threshold": dict(ret=32, ram_set=lambda r: {0x200080B6: r.randrange(0, 7)}),
+    "scale_reading": dict(ret=None, args=lambda r: (r.randrange(-300000, 300000),), trials=300,
+                          ram_set=lambda r: {**floats_at(0x20007E10, 0x20007E2C, 0x20007E30)(r),
+                                             0x2000803C: r.randrange(0, 26)},
+                          with_globals_of=["subtract_zero_offset", "apply_gain", "select_gain"]),
+    "product_scaled": dict(ret=None, args=lambda r: (r.choice([0, -1, 0x7FFFFFFF, -0x80000000, r.getrandbits(32)]),
+                                                     r.choice([0, 7, -3, r.getrandbits(32)])), trials=600,
+                           ram_set=lambda r: {0x2000803C: r.randrange(0, 26), 0x2000803D: r.randrange(0, 4)}),
+    "vector_magnitude": dict(ret=None, trials=1500,
+                             ram_set=lambda r: {a + i: (v >> (8 * i)) & 0xFF for a in (0x20007E9C, 0x20007EA0)
+                                                for v in [r.choice([0, 60000, 60001, -60000 & 0xFFFFFFFF,
+                                                                    0x80000000, r.randrange(0, 60001),
+                                                                    r.getrandbits(32)])] for i in range(4)}),
+    # ---- IAR maths ----
+    "iar_log10": dict(ret=64, trials=4000, args=lambda r: double_args(r)),
+    "dbm_from_voltage": dict(ret=None, trials=800,
+                             ram_set=lambda r: {**{0x20007D64 + i: (v >> (8 * i)) & 0xFF
+                                                   for v in [r.choice([0, 1, 7071, 123456, -5000,
+                                                                       r.getrandbits(20), r.getrandbits(32)])]
+                                                   for i in range(4)},
+                                                0x2000803D: r.randrange(0, 4)}),
     # ---- LCD driver ----
     "lcd_update": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
     "lcd_update_partial": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
@@ -357,6 +401,8 @@ def step(m, func, args, idr):
     m.stop_reason = None
     m.blocks = 0
     r0 = m.call(func, args, sp=INITIAL_SP, max_blocks=200_000)
+    from unicorn.arm_const import UC_ARM_REG_R1
+    r0 |= m.uc.reg_read(UC_ARM_REG_R1) << 32      # for 64-bit (double) returns
     return r0, bytes(m.uc.mem_read(RAM_BASE, RAM_SIZE))
 
 

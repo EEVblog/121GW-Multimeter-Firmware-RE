@@ -27,6 +27,8 @@ set(APP_SOURCES
     src/front_end.c
     src/buzzer.c
     src/display_state.c
+    src/measure_derived.c
+    src/iar_math.c
 )
 
 add_library(app_modules STATIC ${APP_SOURCES})
