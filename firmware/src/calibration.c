@@ -5,6 +5,7 @@
 #include "eeprom.h"
 #include "hy3131_bus.h"
 #include "hy3131_ctrl.h"
+#include "board_io.h"
 #include "hy3131_tables.h"
 #include "measure_scale.h"
 #include "numeric.h"
@@ -15,7 +16,7 @@
 #define CAL_ADDR_AC_PEAK   0x02D0u
 #define CAL_ADDR_2E0       0x02E0u
 
-/* Record base for a function (25-entry little-endian u16 table in flash). */
+/* Record base for a function (26-entry little-endian u16 table in flash). */
 static uint32_t cal_base(uint8_t function)
 {
     const uint8_t *t = HY3131_CFG_08028EE8 + (uint32_t)function * 2;
@@ -248,4 +249,182 @@ int32_t cal_gain_stage(int32_t sample)
         g_setting_238 = 5;
     }
     return 0;
+}
+
+/* ---- loading records ---- */
+
+#define CAL_FUNC6_GAIN_MIN     40000000
+#define CAL_FUNC6_GAIN_MAX     60000000
+#define CAL_FUNC6_GAIN_DEFAULT 49152050
+#define CAL_TRIM_OFFSET        8u      /* trims live at record + 8 */
+#define CAL_FUNC_AC_PEAK_REC   25u     /* cal_base entry for the AC-peak record */
+
+static int dual_gain_function(uint8_t function)
+{
+    return function == 13 || function == 14 || function == 15
+        || function == 22 || function == 23 || function == 24;
+}
+
+/*
+ * orig: 0x080115CC
+ * Address of the four 16-bit trims of a function/range record. Functions
+ * 16 and 18 always use range 1.
+ */
+uint16_t cal_trim_address(uint8_t function, uint8_t range)
+{
+    if (function == 16 || function == 18) {
+        range = 1;
+    }
+    return (uint16_t)((uint16_t)(cal_base(function) + CAL_TRIM_OFFSET) + range * 16u);
+}
+
+/*
+ * orig: 0x0801154E
+ * Address of the extra offset record for functions 16..21; any other
+ * argument is returned unchanged (low 16 bits).
+ */
+uint16_t cal_extra_address(uint32_t function)
+{
+    switch ((uint8_t)function) {
+    case 16: return 0x4D0;
+    case 17: return 0x4D8;
+    case 18: return 0x4E0;
+    case 19: return 0x4E8;
+    case 20: return 0x4F0;
+    case 21: return 0x4F8;
+    default: return (uint16_t)function;
+    }
+}
+
+/*
+ * orig: 0x08011448
+ * Functions 16..21, range 0: loads the extra offset when its record
+ * carries the valid marker, otherwise 0.
+ */
+void cal_load_extra(uint8_t function, uint8_t range)
+{
+    g_cal_extra_offset = 0;
+    if (function >= 16 && function <= 21 && range == 0) {
+        uint16_t address = cal_extra_address(function);
+        if (eeprom_read_byte(address) == EEPROM_VALID_MARKER) {
+            g_cal_extra_offset = (int32_t)eeprom_read_u32_be((uint16_t)(address + 1));
+        }
+    }
+}
+
+/* orig: 0x08011950 - both offset/gain pairs of a dual-gain function */
+void cal_load_dual(void)
+{
+    g_cal_address = cal_address_for_range(0);
+    g_cal_dual_offset_a = (int32_t)eeprom_read_u32_be(g_cal_address);
+    g_gain_e2c = (float)eeprom_read_u32_be(g_cal_address + 4);
+    g_gain_e2c = g_gain_e2c / 1000000.0f;
+    g_cal_address = cal_address_for_range(1);
+    g_cal_address = g_cal_address + 8;
+    g_cal_dual_offset_b = (int32_t)eeprom_read_u32_be(g_cal_address);
+    g_gain_e30 = (float)eeprom_read_u32_be(g_cal_address + 4);
+    g_gain_e30 = g_gain_e30 / 1000000.0f;
+}
+
+/* orig: 0x080119F4 - trims 0 and 1 are limited to +-20000, 2 and 3 to +-10000 */
+void cal_trim_clamp(uint8_t index)
+{
+    int32_t limit;
+
+    if (index > 3) {
+        return;
+    }
+    limit = (index < 2) ? 20000 : 10000;
+    if (g_cal_trim[index] > limit || g_cal_trim[index] < -limit) {
+        g_cal_trim[index] = 0;
+    }
+}
+
+/* orig: 0x08011AA4 - function 0 uses the function 2, range 3 record */
+void cal_load_trims(void)
+{
+    if (g_function == 0) {
+        g_cal_address = cal_trim_address(2, 3);
+    } else {
+        g_cal_address = cal_trim_address(g_function, g_range);
+    }
+    for (uint8_t i = 0; i < 4; i++) {
+        g_cal_trim[i] = eeprom_read_s16_be(g_cal_address + 2u * i);
+        cal_trim_clamp(i);
+    }
+}
+
+/* orig: 0x08011E88 - which = 1..4 stores one trim, 100 stores all four */
+void cal_store_trims(uint8_t function, uint8_t range, uint8_t which)
+{
+    g_cal_address = cal_trim_address(function, range);
+    for (uint8_t i = 0; i < 4; i++) {
+        if (which == i + 1 || which == 100) {
+            cal_trim_clamp(i);
+            eeprom_write_u16_be(g_cal_address + 2u * i, (uint16_t)g_cal_trim[i]);
+        }
+    }
+}
+
+/*
+ * orig: 0x0801167C
+ * Loads the calibration for a function/range into the working offset and
+ * gain (or the special records for index 200, function 6 and the dual-gain
+ * functions).
+ */
+void cal_load(uint8_t function, uint8_t range)
+{
+    if (function == CAL_INDEX_REC_2E0) {
+        g_cal_address = CAL_ADDR_2E0;
+        g_cal_fbe = (int16_t)eeprom_read_u16_be(g_cal_address);
+        if (g_cal_fbe > 1000 || g_cal_fbe < -1000) {
+            g_cal_fbe = 0;
+        }
+        return;
+    }
+    if (g_flag_808a == 0 && function == 9 && g_range == 6) {
+        g_cal_e14 = (int32_t)eeprom_read_u32_be(CAL_ADDR_178);
+        cal_clamp_e14();
+    }
+    if (dual_gain_function(g_function)) {
+        cal_load_dual();
+        return;
+    }
+    if (function == 6) {
+        g_cal_address = cal_base(6);
+        g_cal_func6_gain = (int32_t)eeprom_read_u32_be(g_cal_address + 4);
+        if (g_cal_func6_gain > CAL_FUNC6_GAIN_MAX || g_cal_func6_gain < CAL_FUNC6_GAIN_MIN) {
+            g_cal_func6_gain = CAL_FUNC6_GAIN_DEFAULT;
+        }
+        return;
+    }
+
+    if ((function == 2 || function == 4) && g_flag_80b7 == 1) {
+        g_cal_address = cal_base(CAL_FUNC_AC_PEAK_REC);
+    } else if (function == 0) {
+        g_cal_address = cal_base(g_flag_8098 != 0 ? 2 : 1);
+        g_cal_address = g_cal_address + 0x30;
+    } else if (function == 2) {
+        g_cal_address = cal_base((g_flag_80ba != 0 && g_flag_80bd != 0) ? 1 : 2);
+        g_cal_address = g_cal_address + range * 16u;
+    } else if (function == 10) {
+        g_cal_address = cal_base(9);
+        g_cal_address = g_cal_address + 0x10;
+    } else {
+        g_cal_address = cal_base(function);
+        g_cal_address = g_cal_address + range * 16u;
+    }
+
+    g_zero_offset = (int32_t)eeprom_read_u32_be(g_cal_address);
+    g_gain = (float)eeprom_read_u32_be(g_cal_address + 4);
+    if (function == 12) {
+        if (g_range == 4 && g_pf8_detected_low != 0) {
+            g_gain = g_gain / 10000.0f;
+        } else {
+            g_gain = g_gain / 100000.0f;
+        }
+    } else {
+        g_gain = g_gain / 1000000.0f;
+    }
+    delay_loop(1);
 }

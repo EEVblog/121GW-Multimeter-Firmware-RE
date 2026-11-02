@@ -80,6 +80,34 @@ void eeprom_write_u16_be(uint32_t offset, uint16_t value)
     eeprom_write_byte_retry(offset + 1, (uint8_t)value);
 }
 
+/* orig: 0x08011F80 - most significant byte first */
+uint32_t eeprom_read_u32_be(uint32_t offset)
+{
+    uint8_t b[4];
+
+    for (uint8_t i = 0; i < 4; i++) {
+        b[i] = eeprom_read_byte_raw(offset + i);
+    }
+    return ((uint32_t)b[0] << 24) + ((uint32_t)b[1] << 16) + ((uint32_t)b[2] << 8) + b[3];
+}
+
+/* orig: 0x08012000 */
+uint16_t eeprom_read_u16_be(uint32_t offset)
+{
+    uint8_t b[2];
+
+    for (uint8_t i = 0; i < 2; i++) {
+        b[i] = eeprom_read_byte_raw(offset + i);
+    }
+    return (uint16_t)(b[0] * 0x100u + b[1]);
+}
+
+/* orig: 0x08011FD4 */
+int32_t eeprom_read_s16_be(uint32_t offset)
+{
+    return (int16_t)eeprom_read_u16_be(offset);
+}
+
 /* Writes the valid marker and reads it back, up to 10 times. */
 static void eeprom_set_marker(uint32_t offset)
 {

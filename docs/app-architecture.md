@@ -103,16 +103,18 @@ When every function is reconstructed, the globals are defined normally and the h
 | Start-up (clocks, power, GPIO, ADC, NVIC, timers) | `firmware/src/system_init.c` | 15 | equivalent, including BOR-set, wake-from-standby and no-HSE variants |
 | Flash/option-byte helpers | `firmware/src/flash_ob.c` | 8 | equivalent (tested directly or via `system_init`) |
 | HY3131 control (mode registers, IRQ enables, counter, service, poll) | `firmware/src/hy3131_ctrl.c`, generated `hy3131_tables.c` | 6 | equivalent for valid function/range indices |
-
 | RMS results | `firmware/src/measure_rms.c` | 7 | equivalent |
 | Measurement scaling (zero offset, gain, 16-sample mean, gain divisors) | `firmware/src/measure_scale.c`, `firmware/include/numeric.h` | 11 | equivalent for finite, realistic float values |
-| Data EEPROM access (read, program with retries, BE writes, markers) | `firmware/src/eeprom.c` | 11 | equivalent, including EEPROM write traces |
+| Data EEPROM access (read, program with retries, BE reads/writes, markers) | `firmware/src/eeprom.c` | 14 | equivalent, including EEPROM write traces |
 | Calibration storage and zero/gain calibration | `firmware/src/calibration.c` | 5 | equivalent |
+| Calibration loading (records, trims, extra offsets, dual-gain pairs) | `firmware/src/calibration.c` | 8 | equivalent on randomised EEPROM contents |
 | AD1 results (24-bit read, running mean, per-function dispatch) | `firmware/src/measure_ad1.c` | 4 | equivalent; per-function processing still calls the original |
 | Front-end switching per function | `firmware/src/front_end.c` | 8 | equivalent |
 | Buzzer (PE7), beep presets, auto power-off reset | `firmware/src/buzzer.c` | 6 | equivalent |
 | Measurement helpers, calibration stages | `firmware/src/measure_scale.c`, `firmware/src/calibration.c` | 7 | equivalent |
-| Derived values (power/VA product, vector magnitude, thresholds, hold-off, dBm) | `firmware/src/measure_derived.c` | 6 | equivalent (dBm for ranges 0–3) |
+| Derived values (power/VA product, vector magnitude, thresholds, hold-off, dBm, AD1 staging, function 12 interval) | `firmware/src/measure_derived.c` | 10 | equivalent (dBm for ranges 0–3) |
+| Reading filters (3-sample smoother, 10-sample moving average) | `firmware/src/filters.c` | 2 | equivalent for in-range counters |
+| Type K thermocouple table, °C → °F | `firmware/src/temperature.c` | 2 | equivalent |
 | IAR `log10`, reproduced bit-for-bit | `firmware/src/iar_math.c` | 1 | equivalent on 4000 inputs incl. NaN/inf/zero/subnormal/negative and errno |
 
 Known deviations, all for inputs that valid firmware state never produces:
@@ -120,6 +122,7 @@ Known deviations, all for inputs that valid firmware state never produces:
 - **Float divide near FLT_MAX:** IAR's `fdiv` returns ±infinity for quotients just below FLT_MAX in magnitude (dividend within ~3% of FLT_MAX), where IEEE and libgcc give the finite value. Measurement values are many orders of magnitude smaller.
 - `lcd_reapply_pulse_duration()` with a contrast outside 10–17 uses 0 where the original passes an uninitialised register.
 - `hy3131_write_mode_registers()` / `hy3131_set_irq_enables()` with a function index above 0x18 use zeros / AD1 where the original uses an uninitialised stack buffer.
+- `smooth3()` and `moving_average()` are tested with their counters in range (0–3 and 0–10), which is where the firmware keeps them. A corrupted counter could divide by zero: the Cortex-M3 returns 0 for that, while C leaves it undefined.
 - Table rows beyond the end of the original's register-table blocks read code in the original. Every function has at most 4 rows in its smallest table, and real ranges stay inside the blocks.
 
 Original quirks that are reproduced deliberately:
@@ -130,13 +133,22 @@ Original quirks that are reproduced deliberately:
 
 `tools/emu/identify_math.py` calls helpers in the original with test operands and compares the results with reference IEEE/integer operations. The IAR routines found are float add/sub/mul/div, int/unsigned→float, float↔double, double add/mul/div, double/float→int and float→unsigned (all saturating; see `numeric.h`), unsigned→double, signed/unsigned 64-bit divide, int64→float, flag-setting float compares, double `sqrt` and double `log10`.
 
-In the rebuild, the basic IEEE operations are left to GCC's libgcc, which gives bit-identical results for finite operands. Truncating conversions use `iar_d2i()`/`iar_f2i()`, which reproduce IAR's saturation. `(int)sqrt((double)n)` on 32-bit integers is replaced by an exact integer square root, which gives identical results. `log10` isn't required to be correctly rounded, so IAR's routine will be reconstructed itself when its users are.
+In the rebuild, the basic IEEE operations are left to GCC's libgcc, which gives bit-identical results for finite operands. Truncating conversions use `iar_d2i()`/`iar_f2i()`, which reproduce IAR's saturation. `(int)sqrt((double)n)` on 32-bit integers is replaced by an exact integer square root, which gives identical results. `log10` isn't required to be correctly rounded, so `iar_math.c` reproduces IAR's routine operation by operation (bit-identical, including errno).
 
 ## Calibration (found so far)
 
-- `calibrate_zero_and_gain` (0x0800F7B8, not yet rebuilt) averages 16 samples. It derives the zero offset as `p2 − (mean − p2)/9` and the gain as span / divisor, where the divisor depends on function and range (50000, 30000, 10000, 6000, 1000, or 30000·√2 for AC peak). It stores both through `cal_store_value` (0x08011B40).
+- `calibrate_zero_and_gain` (0x0800F7B8) averages 16 samples. It derives the zero offset as `p2 − (mean − p2)/9` and the gain as span / divisor, where the divisor depends on function and range (50000, 30000, 10000, 6000, 1000, or 30000·√2 for AC peak). It stores both through `cal_store_value` (0x08011B40).
 - Calibration data lives in data EEPROM: byte reads at 0x08080000 + offset; byte writes with up to 10 retries; big-endian 16/32-bit helpers; and 0xA5 "valid" markers at offsets 0x1F and 0x26.
-- `cal_address_for_range` (0x0801159C) gives the address as `table[g_function] + g_range·16`, with the table at 0x08028EE8.
+- `cal_address_for_range` (0x0801159C) gives the address as `table[g_function] + g_range·16`, with the table at 0x08028EE8 (26 entries; entry 25 = 0x2D0 is the AC-peak record).
+- `cal_load(function, range)` (0x0801167C) loads the offset (+0) and gain (+4) into the working values. The gain is ÷1e6; for function 12 it is ÷1e5, or ÷1e4 in range 4 when PF8 reads low. Special cases:
+  - index 200 loads the 16-bit value at 0x2E0 (limit ±1000);
+  - function 6 loads the gain at 0x104 (40e6–60e6, default 49152050);
+  - function 9 range 6 also loads 0x178;
+  - dual-gain functions (13–15, 22–24) load two offset/gain pairs;
+  - function 0 uses `table[1 or 2] + 0x30`, and function 10 uses `table[9] + 0x10`.
+- Each record holds four signed 16-bit trims at +8. Their limits are ±20000, ±20000, ±10000 and ±10000, and an out-of-range trim reads as 0. Functions 16 and 18 always use their range-1 record.
+- Functions 16–21 have an extra offset at 0x4D0 + 8·(function − 16): a 0xA5 marker followed by a big-endian int32. It is used for range 0 only.
+- The type K table (0x08025CF8) holds EMF in µV from −210 °C to +1360 °C in 10 °C steps. Readings are interpolated in 0.01 °C. Valid inputs run from −5891 µV (−200 °C) up to 54138 µV (1350 °C).
 
 ## Start-up summary
 

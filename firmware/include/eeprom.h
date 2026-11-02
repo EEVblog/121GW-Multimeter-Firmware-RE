@@ -21,6 +21,9 @@ void eeprom_write_byte_retry(uint32_t offset, uint8_t value);
 void eeprom_write_byte(uint32_t offset, uint8_t value);
 void eeprom_write_u32_be(uint32_t offset, uint32_t value);
 void eeprom_write_u16_be(uint32_t offset, uint16_t value);
+uint32_t eeprom_read_u32_be(uint32_t offset);
+uint16_t eeprom_read_u16_be(uint32_t offset);
+int32_t eeprom_read_s16_be(uint32_t offset);
 void eeprom_set_marker_a(void);
 void eeprom_set_marker_b(void);
 

@@ -18,6 +18,10 @@ extern uint8_t g_scaled_ready;     /* 0x2000805E */
 extern uint8_t g_flag_80b5;        /* 0x200080B5 */
 extern uint8_t g_sel_80b6;         /* 0x200080B6 */
 extern float g_dbm;                /* 0x20007E94 */
+extern uint16_t g_func12_interval; /* 0x20007FC4 */
+extern uint16_t g_func12_count;    /* 0x20007FC6 */
+extern uint8_t g_flag_80a3;        /* 0x200080A3 */
+extern uint8_t g_flag_8042;        /* 0x20008042 */
 
 void holdoff_on_low_reading(void);
 int32_t range_threshold(void);
@@ -25,5 +29,9 @@ void scale_reading(int32_t raw);
 void product_scaled(int32_t a, int32_t b);
 void vector_magnitude(void);
 void dbm_from_voltage(void);
+void derived_from_average(void);
+void scaled_from_ad1(void);
+void threshold_check(uint32_t value);
+void func12_set_interval(void);
 
 #endif /* MEASURE_DERIVED_H */

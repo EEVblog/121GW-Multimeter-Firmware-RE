@@ -70,6 +70,41 @@ def float_bits(r):
 def floats_at(*addrs):
     return lambda r: {a + i: (v >> (8 * i)) & 0xFF for a in addrs for v in [float_bits(r)] for i in range(4)}
 
+
+def eeprom_words(lo, hi, width, boundary=()):
+    """Randomises EEPROM words in [lo, hi): each big-endian word keeps its real
+    value, becomes a boundary value or random bits."""
+    def make(r):
+        out = {}
+        for a in range(lo, hi, width):
+            roll = r.random()
+            if roll < 0.35:
+                continue
+            if roll < 0.7 and boundary:
+                v = r.choice(boundary)
+            else:
+                v = r.getrandbits(8 * width)
+            v &= (1 << (8 * width)) - 1
+            for i in range(width):
+                out[a + i] = (v >> (8 * (width - 1 - i))) & 0xFF
+        return out
+    return make
+
+
+def le32_at(addr, values):
+    return lambda r: {addr + i: (v >> (8 * i)) & 0xFF for v in [r.choice(values + [r.getrandbits(32)])]
+                      for i in range(4)}
+
+
+def merge(*fns):
+    def make(r):
+        out = {}
+        for f in fns:
+            out.update(f(r))
+        return out
+    return make
+
+
 def double_args(r):
     """A double argument (r0, r1): ordinary values, powers of ten, edge cases."""
     import struct as _s
@@ -295,6 +330,83 @@ SPECS = {
                                                                        r.getrandbits(20), r.getrandbits(32)])]
                                                    for i in range(4)},
                                                 0x2000803D: r.randrange(0, 4)}),
+    # ---- calibration loading ----
+    "eeprom_read_u32_be": dict(ret=32, args=lambda r: (r.randrange(0, 0x2FFC),),
+                               eeprom=eeprom_words(0, 0x600, 4)),
+    "eeprom_read_u16_be": dict(ret=32, args=lambda r: (r.randrange(0, 0x2FFE),),
+                               eeprom=eeprom_words(0, 0x600, 2)),
+    "eeprom_read_s16_be": dict(ret=32, args=lambda r: (r.randrange(0, 0x5FE),),
+                               eeprom=eeprom_words(0, 0x600, 2, [0x7FFF, 0x8000, 0xFFFF, 0])),
+    "cal_trim_address": dict(ret=32, args=lambda r: (r.randrange(0, 26), r.getrandbits(8))),
+    "cal_extra_address": dict(ret=32, args=lambda r: (r.choice(list(range(15, 23)) + [r.getrandbits(32)]),)),
+    "cal_load_extra": dict(ret=None, trials=600,
+                           args=lambda r: (r.choice(list(range(15, 23)) + [r.getrandbits(8)]), r.choice([0, 0, 1, 9])),
+                           eeprom=lambda r: {0x4D0 + 8 * k + i: (r.choice([0xA5, 0xA5, r.getrandbits(8)]) if i == 0
+                                                                 else r.getrandbits(8))
+                                             for k in range(6) for i in range(5)}),
+    "cal_load_dual": dict(ret=None, trials=400,
+                          ram_set=lambda r: {0x2000803C: r.choice([13, 14, 15, 22, 23, 24]),
+                                             0x2000803D: r.randrange(0, 4)},
+                          eeprom=eeprom_words(0x100, 0x500, 4)),
+    "cal_trim_clamp": dict(ret=None, args=lambda r: (r.randrange(0, 6),),
+                           ram_set=merge(*[le32_at(0x20007E4C + 4 * i, [0, 10000, 10001, 20000, 20001, -10000, -10001, -20000, -20001]) for i in range(4)])),
+    "cal_load_trims": dict(ret=None, trials=600,
+                           ram_set=lambda r: {0x2000803C: r.randrange(0, 26), 0x2000803D: r.randrange(0, 8)},
+                           eeprom=eeprom_words(0, 0x500, 2, [10000, 10001, 20000, 20001, 0x10000 - 10000,
+                                                             0x10000 - 10001, 0x10000 - 20000, 0x10000 - 20001,
+                                                             0x7FFF, 0x8000])),
+    "cal_store_trims": dict(ret=None, trials=400,
+                            args=lambda r: (r.randrange(0, 26), r.randrange(0, 8), r.choice([0, 1, 2, 3, 4, 5, 100])),
+                            ram_set=merge(*[le32_at(0x20007E4C + 4 * i, [0, 10000, 10001, 20000, 20001, -10000, -10001, -20000, -20001]) for i in range(4)])),
+    "cal_load": dict(ret=None, trials=1500,
+                     args=lambda r: (r.choice(list(range(26)) + [200, 200, 6, 6, 12, 12, 2, 2, 0, 9, 10]),
+                                     r.randrange(0, 8)),
+                     ram_set=lambda r: {0x2000803C: r.choice(list(range(26)) + [12, 12]),
+                                        0x2000803D: r.choice([4, 4, 6, 6] + list(range(8))),
+                                        0x2000808A: r.choice([0, 0, 1]), 0x200080B7: r.choice([0, 1, 1, 2]),
+                                        0x20008098: r.choice([0, 1]), 0x200080BA: r.choice([0, 1]),
+                                        0x200080BD: r.choice([0, 1]), 0x20007FDF: r.choice([0, 1])},
+                     eeprom=merge(eeprom_words(0x30, 0x500, 4, [40000000, 39999999, 60000000, 60000001,
+                                                                1000000, 0]),
+                                  eeprom_words(0x2E0, 0x2E2, 2, [1000, 1001, 0x10000 - 1000, 0x10000 - 1001]))),
+    # ---- filters, temperature, staging ----
+    "smooth3": dict(ret=32, trials=200, steps=25,
+                    args=lambda r: (r.choice([r.randrange(-30, 30) + 1000, r.randrange(-15, 15) + 1000,
+                                              r.getrandbits(32)]),),
+                    ram_set=merge(le32_at(0x20007E78, [0, 1, 2, 3]), le32_at(0x20007E70, [1000, 990, 1011]))),
+    "moving_average": dict(ret=32, trials=200, steps=30,
+                           args=lambda r: (r.choice([r.randrange(-25, 25) + 500, r.getrandbits(32),
+                                                     r.choice([0x7FFFFFFF, -0x80000000])]), 20, 10),
+                           ram_set=lambda r: {0x20008084: r.randrange(0, 11)},
+                           extra=[(0x200070A8 + 4 * i, 4) for i in range(10)]),
+    "moving_average@params": dict(ret=32, trials=200, steps=30,
+                                  args=lambda r: (r.randrange(-100, 100), r.choice([0, 5, 0x7FFFFFFF, -1]),
+                                                  r.randrange(1, 11)),
+                                  ram_set=lambda r: {0x20008084: r.randrange(0, 11)},
+                           extra=[(0x200070A8 + 4 * i, 4) for i in range(10)]),
+    "thermocouple_to_celsius": dict(ret=None, trials=3000,
+                                    args=lambda r: (r.choice([r.randrange(-7000, 56000), -5891, -5892, 54138,
+                                                              54139, 0, -6035, r.getrandbits(32)]),)),
+    "celsius_to_fahrenheit": dict(ret=32, trials=3000,
+                                  args=lambda r: (r.choice([r.randrange(-30000, 140000), r.randrange(-32768, 32768), r.randrange(2300000, 4700000),
+                                                            -1, 0, 0x8000, 0x7FFF, r.getrandbits(32)]),)),
+    "derived_from_average": dict(ret=None, trials=400,
+                                 ram_set=lambda r: {**floats_at(0x20007E10, 0x20007E2C, 0x20007E30)(r),
+                                                    0x2000803C: r.randrange(0, 26)},
+                                 with_globals_of=["offset_stage", "gain_stage", "remove_offset",
+                                                  "apply_gain", "select_gain"]),
+    "scaled_from_ad1": dict(ret=None, trials=300,
+                            ram_set=lambda r: {**floats_at(0x20007E10, 0x20007E2C, 0x20007E30)(r),
+                                               0x2000803C: r.randrange(0, 26)},
+                            with_globals_of=["remove_offset", "apply_gain", "select_gain"]),
+    "threshold_check": dict(ret=None, trials=800,
+                            args=lambda r: (r.choice([2499, 2500, 2501, 2999, 3000, 3001, 3499, 3500, 3501, 29499,
+                                                      29500, 29501, 30000, 30500, 30501, r.getrandbits(32)]),),
+                            ram_set=lambda r: {0x200080B6: r.randrange(0, 6), 0x200080B5: r.choice([0, 1, 2])},
+                            with_globals_of=["range_threshold", "buzzer_start_forced"]),
+    "func12_set_interval": dict(ret=None, trials=300,
+                                ram_set=lambda r: {0x2000803C: r.choice([12, 12, 12, 3]),
+                                                   0x2000803D: r.randrange(0, 8)}),
     # ---- LCD driver ----
     "lcd_update": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
     "lcd_update_partial": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
@@ -388,9 +500,9 @@ def randomise(ram, rnd, targets, pool):
         ram[off:off + width] = (v & mask).to_bytes(width, "little")
 
 
-def new_machine(flash, hybrid, ram, **model):
+def new_machine(flash, hybrid, ram, eeprom=EEPROM, **model):
     m = Stm32l1(flash, extra_code=(HYBRID_BASE, hybrid), stop_on_app_entry=False,
-                eeprom_image=EEPROM, **model)
+                eeprom_image=eeprom, **model)
     m.uc.mem_write(RAM_BASE, bytes(ram))
     return m
 
@@ -458,8 +570,11 @@ def main():
             randomise(ram, rnd, sorted(targets), pool)
             for addr, val in (spec["ram_set"](rnd).items() if "ram_set" in spec else []):
                 ram[addr - RAM_BASE] = val
-            mo = new_machine(flash, hybrid, ram, **spec.get("model", {}))
-            mn = new_machine(flash, hybrid, ram, **spec.get("model", {}))
+            ee = bytearray(EEPROM)
+            for off, val in (spec["eeprom"](rnd).items() if "eeprom" in spec else []):
+                ee[off] = val
+            mo = new_machine(flash, hybrid, ram, ee, **spec.get("model", {}))
+            mn = new_machine(flash, hybrid, ram, ee, **spec.get("model", {}))
             idr = spec["idr"](rnd) if "idr" in spec else {}
             for s in range(steps):
                 a = spec["args"](rnd) if "args" in spec else ()

@@ -29,6 +29,8 @@ set(APP_SOURCES
     src/display_state.c
     src/measure_derived.c
     src/iar_math.c
+    src/filters.c
+    src/temperature.c
 )
 
 add_library(app_modules STATIC ${APP_SOURCES})

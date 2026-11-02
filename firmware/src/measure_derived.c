@@ -2,6 +2,10 @@
  * Derived measurement values.
  */
 #include "measure_derived.h"
+#include "buzzer.h"
+#include "calibration.h"
+#include "hy3131_bus.h"
+#include "measure_ad1.h"
 #include "hy3131_ctrl.h"
 #include "measure_rms.h"
 #include "measure_scale.h"
@@ -139,4 +143,101 @@ void dbm_from_voltage(void)
     }
     float power = (float)((double)(v * v) / 0.6);
     g_dbm = (float)(iar_log10((double)power) * 10.0);
+}
+
+static int dual_gain_function(void)
+{
+    return g_function == 13 || g_function == 14 || g_function == 15
+        || g_function == 22 || g_function == 23 || g_function == 24;
+}
+
+/*
+ * orig: 0x08006418
+ * Derived value from the AD1 average: zero offset and gain stages, or the
+ * plain average for the dual-gain functions when averaging is on. Those
+ * functions skip the gain stage while g_cal_flag_808e is set.
+ */
+void derived_from_average(void)
+{
+    if (dual_gain_function() && g_avg_flag_808c != 0) {
+        g_derived_value = g_ad1_average;
+        return;
+    }
+    g_derived_value = offset_stage(g_ad1_average);
+    if (!dual_gain_function() || g_cal_flag_808e == 0) {
+        g_derived_value = gain_stage(g_derived_value);
+    }
+}
+
+/* orig: 0x080064D6 - scaled value from the latest AD1 reading (not for dual-gain functions) */
+void scaled_from_ad1(void)
+{
+    if (dual_gain_function()) {
+        return;
+    }
+    g_scaled_value = remove_offset(g_ad1_value);
+    g_scaled_value = apply_gain(g_scaled_value);
+    g_scaled_ready = 1;
+}
+
+/*
+ * orig: 0x080078D8
+ * Threshold detector: for selections 0 and 2 it trips at or below the
+ * threshold, otherwise at or above it. While tripped g_flag_80b5 is set
+ * (which moves the threshold for hysteresis) and the buzzer is kept on.
+ */
+void threshold_check(uint32_t value)
+{
+    uint32_t threshold = (uint32_t)range_threshold();
+    int tripped;
+
+    if (g_sel_80b6 == 0 || g_sel_80b6 == 2) {
+        tripped = value <= threshold;
+    } else {
+        tripped = value >= threshold;
+    }
+    if (tripped) {
+        g_flag_80b5 = 1;
+        buzzer_start_forced(100);
+    } else {
+        g_flag_80b5 = 0;
+    }
+}
+
+/*
+ * orig: 0x0800EC28
+ * Function 12: clears the counters and sets the interval for the range
+ * (ranges above 5 keep the previous interval).
+ */
+void func12_set_interval(void)
+{
+    if (g_function != 12) {
+        return;
+    }
+    g_flag_80a3 = 0;
+    g_func12_count = 0;
+    switch (g_range) {
+    case 0:
+        if (g_pf8_detected_low != 0) {
+            g_func12_interval = 200;
+        } else {
+            g_func12_interval = (g_flag_8042 != 0) ? 300 : 200;
+        }
+        break;
+    case 1:
+        if (g_pf8_detected_low != 0) {
+            g_func12_interval = (g_flag_8042 != 0) ? 300 : 150;
+        } else {
+            g_func12_interval = (g_flag_8042 != 0) ? 300 : 200;
+        }
+        break;
+    case 2: case 3: case 4:
+        g_func12_interval = 200;
+        break;
+    case 5:
+        g_func12_interval = 300;
+        break;
+    default:
+        break;
+    }
 }
