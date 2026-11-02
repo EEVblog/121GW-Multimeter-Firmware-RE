@@ -46,8 +46,12 @@
 0801031e	func	rtc_deselect
 0801033c	func	rtc_data_pin_output
 08010378	func	rtc_data_pin_input
+080104d4	func	eeprom_set_marker_a
+08010f28	func	eeprom_set_marker_b
 0801159c	func	cal_address_for_range
+08011924	func	cal_clamp_e14
 08011b40	func	cal_store_value	calibration write (index, value)
+08011dce	func	cal_store_dual
 0801203a	func	eeprom_read_byte	data EEPROM byte at offset
 0801204c	func	eeprom_read_byte_raw
 08012068	func	eeprom_write_u32_be
@@ -117,6 +121,8 @@
 0801c4d4	func	tim3_init
 0801f87e	func	sd_open
 0801f9fc	func	flash_data_eeprom_unlock
+0801fa1c	func	data_eeprom_lock
+0801fa2e	func	eeprom_program_byte_raw
 0801fa68	func	flash_ob_unlock
 0801fa8e	func	flash_ob_launch
 0801faa0	func	flash_ob_bor_config
@@ -189,6 +195,7 @@
 200077d0	label	hy3131_rx_buffer
 20007c30	label	g_digit_text	5 chars
 20007d0c	label	g_bor_level
+20007d5c	label	g_cal_address
 20007d78	label	g_rms_value
 20007db0	label	g_digits	5 x u32
 20007dc4	label	g_hy_scratch
@@ -200,11 +207,17 @@
 20007e00	label	g_zero_offset
 20007e04	label	g_average16
 20007e10	label	g_gain
+20007e14	label	g_cal_e14
+20007e18	label	g_cal_func6_gain
 20007e1c	label	g_avg_sum
 20007e20	label	g_span
+20007e24	label	g_cal_dual_offset_a
+20007e28	label	g_cal_dual_offset_b
 20007e2c	label	g_gain_e2c
 20007e30	label	g_gain_e30
+20007e68	label	g_cal_ref_e68
 20007fa8	label	g_log_tick_count
+20007fbe	label	g_cal_fbe
 20007fde	label	g_woke_from_standby
 20007fdf	label	g_pf8_detected_low
 20007fe0	label	g_flag_7fe0
@@ -238,6 +251,8 @@
 20008083	label	g_rms_count
 2000808c	label	g_avg_flag_808c
 2000808d	label	g_avg_done_808d
+2000808e	label	g_cal_flag_808e
+2000808f	label	g_cal_done_808f
 20008095	label	g_avg_count
 20008098	label	g_flag_8098
 200080b7	label	g_flag_80b7

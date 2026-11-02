@@ -33,6 +33,7 @@ TABLES = [
     (0x08028D1C, "functions 13-15 by 0x200080C7; functions 16, 18, 20 by range"),
     (0x08028D58, "functions 22-24 by 0x200080C7"),
     (0x08028D94, "functions 17, 19, 21 (and above 0x10 not listed), by range"),
+    (0x08028EE8, "calibration record base address per function (25 x u16, little-endian)"),
     (0x08028F1C, "function 3 by range; function 5 (row 0)"),
     (0x08028F44, "function 4 (default), by range"),
     (0x08028F6C, "function 4 when 0x200080B7 is set, by range"),

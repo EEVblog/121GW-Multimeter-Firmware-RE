@@ -24,6 +24,7 @@ extern const uint8_t hy3131_cfg_block_c[20];
 #define HY3131_CFG_08028D1C (hy3131_cfg_block_b + 0x000)   /* functions 13-15 by 0x200080C7; functions 16, 18, 20 by range */
 #define HY3131_CFG_08028D58 (hy3131_cfg_block_b + 0x03C)   /* functions 22-24 by 0x200080C7 */
 #define HY3131_CFG_08028D94 (hy3131_cfg_block_b + 0x078)   /* functions 17, 19, 21 (and above 0x10 not listed), by range */
+#define HY3131_CFG_08028EE8 (hy3131_cfg_block_b + 0x1CC)   /* calibration record base address per function (25 x u16, little-endian) */
 #define HY3131_CFG_08028F1C (hy3131_cfg_block_b + 0x200)   /* function 3 by range; function 5 (row 0) */
 #define HY3131_CFG_08028F44 (hy3131_cfg_block_b + 0x228)   /* function 4 (default), by range */
 #define HY3131_CFG_08028F6C (hy3131_cfg_block_b + 0x250)   /* function 4 when 0x200080B7 is set, by range */

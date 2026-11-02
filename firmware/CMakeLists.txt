@@ -21,6 +21,8 @@ set(APP_SOURCES
     src/hy3131_ctrl.c
     src/measure_rms.c
     src/measure_scale.c
+    src/eeprom.c
+    src/calibration.c
 )
 
 add_library(app_modules STATIC ${APP_SOURCES})
