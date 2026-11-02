@@ -140,6 +140,13 @@ static int rcc_wait_for_hse_startup(void)
  * orig: 0x0801BF1A; inlines: 0x0801FFF8 (RCC_GetFlagStatus)
  * use_hse == 0 (the only use in the application): MSI at 4.194 MHz, HSI on
  * (for the ADC), LSE and HSE off. Hangs if the HSE refuses to stop.
+ *
+ * Deviation: the original tests HSERDY once and hangs if it is still set.
+ * HSERDY takes a few HSE cycles to clear after HSEON is cleared; the
+ * original's two SPL calls in between take long enough, but GCC's code reads
+ * RCC_CR on the next instruction and hung on the meter (the bootloader
+ * leaves the HSE running). Waiting for the flag behaves the same wherever
+ * the original boots, and still hangs if the HSE never stops.
  */
 void clock_init(uint8_t use_hse)
 {
@@ -153,9 +160,7 @@ void clock_init(uint8_t use_hse)
         RCC_CSR_BYTE1 = 0;
         RCC_CR_BYTE2 = 0;     /* HSE off */
         RCC_CR_BYTE2 = 0;
-        if (RCC->CR & RCC_CR_HSERDY_BIT) {
-            for (;;) {
-            }
+        while (RCC->CR & RCC_CR_HSERDY_BIT) {
         }
     } else {
         RCC_CR_BYTE2 = 0;

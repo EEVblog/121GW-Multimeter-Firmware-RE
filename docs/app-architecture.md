@@ -163,6 +163,9 @@ Known deviations, all for inputs that valid firmware state never produces:
 - Frequency overload (function 6 value of 10^9 counts or more, decade 9): the original stores an uninitialised register as the frequency or reading while flagging the overload. The rebuild leaves the previous value and stores only the decimal and the flag.
 - Table rows beyond the end of the original's register-table blocks read code in the original. Every function has at most 4 rows in its smallest table, and real ranges stay inside the blocks.
 
+Timing deviation found on the meter (the emulator has no clock):
+- `clock_init()`: the original clears HSEON and then tests HSERDY once, hanging if it is still set. The flag takes a few HSE cycles to clear, which the original's two SPL calls cover. GCC reads RCC_CR on the next instruction, so the first flash of the rebuild hung there (the bootloader leaves the HSE running). The rebuild waits for HSERDY to clear instead: the same on any meter the original boots on, and it still hangs if the HSE never stops.
+
 Original quirks that are reproduced deliberately:
 - `adc_init()`: the external-trigger-edge field of the original's init struct is uninitialised. It is always 0 in the start-up sequence (checked in emulation with different RAM fills).
 - `rotary_pins_config()`: for a non-one-hot code the pin mask is whatever the caller left in r2. In the only non-trivial call that is `RCC->AHBENR`, which the C caller passes explicitly.
