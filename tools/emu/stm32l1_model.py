@@ -27,6 +27,8 @@ RET_MAGIC = 0x0F000000          # exception-return trampoline
 APP_BASE = 0x08006000
 
 RCC, PWR, FLASHIF, LCD = 0x40023800, 0x40007000, 0x40023C00, 0x40002400
+ADC1, DBGMCU_BASE = 0x40012400, 0xE0042000
+EEPROM_BASE = 0x08080000
 TIM2, SDIO, DMA1, DMA2 = 0x40000000, 0x40012C00, 0x40026000, 0x40026400
 GPIO = {"A": 0x40020000, "B": 0x40020400, "C": 0x40020800, "D": 0x40020C00,
         "E": 0x40021000, "H": 0x40021400, "F": 0x40021800, "G": 0x40021C00}
@@ -122,7 +124,7 @@ class Stm32l1:
     def __init__(self, flash_image, *, keys_idr=0xFFFF, obr=0x00F000AA, hse_ok=True,
                  sd_image=None, sd_high_capacity=False, sd_v2=True, sd_absent=False,
                  tick_blocks=0, corrupt_flash_at=None, extra_code=None,
-                 stop_on_app_entry=True):
+                 stop_on_app_entry=True, eeprom_image=None, pwr_csr=0x8):
         self.uc = Uc(UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS)
         self.uc.ctl_set_cpu_model(UC_CPU_ARM_CORTEX_M3)
         uc = self.uc
@@ -135,6 +137,13 @@ class Stm32l1:
             uc.mem_map(base, (len(code) + 0xFFFF) & ~0xFFFF, UC_PROT_ALL)
             uc.mem_write(base, bytes(code))
         self.stop_on_app_entry = stop_on_app_entry
+        self.pwr_csr = pwr_csr          # PWR_CSR as read (WUF/SBF/VREFINTRDYF)
+        # Data EEPROM (calibration/settings): plain memory, writes traced.
+        uc.mem_map(EEPROM_BASE, 0x3000 + 0x1000, UC_PROT_ALL)
+        if eeprom_image is not None:
+            uc.mem_write(EEPROM_BASE, bytes(eeprom_image)[:0x3000])
+        uc.hook_add(UC_HOOK_MEM_WRITE, self._on_eeprom_write, begin=EEPROM_BASE,
+                    end=EEPROM_BASE + 0x2FFF)
         uc.mem_map(RET_MAGIC, 0x1000, UC_PROT_ALL)
         uc.mem_write(RET_MAGIC, b"\xFE\xE7")   # b .
         uc.mmio_map(PERIPH_BASE, PERIPH_SIZE, self._mmio_read, PERIPH_BASE,
@@ -142,6 +151,8 @@ class Stm32l1:
         uc.mmio_map(BITBAND_BASE, BITBAND_SIZE, self._bb_read, None, self._bb_write, None)
         uc.mmio_map(OB_BASE, 0x1000, self._mmio_read, OB_BASE, self._mmio_write, OB_BASE)
         uc.mmio_map(SCS_BASE, 0x1000, self._mmio_read, SCS_BASE, self._mmio_write, SCS_BASE)
+        uc.mmio_map(DBGMCU_BASE, 0x1000, self._mmio_read, DBGMCU_BASE, self._mmio_write,
+                    DBGMCU_BASE)
 
         self.regs = {}
         # keys_idr: a constant IDR value, or a list of (reads_before, value) steps
@@ -229,7 +240,9 @@ class Stm32l1:
         elif word == RCC + 0x34:
             r = (r & ~0x202) | ((r & 1) << 1) | ((r & 0x100) << 1)
         elif word == PWR + 0x04:
-            r = 0x8
+            r = self.pwr_csr
+        elif word == ADC1:                     # SR: ADONS follows CR2.ADON
+            r = (r & ~0x40) | ((self._get(ADC1 + 0x08) & 1) << 6)
         elif word == LCD + 0x08:
             en = self._get(LCD) & 1
             r = (r & 0x4) | 0x20 | (en * 0x11)
@@ -345,6 +358,12 @@ class Stm32l1:
         elif address == self.corrupt_flash_at:
             self.corrupt_pending = True
         self.trace.append((self.ctx, "FLASH@%08X" % address, value & 0xFFFFFFFF))
+
+    def _on_eeprom_write(self, uc, access, address, size, value, _):
+        if self._get(FLASHIF + 0x04) & 0x1:
+            raise RuntimeError("data EEPROM write while PELOCK set at 0x%08X" % address)
+        self.trace.append((self.ctx, "EEPROM@%08X/%d" % (address, size),
+                           value & ((1 << (8 * size)) - 1)))
 
     def _apply_erases(self):
         for page in self.erase_pending:

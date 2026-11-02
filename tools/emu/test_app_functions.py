@@ -26,6 +26,7 @@ HYBRID_BIN = os.path.join(ROOT, "build", "firmware", "hybrid.bin")
 HYBRID_BASE = 0x08100000
 STACK_LO, STACK_HI = 0x20000240, 0x20001240     # original CSTACK; contents not compared
 INITIAL_SP = 0x20001240
+EEPROM = open(os.path.join(ROOT, "dumps", "eeprom.bin"), "rb").read()
 
 BYTE_POOL = [0, 0, 1, 1, 2, 3, 5, 10, 0x1E, 0x1F, 0x31, 0x32, 0x33, 0x20, 0x28, 0x40, 0x80, 0xFF]
 KEY_IDR_POOL = [0xFFFF, 0xFFFF & ~(1 << 8), 0xFFFF & ~(1 << 13), 0xFFFF & ~(1 << 14),
@@ -73,6 +74,31 @@ SPECS = {
     "rtc_write_register": dict(ret=None, args=lambda r: (r.getrandbits(4), r.getrandbits(8))),
     "rtc_read_register": dict(ret=8, args=lambda r: (r.getrandbits(4),), idr=pin_pattern("B", 7)),
     "rtc_write_datetime": dict(ret=None, trials=100),
+    # ---- start-up ----
+    "SystemInit": dict(ret=None, trials=20),
+    "clock_init": dict(ret=None, args=lambda r: (r.choice([0, 1]),), trials=40),
+    "rtc_clock_init": dict(ret=None, trials=20),
+    "enable_gpio_clocks": dict(ret=None, trials=20),
+    "rotary_pins_config": dict(ret=None, args=lambda r: (lambda sel, fb: (sel, fb, fb))(
+        r.choice([0, 1, 2, 4, 8, 0x10, 0x20, 0x40, 0x80, r.getrandbits(8)]), r.getrandbits(16))),
+    "porte_inputs_init": dict(ret=None, trials=20),
+    "adc_pins_analog": dict(ret=None, trials=20),
+    "adc_init": dict(ret=None, trials=20),
+    "nvic_init": dict(ret=None, trials=20),
+    "tim2_init": dict(ret=None, trials=20),
+    "tim3_init": dict(ret=None, trials=20),
+    "front_end_select": dict(ret=None, args=lambda r: (r.choice(list(range(0x18)) + [100, r.getrandbits(8)]),)),
+    "board_gpio_init": dict(ret=None, trials=20),
+    "system_init": dict(ret=None, trials=20),
+    "system_init@bor_set": dict(ret=None, trials=10, model=dict(obr=0x00F900AA)),
+    "system_init@woke": dict(ret=None, trials=10, model=dict(pwr_csr=0x9)),
+    "clock_init@no_hse": dict(ret=None, args=lambda r: (r.choice([0, 1]),), trials=20,
+                              model=dict(hse_ok=False)),
+    "SystemInit@no_hse": dict(ret=None, trials=10, model=dict(hse_ok=False)),
+    "flash_data_eeprom_unlock": dict(ret=None, trials=20),
+    "flash_ob_unlock": dict(ret=None, trials=20),
+    "flash_get_status": dict(ret=8, trials=20),
+    "flash_wait_for_last_operation": dict(ret=8, args=lambda r: (r.choice([0, 1, 2, 0x8000]),)),
     # ---- LCD driver ----
     "lcd_update": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
     "lcd_update_partial": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
@@ -166,8 +192,9 @@ def randomise(ram, rnd, targets, pool):
         ram[off:off + width] = (v & mask).to_bytes(width, "little")
 
 
-def new_machine(flash, hybrid, ram):
-    m = Stm32l1(flash, extra_code=(HYBRID_BASE, hybrid), stop_on_app_entry=False)
+def new_machine(flash, hybrid, ram, **model):
+    m = Stm32l1(flash, extra_code=(HYBRID_BASE, hybrid), stop_on_app_entry=False,
+                eeprom_image=EEPROM, **model)
     m.uc.mem_write(RAM_BASE, bytes(ram))
     return m
 
@@ -206,8 +233,9 @@ def main():
 
     failures = 0
     tested = 0
-    for name, spec in SPECS.items():
-        if args.only and name != args.only:
+    for key, spec in SPECS.items():
+        name = key.split("@")[0]
+        if args.only and args.only not in (key, name):
             continue
         if name not in rebuilt:
             print("%-22s not in hybrid image" % name)
@@ -232,8 +260,8 @@ def main():
             randomise(ram, rnd, sorted(targets), pool)
             for addr, val in (spec["ram_set"](rnd).items() if "ram_set" in spec else []):
                 ram[addr - RAM_BASE] = val
-            mo = new_machine(flash, hybrid, ram)
-            mn = new_machine(flash, hybrid, ram)
+            mo = new_machine(flash, hybrid, ram, **spec.get("model", {}))
+            mn = new_machine(flash, hybrid, ram, **spec.get("model", {}))
             idr = spec["idr"](rnd) if "idr" in spec else {}
             for s in range(steps):
                 a = spec["args"](rnd) if "args" in spec else ()
@@ -252,12 +280,12 @@ def main():
         if bad:
             failures += 1
             t, a, idr, problems = bad
-            print("%-22s FAIL trial %d args=%s idr=%s" % (name, t, a, idr))
+            print("%-22s FAIL trial %d args=%s idr=%s" % (key, t, a, idr))
             for p in problems:
                 print("    " + p)
         else:
             print("%-22s pass  %4d trials x %-3d steps (orig 0x%08X, %d globals, %d boundary values)"
-                  % (name, n, steps, orig, len(targets), len(pool)))
+                  % (key, n, steps, orig, len(targets), len(pool)))
     print("\n%d/%d functions equivalent" % (tested - failures, tested))
     sys.exit(1 if failures else 0)
 

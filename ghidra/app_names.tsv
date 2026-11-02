@@ -16,6 +16,7 @@
 0800c1bc	func	hy3131_clock_pulse
 0800c28c	func	detect_pf8_low
 0800ecf6	func	delay_loop
+0800fc60	func	front_end_select
 0801013e	func	bin_to_bcd
 0801016c	func	rtc_write_datetime	registers 2,4,6,10,12,14 from g_rtc_set_reg*
 080101ac	func	rtc_write_register	address+1 then BCD value
@@ -27,6 +28,7 @@
 0801031e	func	rtc_deselect
 0801033c	func	rtc_data_pin_output
 08010378	func	rtc_data_pin_input
+08013dd4	func	adc_init
 08014a14	func	rotary_read_raw
 08014c3c	func	key_short_press_handler
 0801622c	func	key_long_press_handler
@@ -53,11 +55,25 @@
 0801bd48	func	GPIO_Init
 0801bdec	func	GPIO_StructInit
 0801be76	func	system_init
+0801bf1a	func	clock_init
 0801bf92	func	rtc_clock_init
+0801bfc6	func	enable_gpio_clocks
+0801bfde	func	nvic_init
+0801c056	func	board_gpio_init
+0801c2c6	func	rotary_pins_config	fallback pin mask comes from caller's r2
+0801c368	func	porte_inputs_init
+0801c43e	func	adc_pins_analog
+0801c486	func	tim2_init
+0801c4d4	func	tim3_init
 0801f87e	func	sd_open
+0801f9fc	func	flash_data_eeprom_unlock
+0801fa68	func	flash_ob_unlock
 0801fa8e	func	flash_ob_launch
 0801faa0	func	flash_ob_bor_config
 0801faee	func	flash_ob_get_bor
+0801fafa	func	flash_clear_flags
+0801fb00	func	flash_get_status
+0801fb60	func	flash_wait_for_last_operation
 0801fdca	func	RCC_MSIRangeConfig
 0801fe06	func	RCC_SYSCLKConfig
 0801ff34	func	RCC_RTCCLKConfig
@@ -120,8 +136,10 @@
 20007790	label	g_lcd_shadow	16 words, copy of LCD->RAM
 200077d0	label	hy3131_rx_buffer
 20007c30	label	g_digit_text	5 chars
+20007d0c	label	g_bor_level
 20007db0	label	g_digits	5 x u32
 20007fa8	label	g_log_tick_count
+20007fde	label	g_woke_from_standby
 20007fdf	label	g_pf8_detected_low
 20007fe1	label	g_logging_active
 20007fe2	label	g_log_due
@@ -146,6 +164,7 @@
 2000807d	label	g_hy_r20
 2000807e	label	g_hy_r29
 2000807f	label	g_hy_irq_pending
+200080b9	label	g_flag_80b9
 200080ce	label	g_flag_80ce
 200080d0	label	g_task_flag_a
 200080d1	label	g_task_flag_b
