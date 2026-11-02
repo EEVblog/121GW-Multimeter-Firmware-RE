@@ -6,7 +6,10 @@ Names come from ghidra/app_names.tsv; FUN_xxxxxxxx and DAT_xxxxxxxx resolve
 to the address in their name. Functions are emitted with .thumb_set so calls
 stay in Thumb state.
 
-    python -P tools/hybrid_syms.py <library.a> <output.s>
+    python -P tools/hybrid_syms.py <library.a> <output.s> [--ram-only]
+
+With --ram-only (the standalone application image) only RAM variables may
+be bound; any function still taken from the original image is an error.
 """
 import os
 import subprocess
@@ -27,6 +30,8 @@ def names():
 
 def main():
     lib, dest = sys.argv[1], sys.argv[2]
+    ram_only = "--ram-only" in sys.argv[3:]
+    from_original = []
     nm = subprocess.run(["arm-none-eabi-nm", lib], capture_output=True, text=True, check=True).stdout
     defined, undefined = set(), set()
     for line in nm.splitlines():
@@ -51,12 +56,17 @@ def main():
         else:
             missing.append(sym)
             continue
+        if ram_only and not (0x20000000 <= addr < 0x20010000):
+            from_original.append(sym)
+            continue
         lines.append("    .global %s" % sym)
         if kind == "func":
             lines.append("    .type %s, %%function" % sym)
             lines.append("    .thumb_set %s, 0x%08X" % (sym, addr | 1))
         else:
             lines.append("    .set %s, 0x%08X" % (sym, addr))
+    if from_original:
+        sys.exit("standalone image still needs the original image for: " + ", ".join(from_original))
     if missing:
         sys.exit("unresolved symbols (add them to ghidra/app_names.tsv): " + ", ".join(missing))
     open(dest, "w").write("\n".join(lines) + "\n")

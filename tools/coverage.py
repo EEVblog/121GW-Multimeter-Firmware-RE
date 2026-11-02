@@ -48,7 +48,11 @@ LIBRARY = {
             (0x08021D72, "f_read"), (0x08021F60, "f_write"), (0x08022188, "f_sync"),
             (0x0802224C, "f_close"), (0x08022268, "f_lseek"), (0x0802242C, "f_opendir"),
             (0x080224B6, "f_readdir"), (0x08022526, "f_stat"), (0x0802256E, "f_utime"))},
-        0x08023CA0: "IAR strlen -> newlib/libgcc strlen",
+        0x08023CA0: "IAR strlen -> firmware/src/libc_min.c strlen",
+        0x08013EC4: "IAR __aeabi_i2d -> libgcc",
+        0x08013EDC: "IAR __aeabi_ui2d -> libgcc",
+        0x0801FB9C: "IAR __aeabi_dsub -> libgcc",
+        0x08028D12: "IAR __iar_zero_init3 (loop) -> firmware/src/startup.c",
     },
 }
 

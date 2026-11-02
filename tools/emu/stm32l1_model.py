@@ -34,6 +34,7 @@ GPIO = {"A": 0x40020000, "B": 0x40020400, "C": 0x40020800, "D": 0x40020C00,
         "E": 0x40021000, "H": 0x40021400, "F": 0x40021800, "G": 0x40021C00}
 
 IRQ_TIM2, IRQ_SDIO, IRQ_DMA2_CH4 = 28, 45, 53
+TIM3, IRQ_TIM3 = 0x40000400, 29
 CTX_REGS = [UC_ARM_REG_R0, UC_ARM_REG_R1, UC_ARM_REG_R2, UC_ARM_REG_R3, UC_ARM_REG_R4,
             UC_ARM_REG_R5, UC_ARM_REG_R6, UC_ARM_REG_R7, UC_ARM_REG_R8, UC_ARM_REG_R9,
             UC_ARM_REG_R10, UC_ARM_REG_R11, UC_ARM_REG_R12, UC_ARM_REG_LR, UC_ARM_REG_SP,
@@ -135,7 +136,7 @@ class Stm32l1:
     def __init__(self, flash_image, *, keys_idr=0xFFFF, obr=0x00F000AA, hse_ok=True,
                  sd_image=None, sd_high_capacity=False, sd_v2=True, sd_absent=False,
                  tick_blocks=0, corrupt_flash_at=None, extra_code=None,
-                 stop_on_app_entry=True, eeprom_image=None, pwr_csr=0x8):
+                 stop_on_app_entry=True, eeprom_image=None, pwr_csr=0x8, tick_points=None):
         self.uc = Uc(UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS)
         self.uc.ctl_set_cpu_model(UC_CPU_ARM_CORTEX_M3)
         uc = self.uc
@@ -183,6 +184,12 @@ class Stm32l1:
         self.stop_reason = None
         self.blocks = 0
         self.tick_blocks = tick_blocks
+        # tick_points: program points (loop heads); each visit is one TIM3
+        # tick and every tenth a TIM2 tick, so timing follows program progress
+        self.tick_points = set(tick_points or ())
+        self.tick_visits = 0
+        self.tick_limit = None               # stop after this many tick-point visits
+        self.skip_tick_at = None
         self.flash_unlock_seq = {"pe": 0, "prg": 0, "opt": 0}
         self.erase_pending = []
         self.sd = (SdCard(sd_image, sd_high_capacity, sd_v2, sd_absent)
@@ -255,6 +262,8 @@ class Stm32l1:
         elif word == ADC1:                     # SR: ADONS (and EOC) follow CR2.ADON
             on = self._get(ADC1 + 0x08) & 1
             r = (r & ~0x42) | (on << 6) | (on << 1)
+        elif word in (0x40004400, 0x40013800):  # USART2/USART1 SR: TXE and TC always set (cannot be cleared)
+            r |= 0xC0
         elif word == ADC1 + 0x58:              # DR: from idr["ADC"] (value or callable)
             src = self.idr.get("ADC")
             if callable(src):
@@ -303,7 +312,7 @@ class Stm32l1:
             self.regs[odr] = o
             self._record(odr, o)
             return
-        if word == TIM2 + 0x10:          # SR: write 0 to clear (16 significant bits)
+        if word in (TIM2 + 0x10, TIM3 + 0x10):   # SR: write 0 to clear (16 significant bits)
             self.regs[word] = old & (value | ~mask)
             self._record(word, (value | ~mask) & 0xFFFF)
             self._update_irqs()
@@ -454,10 +463,11 @@ class Stm32l1:
             self.pending_irqs.add(IRQ_DMA2_CH4)
         if self.regs.get("sdio_sta", 0) & self._get(SDIO + 0x3C):
             self.pending_irqs.add(IRQ_SDIO)
-        if (self._get(TIM2 + 0x10) & 1) and (self._get(TIM2 + 0x0C) & 1):
-            self.pending_irqs.add(IRQ_TIM2)
-        else:
-            self.pending_irqs.discard(IRQ_TIM2)
+        for base, irq in ((TIM2, IRQ_TIM2), (TIM3, IRQ_TIM3)):
+            if (self._get(base + 0x10) & 1) and (self._get(base + 0x0C) & 1):
+                self.pending_irqs.add(irq)
+            else:
+                self.pending_irqs.discard(irq)
 
     def _on_block(self, uc, address, size, _):
         self.blocks += 1
@@ -467,9 +477,33 @@ class Stm32l1:
             self.corrupt_pending = False
             word = struct.unpack("<I", uc.mem_read(self.corrupt_flash_at, 4))[0]
             uc.mem_write(self.corrupt_flash_at, struct.pack("<I", word ^ 0x00000100))
-        if self.tick_blocks and self.blocks % self.tick_blocks == 0:
-            if (self._get(TIM2) & 1):
+        if self.tick_points and address in self.tick_points and not self.irq_stack:
+            if self.skip_tick_at == address:
+                self.skip_tick_at = None          # resumed here after an interrupt
+            else:
+                self.tick_visits += 1
+                if self.tick_limit is not None and self.tick_visits > self.tick_limit:
+                    self._stop("tick limit")
+                    return
+                if (self._get(TIM3) & 1):
+                    self.regs[TIM3 + 0x10] = self._get(TIM3 + 0x10) | 1
+                if self.tick_visits % 10 == 0 and (self._get(TIM2) & 1):
+                    self.regs[TIM2 + 0x10] = self._get(TIM2 + 0x10) | 1
+                self._update_irqs()
+                if not any(self._irq_enabled(i) for i in self.pending_irqs):
+                    self.skip_tick_at = None
+                else:
+                    self.skip_tick_at = address       # the interrupt returns to this block
+        if self.tick_blocks:
+            # TIM2 (~100 Hz) every tick_blocks blocks; TIM3 (~1 kHz) ten times as often
+            ticked = False
+            if self.blocks % self.tick_blocks == 0 and (self._get(TIM2) & 1):
                 self.regs[TIM2 + 0x10] = self._get(TIM2 + 0x10) | 1
+                ticked = True
+            if self.blocks % max(1, self.tick_blocks // 10) == 0 and (self._get(TIM3) & 1):
+                self.regs[TIM3 + 0x10] = self._get(TIM3 + 0x10) | 1
+                ticked = True
+            if ticked:
                 self._update_irqs()
         if self.stop_on_app_entry and APP_BASE <= address < FLASH_BASE + FLASH_SIZE \
                 and not self.irq_stack:

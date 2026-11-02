@@ -54,6 +54,10 @@ set(APP_SOURCES
     src/setup_menu.c
     src/modes.c
     src/battery.c
+    src/sd_log.c
+    src/key_handlers.c
+    src/main.c
+    src/libc_min.c
     ${COMMON_DIR}/fatfs/ff.c
 )
 
@@ -91,5 +95,31 @@ target_link_options(hybrid.elf PRIVATE
 target_link_libraries(hybrid.elf PRIVATE -Wl,--whole-archive app_modules -Wl,--no-whole-archive gcc)
 add_custom_command(TARGET hybrid.elf POST_BUILD
     COMMAND ${CMAKE_OBJCOPY} -O binary hybrid.elf hybrid.bin
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+# ---- Standalone application image ------------------------------------------
+# Every function rebuilt; globals at their original RAM addresses
+# (tools/hybrid_syms.py --ram-only fails if anything else is still needed).
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ram_syms.s
+    COMMAND ${Python3_EXECUTABLE} -P ${ROOT_DIR}/tools/hybrid_syms.py
+            $<TARGET_FILE:app_modules> ${CMAKE_CURRENT_BINARY_DIR}/ram_syms.s --ram-only
+    DEPENDS app_modules ${ROOT_DIR}/tools/hybrid_syms.py ${ROOT_DIR}/ghidra/app_names.tsv
+    COMMENT "Binding globals to their original RAM addresses"
+)
+add_executable(app.elf src/startup.c src/ram_init.c ${CMAKE_CURRENT_BINARY_DIR}/ram_syms.s)
+target_include_directories(app.elf PRIVATE include ${COMMON_DIR}/cmsis/core ${COMMON_DIR}/cmsis/device)
+target_compile_definitions(app.elf PRIVATE STM32L152xD)
+target_compile_options(app.elf PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c11 -Wall -Wextra>)
+target_link_options(app.elf PRIVATE
+    -T${CMAKE_CURRENT_SOURCE_DIR}/stm32l152xd_app.ld
+    -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/app.map
+    -nostdlib -Wl,--gc-sections
+)
+target_link_libraries(app.elf PRIVATE app_modules gcc)
+add_custom_command(TARGET app.elf POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O binary app.elf app.bin
+    COMMAND ${CMAKE_SIZE} app.elf
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )

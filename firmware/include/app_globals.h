@@ -14,7 +14,7 @@
 
 /* ---- settings (initialised data, 0x20000000..0x2000023D) ---------------- */
 extern uint16_t g_log_interval_s;       /* 0x2000022C  default 1 */
-extern uint16_t g_cfg_022e;             /* 0x2000022E  default 500; role unknown (key timing) */
+extern volatile uint16_t g_cfg_022e;    /* 0x2000022E  1 kHz countdown (TIM3): start-up screen and its key actions */
 extern uint16_t g_apo_seconds_left;     /* 0x20000230  default 1800 (30 min) */
 
 /* ---- keys and rotary switch ---------------------------------------------- */

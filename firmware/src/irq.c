@@ -7,6 +7,20 @@
 #include "board_io.h"
 #include "buzzer.h"
 #include "display_text.h"
+#include "ble_command.h"
+#include "ac_response.h"
+#include "measure_scale.h"
+#include "ble_packet.h"
+#include "display_state.h"
+#include "display_update.h"
+#include "hy3131_ctrl.h"
+#include "lcd_driver.h"
+#include "measure_counter.h"
+#include "measure_derived.h"
+#include "measure_funcs.h"
+#include "modes.h"
+#include "sd_log.h"
+#include "setup_menu.h"
 #include "sd_card.h"
 #include "stm32l1xx.h"
 
@@ -161,4 +175,148 @@ void power_off_beep(void)
         ticks++;
     } while (ticks < 100);
     gpio_reset(GPIOE, BUZZER_PIN);
+}
+
+/*
+ * orig: 0x0802428C - ~99.8 Hz scheduler tick: task flags (a every tick,
+ * b every 10, d every 50), the fast-logging tick, menu time-out, hold-off
+ * timers that clear stale counter/frequency readings, and every 50 ticks
+ * the BLE packet, the alarm beep and the edit/clock blink phases.
+ * inlines: 0x0802099E (TIM_ClearITPendingBit), 0x0801CC08 (USART_ITConfig)
+ */
+void TIM2_IRQHandler(void)
+{
+    uint8_t f;
+
+    TIM2->SR = (uint16_t)~TIM_IT_UPDATE;
+    g_task_flag_a = 1;
+
+    if (g_flag_8035 != 0 && g_count_8036 != 0) {
+        g_count_8036--;
+        if (g_count_8036 == 0) {
+            g_flag_8035 = 0;
+        }
+    }
+    if (g_logging_active != 0 && g_log_interval_s == 0 && g_autohold_mode == 0) {
+        g_log_tick_count++;
+        if (g_log_tick_count > 15) {
+            g_log_tick_count = 0;
+            g_flag_7ffa++;
+            if (g_flag_7ffa < 6) {
+                g_log_due = 1;
+            }
+        }
+    }
+    if (g_menu_active != 0) {
+        g_menu_idle_ticks++;
+        if (g_menu_idle_ticks > 1000) {
+            menu_exit();
+        }
+    }
+    if (g_beep_holdoff != 0) {
+        g_beep_holdoff--;
+    }
+
+    f = g_function;
+    if ((((f == 16 || f == 18 || f == 20 || f == 17 || f == 19 || f == 21) && g_mode_8037 == 10)
+         || g_mode_8037 == 12)
+        && g_flag_80aa != 0) {
+        g_flag_80aa--;
+        if (g_flag_80aa == 0) {
+            g_disp_flag_8062 = 1;
+        }
+    }
+    if (g_function == 12 && g_func12_interval != 0) {
+        g_func12_interval--;
+        if (g_func12_interval == 0) {
+            g_flag_80a3 = 1;
+        }
+    }
+    g_func12_count++;
+
+    f = g_function;
+    if (f == 6 || f == 7 || f == 8) {
+        g_holdoff++;
+        if (g_holdoff > 300) {
+            g_holdoff = 0;
+            g_derived_value = 0;
+            if (g_manual_range == 0) {
+                g_range = 0;
+            }
+            if (g_autohold_mode == 0) {
+                g_new_reading = 1;
+                if (g_manual_range == 0) {
+                    g_flag_804b = 1;
+                }
+            } else {
+                g_flag_8052 = 1;
+                g_flag_8051 = 0;
+                g_count_7fb2 = 0;
+            }
+        }
+    }
+    f = g_function;
+    if (f == 16 || f == 18 || f == 20 || f == 2 || f == 4) {
+        g_holdoff++;
+        if (g_holdoff > 2000) {
+            g_holdoff = 0;
+            g_freq_decimal = 0;
+            g_disp_flag_8062 = 1;
+            g_freq_raw = 0;
+        }
+    }
+    if (g_function == 0 && g_flag_8098 != 0) {
+        g_holdoff++;
+        if (g_holdoff > 500) {
+            g_holdoff = 0;
+            g_freq_decimal = 0;
+            g_disp_flag_8062 = 1;
+            g_freq_raw = 0;
+        }
+    }
+    if ((uint8_t)(g_autohold_mode & (g_flag_8052 ^ 1u)) != 0) {
+        g_count_7fb2++;
+        if (g_count_7fb2 == 50) {
+            g_count_7fb2 = 0;
+            g_flag_8051 = 1;
+        }
+    }
+    if (g_count_7fb2 > 49) {
+        g_count_7fb2 = 0;
+    }
+
+    g_tick_div10++;
+    if (g_tick_div10 > 9) {
+        g_tick_div10 = 0;
+        g_task_flag_b = 1;
+    }
+    if (g_tick_div50 == 40) {
+        g_flag_802c = 1;
+    }
+    g_tick_div50++;
+    if (g_tick_div50 > 49) {
+        g_tick_div50 = 0;
+        g_task_flag_d = 1;
+        if (g_ble_enabled != 0) {
+            g_ble_tx_index = 0;
+            usart_send_byte(USART2, g_ble_packet[0]);
+            USART2->CR1 |= USART_CR1_TXEIE;
+        }
+        g_half_second_phase = (g_half_second_phase != 1);
+        if ((g_flag_8076 != 0 || g_flag_80b2 != 0) && g_half_second_phase != 0) {
+            buzzer_start_forced(500);
+        }
+        if (g_flag_806e != 0) {
+            g_flag_806f = (g_flag_806f != 1);
+            g_disp_flag_8062 = 1;
+        }
+        if (g_mode_8037 == 7) {
+            g_flag_80d5 = (g_flag_80d5 != 1);
+            show_time_pair(1);
+        }
+    }
+    g_tick_div100++;
+    if (g_tick_div100 > 99) {
+        g_tick_div100 = 0;
+    }
 }

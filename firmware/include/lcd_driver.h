@@ -17,7 +17,7 @@ extern uint8_t g_lcd_contrast;          /* 0x20000237  10..17, default 14 */
 extern uint8_t g_display_dirty;         /* 0x2000805B  request lcd_update() */
 extern int32_t g_digits[5];             /* 0x20007DB0  decimal digits, most significant first (signed) */
 extern char g_digit_text[5];            /* 0x20007C30  digits as characters, leading blanks */
-extern uint8_t g_flag_8050;             /* 0x20008050  role unknown; selects partial updates */
+extern uint8_t g_autohold_mode;          /* 0x20008050  auto-hold (partial LCD updates) */
 extern uint8_t g_flag_8053;             /* 0x20008053  forces one full update */
 extern uint8_t g_logging_active;        /* 0x20007FE1 */
 

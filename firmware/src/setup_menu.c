@@ -447,7 +447,7 @@ void app_state_init(void)
     secondary_mode_default();
     g_minmax_mode = 0;
     g_hold_active = 0;
-    g_flag_8050 = 0;
+    g_autohold_mode = 0;
     g_rel_active = 0;
     g_flag_80b7 = 0;
     g_flag_80b9 = 0;

@@ -2,6 +2,15 @@
  * Measurement modes behind the keys: HOLD, REL, MIN/MAX, the 0x20008050
  * mode, MEM store/recall display, and the start of a calibration step.
  */
+#include "trim_correction.h"
+#include "measure_ad1.h"
+#include "temperature.h"
+#include "sd_log.h"
+#include "irq.h"
+#include "ble_command.h"
+#include "rtc.h"
+#include "stm32l1xx.h"
+#include "ble_packet.h"
 #include "modes.h"
 #include "ac_response.h"
 #include "annunciators.h"
@@ -190,20 +199,20 @@ void rel_apply(void)
     g_derived_value = (int32_t)((uint32_t)g_derived_value - (uint32_t)g_rel_reference);
 }
 
-/* orig: 0x0801584C - HOLD off and the 0x20008050 mode on/off; clear_modes == 1 also ends MIN/MAX and REL */
-void mode_8050_set(uint8_t on, uint8_t clear_modes)
+/* orig: 0x0801584C - HOLD off and auto-hold mode on/off; clear_modes == 1 also ends MIN/MAX and REL */
+void autohold_mode_set(uint8_t on, uint8_t clear_modes)
 {
     g_hold_active = 0;
     if (on != 0) {
         g_flag_8053 = 1;
         g_flag_8051 = 1;
-        g_flag_8050 = 1;
+        g_autohold_mode = 1;
         g_range_8056 = g_range;
         g_flag_8055 = 0;
     } else {
         g_flag_8053 = 0;
         g_flag_8051 = 0;
-        g_flag_8050 = 0;
+        g_autohold_mode = 0;
     }
     g_flag_8052 = 0;
     g_count_7fb2 = 0;
@@ -372,7 +381,7 @@ uint8_t cal_freq_check(uint8_t second)
 }
 
 /* orig: 0x080157E8 - samples averaged for a calibration step */
-uint8_t cal_sample_count(void)
+uint8_t cal_step_samples(void)
 {
     uint8_t f = g_function;
 
@@ -401,7 +410,7 @@ uint8_t cal_start(uint8_t which)
         } else if (which == 1) {
             g_cal_flag_808e = 1;
         }
-        g_avg_count = cal_sample_count();
+        g_avg_count = cal_step_samples();
         g_cal_sum64 = 0;
         g_avg_sum = 0;
     }
@@ -436,8 +445,405 @@ void mode_key(void)
     }
     if (changed) {
         g_hold_active = 0;
-        g_flag_8050 = 0;
+        g_autohold_mode = 0;
         g_flag_804a = 1;
         settings_save_function();
+    }
+}
+
+/*
+ * orig: 0x0800E2A0 - function 9 in auto range: a range step needs the same
+ * direction twice within 100 ticks (returns 1 to hold back a step down
+ * right after a step up)
+ */
+uint8_t range_step_blocked(uint8_t up)
+{
+    if (g_manual_range != 0 || g_flag_808a != 0 || g_function != 9) {
+        g_flag_8035 = 0;
+        return 0;
+    }
+    if (up == 0 && g_flag_8035 == 1) {
+        return 1;
+    }
+    g_flag_8035 = (up == 0) ? 2 : 1;
+    g_count_8036 = 100;
+    return 0;
+}
+
+/*
+ * orig: 0x0800E30C - auto-hold (with HOLD or auto-hold mode): after the
+ * input drops below 1000 counts, the next reading that stays within 20
+ * counts on two updates (and differs by more than 400 from the held one) is
+ * captured, logged and confirmed with a short beep
+ */
+void autohold_update(void)
+{
+    int32_t v;
+    uint8_t f;
+
+    if ((g_hold_active == 0 && g_autohold_mode == 0) || g_flag_805c != 0) {
+        return;
+    }
+    if (g_function == 9 && g_manual_range == 0 && g_range != 0 && g_range <= 5 && g_count_805a != 0) {
+        return;
+    }
+    v = g_derived_value;
+    f = g_function;
+    if (!(((f == 9 || f == 10) && v > 999 && g_flag_8046 == 0)
+          || (f != 9 && f != 10 && (v > 999 || v < -999)))) {
+        g_flag_8052 = 1;
+        g_flag_8051 = 0;
+        g_count_7fb2 = 0;
+        g_autohold_value = g_derived_value;
+        g_new_reading = 0;
+        return;
+    }
+    if (g_flag_8052 != 0) {
+        g_flag_8052 = 0;
+        g_flag_8051 = 0;
+        g_count_7fb2 = 0;
+    }
+    if (g_flag_8051 == 0 && g_flag_8046 == 0) {
+        g_new_reading = 0;
+        return;
+    }
+    if (g_function != 9 && g_function != 10 && g_flag_8046 != 0) {
+        return;
+    }
+    if ((g_function == 9 || g_function == 10) && g_flag_8046 != 0) {
+        g_new_reading = 0;
+        g_autohold_value = 1000000;
+        g_autohold_armed = 0;
+    } else if ((uint8_t)(g_autohold_force & (g_flag_8046 ^ 1u)) == 0
+               && g_derived_value < (int32_t)((uint32_t)g_autohold_value + 400u)
+               && (int32_t)((uint32_t)g_autohold_value - 400u) < g_derived_value) {
+        g_new_reading = 0;
+        g_autohold_armed = 0;
+    } else {
+        uint32_t magnitude = (uint32_t)g_derived_value;
+
+        g_autohold_force = 0;
+        if (g_derived_value < 0) {
+            magnitude = 0u - (uint32_t)g_derived_value;
+        }
+        if (magnitude <= g_bar_limit / 10u + g_bar_limit) {
+            if (g_autohold_armed == 0) {
+                g_autohold_armed = 1;
+                g_autohold_candidate = g_derived_value;
+            } else if (g_derived_value < (int32_t)((uint32_t)g_autohold_candidate - 20u)
+                       || (int32_t)((uint32_t)g_autohold_candidate + 20u) < g_derived_value) {
+                g_autohold_armed = 0;
+            } else {
+                g_autohold_armed = 0;
+                g_autohold_captured = g_derived_value;
+                g_flag_8053 = 1;
+                g_autohold_value = g_derived_value;
+                g_range_8056 = g_range;
+                g_flag_8055 = 0;
+                if (g_logging_active != 0) {
+                    g_log_due = 1;
+                }
+                buzzer_start_forced(50);
+            }
+        }
+    }
+    g_flag_8051 = 0;
+    g_count_7fb2 = 0;
+}
+
+/*
+ * orig: 0x0800E848 - warnings: g_flag_80b2 (hazardous voltage beep) beyond
+ * 6000 counts in functions 0..2 (functions 1/2 in range 3 only),
+ * g_flag_80b1 (warning symbol) when a reading exceeds the rating of the range
+ */
+void voltage_warnings(void)
+{
+    uint8_t f;
+
+    g_flag_80b2 = 0;
+    g_flag_80b1 = 0;
+    f = g_function;
+    if ((f == 1 || f == 2) && g_range == 3) {
+        g_flag_80b2 = outside_limit(g_derived_value, 6000);
+        if (g_flag_8046 != 0) {
+            g_flag_80b2 = 1;
+        }
+    } else if (f == 0) {
+        g_flag_80b2 = outside_limit(g_derived_value, 6000);
+        if (g_flag_8046 != 0) {
+            g_flag_80b2 = 1;
+        }
+    }
+    f = g_function;
+    if (f == 1 || f == 2) {
+        if (g_range != 0) {
+            if (g_range == 2) {
+                g_flag_80b1 = outside_limit(g_derived_value, 3000);
+            } else if (g_range < 2) {
+                g_flag_80b1 = outside_limit(g_derived_value, 30000);
+            } else if (g_range == 3) {
+                g_flag_80b1 = outside_limit(g_derived_value, 300);
+            }
+        }
+        if (g_range != 0 && g_flag_8046 != 0) {
+            g_flag_80b1 = 1;
+        }
+    } else if (f == 13 || f == 14 || f == 15 || f == 22 || f == 23 || f == 24) {
+        if (g_range == 1 || g_range == 3) {
+            g_flag_80b1 = outside_limit(g_ref_7d7c, 30000);
+            if (g_disp_flag_80ca != 0) {
+                g_flag_80b1 = 1;
+            }
+        }
+    } else if (f == 0) {
+        g_flag_80b1 = outside_limit(g_derived_value, 300);
+        if (g_flag_8046 != 0) {
+            g_flag_80b1 = 1;
+        }
+    }
+    sym_w1_b7_update();
+}
+
+/*
+ * orig: 0x0800ED64 - frequency functions without the second reading: every
+ * 100 ticks (2000 in function 0) alternate the counter preset 0x8000/0xE000
+ * and reconfigure the HY3131
+ */
+void counter_preset_alternate(void)
+{
+    uint8_t f = g_function;
+    uint16_t period;
+
+    if (g_flag_80a5 != 0) {
+        return;
+    }
+    if (!(((f == 16 || f == 18 || f == 20 || f == 2 || f == 4) && g_flag_80ba == 0)
+          || (f == 0 && g_flag_8098 != 0))) {
+        return;
+    }
+    period = (g_function == 0) ? 2000 : 100;
+    g_counter_fc2++;
+    if (period < g_counter_fc2) {
+        g_counter_fc2 = 0;
+        g_preset_phase = (g_preset_phase != 1);
+        g_counter_preset = (g_preset_phase != 0) ? 0x8000u : 0xE000u;
+        hy3131_configure_mode(g_function, g_range);
+    }
+}
+
+/*
+ * orig: 0x08006558 - function 0 (LowZ): five quiet readings in a row
+ * (within +-100 counts, +-30 once detected) count down g_setting_239; at 0
+ * the input detection g_flag_8098 toggles and the function is set up again
+ */
+void lowz_detect(void)
+{
+    int32_t limit = (g_flag_8099 == 0) ? 100 : 30;
+
+    if (limit < g_derived_value || g_derived_value < -limit || g_flag_8046 != 0) {
+        cal_setting_239_reset();
+        if (g_flag_8099 == 0) {
+            g_derived_value = 0;
+            g_lowz_count--;
+            if (g_lowz_count == 0) {
+                g_flag_8099 = 1;
+                g_flag_8060 = 1;
+            }
+        }
+    } else {
+        g_derived_value = 0;
+        g_flag_8099 = 0;
+        g_lowz_count = 5;
+        g_flag_8060 = 1;
+        g_setting_239--;
+        if (g_setting_239 == 0) {
+            g_flag_8098 = (g_flag_8098 == 0);
+            cal_setting_239_reset();
+            function_change(0);
+        }
+    }
+}
+
+/* orig: 0x0800DCFC - a new reading: auto-range, warnings, auto-hold, MIN/MAX, REL, overload latch */
+void measure_postprocess(void)
+{
+    autorange();
+    if (g_setting_238 == 0) {
+        voltage_warnings();
+    }
+    autohold_update();
+    minmax_update();
+    rel_apply();
+    g_flag_8048 = (g_flag_8046 != 0);
+    overload_latch();
+}
+
+/*
+ * orig: 0x0801417C - current input sockets: PE10/PE11 low (1 / 2) when a
+ * plug is in. After 10 equal samples, the A socket (1) switches the current
+ * functions between their mA and A variants, and a plug in a socket that
+ * does not fit the function asks for the lead ("LEAd")
+ */
+void input_jack_check(void)
+{
+    uint8_t settled = 0;
+    uint8_t changed = 0;
+    uint8_t jack;
+    uint8_t f;
+
+    jack = ((uint16_t)GPIOE->IDR & (1u << 10)) == 0;
+    if (((uint16_t)GPIOE->IDR & (1u << 11)) == 0) {
+        jack = (uint8_t)(jack + 2);
+    }
+    if (g_jack_prev == jack) {
+        g_jack_debounce--;
+        if (g_jack_debounce == 0) {
+            g_jack_debounce = 10;
+            g_jack_amps = (jack == 1);
+            settled = 1;
+        }
+    } else {
+        g_jack_debounce = 10;
+        g_flag_80cc = jack;
+        g_jack_prev = jack;
+    }
+
+    f = g_function;
+    if (f == 20 && g_jack_amps != 0) {
+        g_function = 18;
+        changed = 1;
+    } else if (f == 21 && g_jack_amps != 0) {
+        g_function = 19;
+        changed = 1;
+    } else if (f == 15 && g_jack_amps != 0) {
+        g_function = 14;
+        changed = 1;
+    } else if (f == 24 && g_jack_amps != 0) {
+        g_function = 23;
+        changed = 1;
+    } else if (f == 18 && g_jack_amps == 0) {
+        g_function = 20;
+        changed = 1;
+    } else if (f == 19 && g_jack_amps == 0) {
+        g_function = 21;
+        changed = 1;
+    } else if (f == 14 && g_jack_amps == 0) {
+        g_function = 15;
+        changed = 1;
+    } else if (f == 23 && g_jack_amps == 0) {
+        g_function = 24;
+        changed = 1;
+    }
+    if (changed) {
+        g_flag_804a = 1;
+        function_change(1);
+    }
+    if (settled) {
+        if (jack == 1 || jack == 2) {
+            f = g_function;
+            if (f == 18 || f == 20 || f == 19 || f == 21 || f == 14 || f == 15 || f == 23 || f == 24) {
+                g_flag_8076 = 0;
+            } else if (f == 16 || f == 17 || f == 13 || f == 22) {
+                if (jack == 2) {
+                    show_lead_request();
+                } else {
+                    g_flag_8076 = 0;
+                }
+            } else {
+                show_lead_request();
+            }
+        } else {
+            g_flag_8076 = 0;
+        }
+    }
+}
+
+/*
+ * orig: 0x08015410 - next secondary display mode for the function (while
+ * editing the serial number: next digit), and load the setup value to edit
+ */
+void secondary_mode_next(void)
+{
+    uint8_t f;
+
+    if (g_mode_8037 != 8) {
+        g_flag_806e = 0;
+    }
+    if (g_flag_806e != 0 && g_mode_8037 == 8) {
+        if (g_edit_digit == 0) {
+            g_edit_digit = 4;
+        } else {
+            g_edit_digit--;
+        }
+        g_edit_idle_ticks = 0;
+    } else {
+        f = g_function;
+        if (f == 2 && g_flag_80ba == 0) {
+            g_mode_8037++;
+            if (g_mode_8037 > 11) {
+                g_mode_8037 = 0;
+            }
+        } else if (f == 13 || f == 14 || f == 15 || f == 22 || f == 23 || f == 24) {
+            g_mode_8037++;
+            if (g_mode_8037 == 11) {
+                g_flag_80a9 = g_flag_80a8;
+            } else if (g_flag_80a8 == 0) {
+                if (g_mode_8037 > 11) {
+                    g_mode_8037 = 0;
+                }
+            } else if (g_mode_8037 > 12) {
+                g_mode_8037 = 0;
+            }
+            if (g_mode_8037 == 10) {
+                secondary_dp_refresh();
+            }
+            if (g_mode_8037 == 12) {
+                g_flag_80aa = 100;
+            }
+        } else if (f == 16 || f == 18 || f == 20) {
+            g_mode_8037++;
+            if (g_mode_8037 == 10) {
+                g_flag_80a6 = g_flag_80a5;
+            } else if (g_mode_8037 > 11) {
+                g_mode_8037 = 0;
+            }
+        } else if (f == 17 || f == 19 || f == 21) {
+            g_mode_8037++;
+            if (g_mode_8037 == 10) {
+                g_flag_80a6 = g_flag_80a5;
+            } else if (g_flag_80a5 == 0) {
+                if (g_mode_8037 > 10) {
+                    g_mode_8037 = 0;
+                }
+            } else if (g_mode_8037 > 11) {
+                g_mode_8037 = 0;
+            }
+        } else if (f == 11 || f == 10 || f == 4) {
+            g_mode_8037++;
+            if (g_mode_8037 > 10) {
+                g_mode_8037 = 0;
+            }
+        } else {
+            g_mode_8037++;
+            if (g_mode_8037 > 9) {
+                g_mode_8037 = 0;
+            }
+        }
+    }
+
+    if (g_mode_8037 == 5) {
+        g_rtc_edit_dd = g_rtc_set_reg2;
+    } else if (g_mode_8037 == 6) {
+        g_rtc_edit_de = g_rtc_set_reg4;
+        g_rtc_edit_df = g_rtc_set_reg6;
+        g_flag_80d6 = 0;
+    } else if (g_mode_8037 == 7) {
+        g_rtc_edit_e0 = g_rtc_set_reg10;
+        g_rtc_edit_e1 = g_rtc_set_reg12;
+        g_flag_80d6 = 0;
+    } else if (g_flag_806e == 0 && g_mode_8037 == 8) {
+        g_edit_value = g_serial_number;
+    } else if (g_mode_8037 == 9) {
+        g_log_interval_edit = g_log_interval_s;
     }
 }

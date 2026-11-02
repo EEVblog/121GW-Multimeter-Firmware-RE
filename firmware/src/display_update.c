@@ -120,7 +120,7 @@ void main_display_update(void)
         g_flag_8046 = 0;
         main_show_end_text(3);
     } else if ((g_setting_238 != 0 || g_flag_805c != 0) && g_function != 0) {
-        if (g_flag_8050 == 0) {
+        if (g_autohold_mode == 0) {
             show_blank(0);
         }
         g_flag_8046 = 0;
@@ -347,4 +347,18 @@ void secondary_dp_refresh(void)
     g_count_7fd8 = 0;
     g_flag_8063 = 1;
     g_disp_flag_8062 = 1;
+}
+
+/* orig: 0x0800D664 - dual functions: swap the secondary reading every 300 calls */
+void dual_secondary_alternate(void)
+{
+    uint8_t f = g_function;
+
+    if (f == 13 || f == 14 || f == 15 || f == 22 || f == 23 || f == 24) {
+        g_count_7fd8++;
+        if (g_count_7fd8 > 299) {
+            g_flag_80c2 = (g_flag_80c2 != 1);
+            secondary_dp_refresh();
+        }
+    }
 }

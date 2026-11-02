@@ -60,13 +60,13 @@ uint8_t lcd_flag_set(uint32_t flag)
 
 /*
  * orig: 0x0801B304
- * Full update, unless g_flag_8050 is set while not logging and no full update
+ * Full update, unless g_autohold_mode is set while not logging and no full update
  * was forced, in which case only part of the display is refreshed. The flags
  * are combined bitwise, as in the original.
  */
 void lcd_update(void)
 {
-    if ((uint8_t)(g_flag_8050 & (g_logging_active ^ 1u) & (g_flag_8053 ^ 1u)) == 0) {
+    if ((uint8_t)(g_autohold_mode & (g_logging_active ^ 1u) & (g_flag_8053 ^ 1u)) == 0) {
         g_flag_8053 = 0;
         while (LCD->SR & LCD_SR_UDR) {
         }

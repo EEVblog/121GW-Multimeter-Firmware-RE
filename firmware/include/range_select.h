@@ -33,4 +33,11 @@ extern const uint8_t g_range_count[26];   /* 0x20000000  ranges per function (in
 void dual_rows_for_range(uint8_t function, uint8_t range);
 void range_key(void);
 
+extern uint8_t g_flag_809a;              /* 0x2000809A */
+extern uint8_t g_flag_80c9;              /* 0x200080C9 */
+extern uint8_t g_overload_prev;          /* 0x200080F8  overload at the last auto-range check */
+
+void function_change(uint8_t stop_logging);
+void autorange(void);
+
 #endif /* RANGE_SELECT_H */

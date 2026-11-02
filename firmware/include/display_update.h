@@ -46,5 +46,6 @@ void display_recall_symbols(void);
 extern uint16_t g_count_7fd8;        /* 0x20007FD8 */
 
 void secondary_dp_refresh(void);
+void dual_secondary_alternate(void);
 
 #endif /* DISPLAY_UPDATE_H */

@@ -192,13 +192,13 @@ void sym_w0_b16_update(uint8_t refresh)
 /* orig: 0x0801A028 - 0, or 1 / 2 for the partial-update and 0x2000804F states outside logging/menu */
 uint8_t display_partial_mode(void)
 {
-    if ((uint8_t)(g_logging_active & (g_flag_8050 ^ 1u)) != 0 || g_menu_active != 0) {
+    if ((uint8_t)(g_logging_active & (g_autohold_mode ^ 1u)) != 0 || g_menu_active != 0) {
         return 0;
     }
     if (g_hold_active != 0) {
         return 2;
     }
-    return (g_flag_8050 != 0) ? 1 : 0;
+    return (g_autohold_mode != 0) ? 1 : 0;
 }
 
 /* orig: 0x0801A110 - shadow[2] bit 31 from g_flag_80b9 (in the menu: 0x20007FE7) */
@@ -233,7 +233,7 @@ uint8_t autorange_shown(void)
     if (g_flag_808a != 0) {
         return 0;
     }
-    if ((uint8_t)(g_logging_active & (g_flag_8050 ^ 1u)) != 0) {
+    if ((uint8_t)(g_logging_active & (g_autohold_mode ^ 1u)) != 0) {
         return 0;
     }
     if (g_function == 11 || g_function == 10 || g_function == 5 || g_function == 0 || g_function == 8) {

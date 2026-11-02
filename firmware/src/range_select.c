@@ -2,6 +2,20 @@
  * Function/range change: HY3131 reconfiguration, calibration reload,
  * main display decimal point and display mode.
  */
+#include "annunciators.h"
+#include "measure_peak.h"
+#include "modes.h"
+#include "display_bargraph.h"
+#include "display_text.h"
+#include "display_update.h"
+#include "trim_correction.h"
+#include "dual_correction.h"
+#include "measure_ad1.h"
+#include "temperature.h"
+#include "setup_menu.h"
+#include "sd_log.h"
+#include "irq.h"
+#include "system_init.h"
 #include "range_select.h"
 #include "calibration.h"
 #include "display_state.h"
@@ -331,11 +345,11 @@ void dual_rows_for_range(uint8_t function, uint8_t range)
 /*
  * orig: 0x08014796 - RANGE key: the first press switches to manual range,
  * later presses step through the function's ranges (not in HOLD or the
- * 0x20008050 mode, nor for single-range functions)
+ * auto-hold mode, nor for single-range functions)
  */
 void range_key(void)
 {
-    if (g_hold_active != 0 || g_flag_8050 != 0) {
+    if (g_hold_active != 0 || g_autohold_mode != 0) {
         beep_triple();
         return;
     }
@@ -359,5 +373,223 @@ void range_key(void)
         g_flag_804b = 1;
         dual_rows_for_range(g_function, g_range);
         beep_short();
+    }
+}
+
+/*
+ * orig: 0x0800D2D0 - set up the current function and range: clears the
+ * measurement state; after a rotary/MODE change (g_flag_804a) also resets
+ * the range, auto-hold and setup items, and (stop_logging == 1) ends logging
+ */
+void function_change(uint8_t stop_logging)
+{
+    if (g_function == 9 && g_range != 0 && g_range < 6) {
+        g_count_805a = 2;
+    }
+    g_f12_skip = 0;
+    g_flag_809a = 0;
+    g_flag_80c5 = 0;
+    g_flag_80c4 = 0;
+    g_sub_value = 0;
+    g_ad1_average_ready = 0;
+    g_ad1_count = 0;
+    g_ref_7d7c = 0;
+    g_level_7d80 = 0;
+    g_freq_raw_f0 = 0;
+    g_freq_decimal_f0 = 0;
+    if (g_function == 2 && g_flag_80ba != 0) {
+        g_vec_a = 0;
+        g_vec_b = 0;
+    }
+    if (g_flag_804a != 0) {
+        g_flag_80a2 = 0;
+        g_sel_80c6 = 0;
+        g_sel_80c7 = 0;
+        g_flag_80c2 = 0;
+        g_flag_80c8 = 0;
+        g_flag_80c9 = 0;
+        g_manual_range = (g_function == 11);
+        secondary_mode_default();
+        g_flag_80a6 = 0;
+        g_flag_80a5 = 0;
+        g_flag_806e = 0;
+        if ((g_function == 2 && g_flag_80ba == 0) || g_function == 4) {
+            if (g_flag_80b7 == 0) {
+                g_range = 0;
+            } else {
+                g_manual_range = 1;
+            }
+        } else if (g_function == 9 && g_flag_808a == 0) {
+            g_range = 6;
+        } else {
+            g_range = 0;
+        }
+        g_autohold_mode = 0;
+        g_flag_8051 = 0;
+        g_flag_8052 = 0;
+        g_flag_8053 = 0;
+        g_count_7fb2 = 0;
+        if (stop_logging == 1 && g_logging_active != 0) {
+            log_stop(1);
+            g_logging_active = 0;
+        }
+        menu_exit();
+    }
+    g_counter_fc2 = 0;
+    g_holdoff = 0;
+    g_flag_80b1 = 0;
+    g_flag_80b2 = 0;
+    if (g_function != 2 && g_function != 4) {
+        g_flag_80b9 = 0;
+    }
+    if (g_function != 2) {
+        g_flag_80ba = 0;
+    }
+    g_rel_active = 0;
+    g_minmax_mode = 0;
+    if ((g_function != 2 || g_flag_80ba != 0) && g_function != 4) {
+        g_flag_80b7 = 0;
+    }
+    g_peak_max = 0;
+    g_peak_min = 0;
+    g_flag_8063 = 1;
+    g_flag_8060 = 1;
+    g_disp_flag_8062 = 1;
+    g_flag_804c = 0;
+    if (g_hold_active == 0 && g_autohold_mode == 0) {
+        g_flag_805f = 1;
+    }
+    mode_238_select();
+    main_dp_update();
+    bar_limit_update();
+    range_select(1);
+    if (g_function != 9 || g_range != 6) {
+        g_derived_value = 0;
+        g_scaled_value = 0;
+    }
+    measure_display_reset();
+    front_end_configure(g_function, g_range);
+    if (g_flag_804a != 0) {
+        apo_reset();
+        buzzer_start(300);
+    }
+    g_flag_804a = 0;
+    g_flag_804b = 0;
+    if (g_autohold_mode != 0) {
+        g_flag_8061 = 0;
+        g_flag_8060 = 0;
+        g_scaled_ready = 0;
+        g_new_reading = 0;
+    }
+}
+
+/*
+ * orig: 0x0800DE24 - auto-range and overload: up a range above 110 %
+ * (1/12 more after an overload) of the bargraph limit, down below 10 %
+ * (1 % for function 12 range 5, 50 % for functions 20/21 range 2); OL in
+ * the top range or with manual range
+ */
+void autorange(void)
+{
+    uint8_t f = g_function;
+    uint32_t upper;
+    uint32_t lower;
+    uint32_t magnitude;
+
+    if (f == 12 && (uint8_t)(g_manual_range & g_flag_8046) != 0) {
+        g_setting_238 = 0;
+        g_flag_805c = 0;
+        return;
+    }
+    if (f != 6 && f != 7 && f != 8 && f != 13 && f != 14 && f != 15 && f != 22 && f != 23 && f != 24) {
+        g_flag_8046 = 0;
+    }
+    if (g_setting_238 != 0) {
+        g_setting_238--;
+        g_overload_prev = 0;
+        g_flag_805c = 1;
+        return;
+    }
+    g_flag_805c = 0;
+    if (g_flag_808a != 0) {
+        g_overload_prev = 0;
+        return;
+    }
+    f = g_function;
+    if (f == 13 || f == 14 || f == 15 || f == 22 || f == 23 || f == 24) {
+        return;
+    }
+    if (f == 6 || f == 7 || f == 8) {
+        g_peak_is_min = 0;
+        return;
+    }
+
+    upper = g_bar_limit;
+    if (f != 11) {
+        upper = (g_overload_prev == 0) ? g_bar_limit / 10u + g_bar_limit : g_bar_limit / 12u + g_bar_limit;
+    }
+    lower = (f == 12 && g_range == 5) ? g_bar_limit / 100u : g_bar_limit / 10u;
+    if ((f == 20 || f == 21) && g_range == 2) {
+        lower *= 5u;
+    }
+    g_peak_is_min = g_derived_value < 0;
+    magnitude = (uint32_t)g_derived_value;
+    if (g_peak_is_min) {
+        magnitude = 0u - (uint32_t)g_derived_value;
+    }
+
+    if (g_minmax_mode == 0 && g_manual_range == 0 && g_range_count[g_function] > 1) {
+        if (upper < magnitude) {
+            if ((g_hold_active == 0
+                 || (g_autohold_mode != 0 && g_function != 6 && g_function != 7 && g_function != 8
+                     && g_function != 12))
+                && (int32_t)g_range < (int32_t)g_range_count[g_function] - 1) {
+                if (range_step_blocked(1) == 0) {
+                    g_range++;
+                    g_flag_804b = 1;
+                    g_flag_805c = 1;
+                    if (g_autohold_mode != 0) {
+                        g_autohold_value = 0;
+                    }
+                }
+            } else {
+                g_flag_8046 = 1;
+                if ((g_autohold_mode & 1u) != 0 && g_function == 9 && g_range == 6) {
+                    g_flag_8055 = 1;
+                }
+            }
+        } else if ((g_autohold_mode & g_flag_8055 & 1u) == 0 || g_function != 9 || g_range != 6) {
+            if (magnitude < lower) {
+                if (g_hold_active == 0 && g_range != 0 && range_step_blocked(0) == 0) {
+                    if (g_function == 12 && g_range == 2 && magnitude < 11) {
+                        g_flag_80a2 = 1;
+                    }
+                    g_range--;
+                    g_flag_804b = 1;
+                    g_flag_805c = 1;
+                    if (g_autohold_mode != 0) {
+                        g_autohold_value = 0;
+                    }
+                }
+            } else {
+                g_flag_8035 = 0;
+            }
+        } else {
+            g_flag_8055 = 0;
+            g_range = g_range_8056;
+            g_flag_804b = 1;
+            g_flag_805c = 1;
+        }
+        g_overload_prev = (g_flag_8046 != 0) ? 1 : 0;
+    } else if (g_function == 5) {
+        if (g_temp_status == 1) {
+            g_peak_is_min = 0;
+            g_flag_8046 = 1;
+        } else if (g_temp_status == 2) {
+            g_peak_is_min = 1;
+            g_flag_8046 = 1;
+        }
+    } else if (upper < magnitude) {
+        g_flag_8046 = 1;
     }
 }

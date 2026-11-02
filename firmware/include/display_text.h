@@ -51,6 +51,7 @@ void show_in_number(uint16_t n);
 void main_show_avg_count(uint8_t sel);
 void show_pair_dash(uint8_t update_now, uint8_t a, uint8_t b);
 void show_pair_blink(uint8_t update_now, uint8_t a, uint8_t b);
+void show_time_pair(uint8_t update_now);
 
 void show_temperature(int32_t c100);
 void show_burden_value(int32_t value, uint8_t mode);
@@ -71,6 +72,6 @@ void lcd_all_segments_on(void);
 
 extern char g_number_text[16];   /* 0x20007BE0  (the original addresses only its end, 0x20007BEF) */
 
-void number_to_text(uint32_t n);
+char *number_to_text(uint32_t n);
 
 #endif /* DISPLAY_TEXT_H */

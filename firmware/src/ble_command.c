@@ -10,6 +10,7 @@
  * Accepted commands are echoed back.
  */
 #include "ble_command.h"
+#include "ble_packet.h"
 #include "display_state.h"
 #include "display_text.h"
 #include "display_update.h"
@@ -147,5 +148,50 @@ void usart_enable(USART_TypeDef *usart, uint8_t enable)
         *cr1 |= 0x2000u;
     } else {
         *cr1 &= 0xDFFFu;
+    }
+}
+
+/*
+ * orig: 0x080247D8 - USART2: send the next byte of the reading packet on
+ * TXE (then stop the TXE interrupt); collect command bytes on RXNE. A
+ * command starts with 0xF4 (5 bytes) or 0xF8 (15 bytes); other first bytes
+ * are dropped.
+ * inlines: 0x0801CC7C (USART_GetITStatus), 0x0801CCEC (USART_ClearITPendingBit),
+ * 0x0801CC00 (USART_ReceiveData), 0x0801CC08 (USART_ITConfig)
+ */
+void USART2_IRQHandler(void)
+{
+    volatile uint16_t *sr = (volatile uint16_t *)&USART2->SR;
+    volatile uint16_t *cr1 = (volatile uint16_t *)&USART2->CR1;
+
+    if ((*cr1 & USART_CR1_TXEIE) && (*sr & USART_SR_TXE)) {
+        *sr = (uint16_t)~USART_SR_TXE;
+        g_ble_tx_index++;
+        if (g_ble_tx_index < sizeof g_ble_packet) {
+            usart_send_byte(USART2, g_ble_packet[g_ble_tx_index]);
+        } else {
+            USART2->CR1 &= ~USART_CR1_TXEIE;
+        }
+    }
+    if ((*cr1 & USART_CR1_RXNEIE) && (*sr & USART_SR_RXNE)) {
+        g_ble_rx[g_ble_rx_index] = (uint8_t)(*(volatile uint16_t *)&USART2->DR & 0x1FFu);
+        *sr = (uint16_t)~USART_SR_RXNE;
+        g_ble_rx_index++;
+        if (g_ble_rx_index > 19) {
+            g_ble_rx_index = 0;
+        }
+        if (g_ble_rx_index == 1) {
+            if (g_ble_rx[0] == 0xF4) {
+                g_ble_rx_expected = 5;
+            } else if (g_ble_rx[0] == 0xF8) {
+                g_ble_rx_expected = 15;
+            } else {
+                g_ble_rx_index = 0;
+            }
+        } else if (g_ble_rx_expected <= g_ble_rx_index) {
+            g_ble_rx_ready = 1;
+            g_ble_rx_len = g_ble_rx_expected;
+            g_ble_rx_index = 0;
+        }
     }
 }

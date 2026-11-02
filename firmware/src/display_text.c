@@ -9,6 +9,8 @@
  * font never sets it, and only some positions clear it.
  */
 #include "display_text.h"
+#include "display_update.h"
+#include "rtc.h"
 #include "display_symbols.h"
 #include "front_end.h"
 #include "lcd_driver.h"
@@ -809,7 +811,7 @@ void lcd_all_segments_on(void)
 }
 
 /* orig: 0x0801F7AC - decimal text of n, ending at g_number_text[15] (NUL) */
-void number_to_text(uint32_t n)
+char *number_to_text(uint32_t n)
 {
     char *p = &g_number_text[15];
 
@@ -818,4 +820,15 @@ void number_to_text(uint32_t n)
         *--p = (char)('0' + n % 10u);
         n /= 10u;
     } while (n != 0);
+    return p;
+}
+
+/* orig: 0x0801896C - hour and minute (the values being edited while g_flag_806e is set) */
+void show_time_pair(uint8_t update_now)
+{
+    if (g_flag_806e == 0) {
+        show_pair_blink(update_now, g_rtc_set_reg10, g_rtc_set_reg12);
+    } else {
+        show_pair_blink(update_now, g_rtc_edit_e0, g_rtc_edit_e1);
+    }
 }

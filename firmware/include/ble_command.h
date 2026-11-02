@@ -24,4 +24,10 @@ void setting_edit_timeout(void);
 
 void usart_enable(USART_TypeDef *usart, uint8_t enable);
 
+extern uint8_t g_ble_tx_index;        /* 0x20008031  packet byte being sent */
+extern uint8_t g_ble_rx_index;        /* 0x2000802D */
+extern uint8_t g_ble_rx_expected;     /* 0x2000802E  command length */
+
+void USART2_IRQHandler(void);
+
 #endif /* BLE_COMMAND_H */

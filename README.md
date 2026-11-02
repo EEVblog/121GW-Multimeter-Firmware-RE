@@ -6,7 +6,7 @@ Clean reverse-engineering of the EEVblog 121GW multimeter firmware (STM32L152xD 
 |---|---|---|
 | ST system bootloader (ROM) | `st-bootloader/` | Documentation only (ST code, not reproduced) |
 | Custom SD-card bootloader | `bootloader/` | Reconstructed; equivalent to the original in emulation (see `docs/bootloader.md`); not yet run on hardware |
-| Multimeter application (v2.05) | `firmware/` | Not started |
+| Multimeter application (v2.05) | `firmware/` | Reconstructed (691 functions plus FatFs and the C runtime); equivalent to the original in emulation, function by function and as a whole image (see `docs/app-architecture.md`); not yet run on hardware |
 
 ## Building
 
@@ -19,11 +19,21 @@ cmake --build build/bootloader
 
 Output: `build/bootloader/bootloader.bin`, linked at 0x08000000.
 
+```
+cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake -S firmware -B build/firmware
+cmake --build build/firmware
+```
+
+Output: `build/firmware/app.bin`, the application linked at 0x08006000 (the address the SD bootloader starts). The same build also produces `hybrid.bin`, the test image used by the function-level equivalence tests.
+
 ## Verifying
 
 ```
 python -P tools/emu/test_bootloader.py     # original vs rebuilt, on an emulated STM32L1
 python -P tools/coverage.py bootloader     # every original function accounted for
+python -P tools/emu/test_app_functions.py  # application, function by function (--shard i/n to split)
+python -P tools/emu/compare_app.py 20000000 0 --points --ticks=40000   # whole application image
+python -P tools/coverage.py app
 ```
 
 The emulator test needs `pip install unicorn` and a private dump of the original flash in `dumps/` (not distributed).
@@ -33,6 +43,7 @@ The emulator test needs `pip install unicorn` and a private dump of the original
 | Path | Contents |
 |---|---|
 | `bootloader/` | Bootloader sources, linker script, CMake project |
+| `firmware/` | Application sources, linker script, CMake project |
 | `common/cmsis/` | ARM CMSIS core and ST STM32L1 device headers (Apache-2.0) |
 | `common/fatfs/` | ChaN FatFs R0.08a, as used by the original (BSD-style licence in `ff.c`) |
 | `docs/` | Memory map, bootloader notes, coverage tables, tooling, manual text |

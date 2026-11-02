@@ -37,4 +37,18 @@ extern volatile uint8_t g_task_flag_a;   /* 0x200080D0 */
 
 void power_off_beep(void);
 
+extern volatile uint8_t g_task_flag_b;   /* 0x200080D1  every 10 ticks */
+extern volatile uint8_t g_task_flag_c;   /* 0x200080D2  never set */
+extern volatile uint8_t g_task_flag_d;   /* 0x200080D3  every 50 ticks */
+extern uint8_t g_flag_8035;              /* 0x20008035 */
+extern uint8_t g_count_8036;             /* 0x20008036  clears g_flag_8035 when it runs out */
+extern uint16_t g_menu_idle_ticks;       /* 0x20007FAA  the menu closes after 1000 */
+extern uint32_t g_tick_div10;            /* 0x20007F00 */
+extern uint32_t g_tick_div50;            /* 0x20007F04 */
+extern uint32_t g_tick_div100;           /* 0x20007F08 */
+extern uint8_t g_flag_802c;              /* 0x2000802C  set at tick 40 of 50 */
+extern uint8_t g_half_second_phase;      /* 0x20008077 */
+
+void TIM2_IRQHandler(void);
+
 #endif /* IRQ_H */

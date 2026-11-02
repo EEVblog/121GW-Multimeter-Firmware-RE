@@ -3,7 +3,7 @@
  */
 #include "keys.h"
 #include "app_globals.h"
-#include "orig_calls.h"
+#include "key_handlers.h"
 #include "measure_counter.h"
 #include "modes.h"
 #include "power.h"
@@ -204,13 +204,13 @@ void keys_dispatch_events(void)
         g_key_short_pending = 0;
         g_flag_801b = 0;
         g_flag_801d = 0;
-        FUN_08014c3c(g_key_short_code);
+        key_short_press_handler(g_key_short_code);
     }
     if (g_key_long_pending) {
         g_key_long_pending = 0;
         g_flag_801b = 0;
         g_flag_801d = 0;
-        FUN_0801622c(g_key_long_code);
+        key_long_press_handler(g_key_long_code);
     }
 }
 
@@ -278,7 +278,7 @@ void rotary_select_function(void)
         g_flag_804a = 1;
         g_flag_80b9 = 0;
         g_hold_active = 0;
-        g_flag_8050 = 0;
+        g_autohold_mode = 0;
         g_flag_8053 = 0;
         g_flag_8051 = 0;
         g_count_7fb2 = 0;
@@ -318,11 +318,11 @@ void input_event_dispatch(void)
     g_flag_801d = 0;
     key = (code <= 8) ? key_of_event[code] : 0;
     if (key != 0) {
-        FUN_08014c3c(key);
+        key_short_press_handler(key);
         return;
     }
     code = g_input_event_code;
     if (code >= 0x81 && code <= 0x88) {
-        FUN_0801622c(key_of_event[code - 0x80]);
+        key_long_press_handler(key_of_event[code - 0x80]);
     }
 }
