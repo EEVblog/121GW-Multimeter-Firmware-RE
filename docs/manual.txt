@@ -1,0 +1,1500 @@
+
+===== page 1 =====
+    
+ 
+USER'S MANUAL 
+121GW  
+MULTIMETER 
+ 
+Last Revised 
+3 March 2025 
+
+===== page 2 =====
+121GW User Manual  Last Revised: 3 March 2025 
+2 
+CONTENTS  
+Contact .............................................................................................................. 5 
+Glossary of Terms .............................................................................................. 6 
+Change log ......................................................................................................... 7 
+Firmware Version .............................................................................................. 9 
+General ............................................................................................................ 11 
+FCC/IC Information ...................................................................................... 11 
+Information to the User .............................................................................. 11 
+Introduction .................................................................................................... 12 
+Features .......................................................................................................... 13 
+Specifications .................................................................................................. 15 
+General ........................................................................................................ 15 
+Voltage Measurement ................................................................................. 17 
+Current Measurement ................................................................................. 18 
+Resistance & Capacitance Measurement .................................................... 19 
+Diode Measurement.................................................................................... 20 
+Frequency & Duty Cycle Measurement ...................................................... 21 
+VA Measurement ........................................................................................ 22 
+Temperature & Continuity .......................................................................... 23 
+Bluetooth Specifications .............................................................................. 24 
+Standards ........................................................................................................ 25 
+Compliance Symbols ................................................................................... 25 
+IEC Standards ............................................................................................... 25 
+ANSI Standards ............................................................................................ 25 
+Safety .............................................................................................................. 25 
+===== page 3 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 3 
+Warning ....................................................................................................... 26 
+Caution ........................................................................................................ 29 
+Operation ........................................................................................................ 30 
+Measuring ....................................................................................................... 35 
+Voltage  .............................................................................................. 35 
+dBm .......................................................................................................... 37 
+Voltage  ................................................................................................ 38 
+Temperature  ......................................................................................... 39 
+Current  ......................................................................................... 40 
+Burden Voltage ........................................................................................ 42 
+Resistance  ............................................................................................. 44 
+Continuity Testing ................................................................................ 45 
+Cable Break Testing  ............................................................................. 46 
+Capacitance  .......................................................................................... 47 
+Frequency  ........................................................................................... 48 
+Duty Cycle  ........................................................................................... 49 
+Pulse Width  ......................................................................................... 50 
+Diode Measurement  ............................................................................ 51 
+Power (VA)  ................................................................... 53 
+Data Logging ................................................................................................ 54 
+Backlight ...................................................................................................... 55 
+Bluetooth ..................................................................................................... 55 
+Measurement HOLD .................................................................................... 56 
+
+===== page 4 =====
+121GW User Manual  Last Revised: 3 March 2025 
+4 
+Relative Measurement (REL) ....................................................................... 57 
+MIN/MAX/AVG ............................................................................................ 58 
+Setup Menu ................................................................................................. 59 
+Temperature ............................................................................................ 60 
+Battery Voltage ........................................................................................ 60 
+Auto Power Off (APO) .............................................................................. 61 
+Buzzer On/Off .......................................................................................... 61 
+LCD Contrast ............................................................................................ 61 
+Date.......................................................................................................... 62 
+Multimeter ID .......................................................................................... 63 
+Logging Interval ....................................................................................... 63 
+Maintenance ................................................................................................... 64 
+Debugging .................................................................................................... 64 
+Cleaning and Storage ................................................................................... 64 
+Fuse Replacement ....................................................................................... 64 
+Calibration ....................................................................................................... 66 
+Calibration Mode ......................................................................................... 67 
+Saving Calibration Data ............................................................................... 68 
+Loading Calibration Data ............................................................................. 68 
+Zero Offset Calibration ................................................................................ 69 
+Full Scale GAIN Calibration .......................................................................... 70 
+Calibration Reference Table ............................................................................ 71 
+Firmware Update ............................................................................................ 72 
+Warranty ......................................................................................................... 73 
+ 
+===== page 5 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 5 
+CONTACT 
+If you have a warranty claim, you can contact us at the following email ad-
+dress: 
+sales@eevblog.com 
+This multimeter and accessories can be purchased from: 
+www.eevblog.com 
+Community Support for the meter is provided on the EEVblog Forum: 
+www.eevblog.com/forum 
+Issues should be reported in the Report an issue section of the multimeters 
+official page: 
+www.eevblog.com/product/121gw/ 
+  
+===== page 6 =====
+121GW User Manual  Last Revised: 3 March 2025 
+6 
+GLOSSARY OF TERMS 
+IEC 
+(International Electrotechnical Commission) 
+An organisation that publishes various international standards relating to 
+electrical, electronics and related technology. 
+ANSI 
+(American National Standards Institute).  
+Americas non-profit standards organisation that oversee the development 
+and use of standards in various domains. 
+ETL 
+(ETL Testing Laboratories)  
+The compliance certification mark of Intertek Group in Europe. 
+OP 
+(Overload Protection) 
+The voltage that a function of the Multimeter than withstand. 
+Accuracy 
+The closeness of a measured value to a known standard. 
+ 
+Low BurdenTM 
+Provides low burden voltage when measuring current compared with typical 
+multimeters, minimising impact on your in-circuit current measurements. 
+  
+===== page 7 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 7 
+CHANGE LOG 
+The following represents the changes made to the manual: 
+Date Changes 
+15/01/17 Added Serial Number section 
+Added Hold requirement to save setup items 
+Fixed various grammar errors 
+Added Bluetooth symbol to frontpage 
+31/01/18 Changed incorrect fuse rating to  
+400 mA / 600 V HRC Fuse 
+Added Low Z mode description 
+04/03/18 Added Multimeter ID to list on page 53. 
+11/04/18 Minor grammar and a spelling change. 
+Added VA specifications 
+Specification format changes 
+24/05/18 Added information about new firmware version 1.15 and 
+1.17. 
+09/07/18 Added information about new firmware version 1.21 and 
+1.22.  
+Added more information about use of Low Z mode. 
+26/07/18 Modified formatting of VAC table. 
+Described Relative mode. 
+Improved burden voltage section steps. 
+Fixed error in offset calibration table. 
+Changed steps for all setup items to allow for units that 
+have buzzer turned off. 
+Some grammar errors resolved. 
+27/07/18 Updated IAP section, removed incorrect step. 
+24/08/18 Updated DC mode section description for clarity. 
+30/08/18 Updated sections on battery type.  
+Added warning about lithium batteries. 
+11/09/18 Added information about 500VA range. 
+04/12/18 Moved case into optional accessory. 
+29/01/19 Added comment about modes being preserved between 
+resets. 
+===== page 8 =====
+121GW User Manual  Last Revised: 3 March 2025 
+8 
+08/08/19 Added battery voltage check to the firmware update pro-
+cedure. 
+01/03/20 Added caution about ACV autoranging with DC offsets 
+24/02/25 Corrected Period measurement to Pulse Width. Also 
+changed 50,000 count to 55,000 count. 
+03/03/25 Minor text clarifications. Battery details updated. DCV 
+50mV range corrected from 5mV. 
+ 
+  
+===== page 9 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 9 
+FIRMWARE VERSION 
+This manual is written for the latest version of the 121GW firmware.  
+The following is a list of changes for each version: 
+Version Changes 
+1.00 Added support for exporting and importing calibration 
+data to/from SD card. 
+Displays version number on boot. 
+1.01 Internal version. 
+1.02 Internal version. 
+1.03 Fixed possible import export calibration bug. 
+1.04 Resistance auto-ranging speed improved. 
+Can now turn beeper off. 
+Negative VA values now readable. 
+1.05 Further improved auto-ranging speed. 
+Improved Low-Z measurement up to 20KHz. 
+1.06 Internal version. 
+1.07 Improved VA mode over-estimation error. 
+1.15 Improved display to show OFL in appropriate sections, 
+fixed lookup table bug with various range.  
+1.17 Improved accuracy of voltage measurement in AC and DC 
+VA modes. 
+1.21 Added support for ◦C and ◦F in the Bluetooth packet. 
+1.22 Added 2 more bits of data for the main data to  
+accommodate values over 65535. 
+1.25 Auto-ranging loop in M Ohms range resolved. 
+Burden Voltage glitch resolved. 
+1.26 Improved resistance range noise when logging. 
+1.51 208ms data logging interval -> 200ms. 
+File date and time in file meta info corrected. 
+DC+AC auto ranging loop issue resolved. 
+Amp range sensitivity improved. 
+AC mode frequency persistence issue resolved. 
+VAC + LPF bargraph issue resolved. 
+===== page 10 =====
+121GW User Manual  Last Revised: 3 March 2025 
+10 
+2.00 Improved the Auto-ranging reading speed in both ca-
+pacitance and resistance ranges. 
+2.01 Resolved calibration glitch with V2.00 firmware. 
+Reduces the Offset in the 50-ohm range. 
+2.04  SD card logging issues resolved 
+2.05  Improved LFP response (released 22/4/2021) 
+ 
+  
+===== page 11 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 11 
+GENERAL 
+FCC/IC INFORMATION 
+This device complies with Part 15 of the FCC Rules and CAN ICES-3(A). Opera-
+tion is subject to the following two conditions: (1) this device may not cause 
+harmful interference, and (2) this device must accept any interference re-
+ceived, including interference that may cause undesired operations. 
+INFORMATION TO THE USER 
+This equipment has been tested and found to comply with the limits for a 
+Class B digital device, pursuant to part 15 of the FCC Rules. These limits are 
+designed to provide reasonable protection against harmful interference in a 
+residential installation. 
+This equipment generates, uses and can radiate radio frequency energy and, 
+if not installed and used in accordance with the instructions, may cause 
+harmful interference to radio communications. However, there is no guaran-
+tee that interference will not occur in an installation. 
+If this equipment does cause harmful interference to radio or television re-
+ception, which can be determined by turning the equipment off and on, the 
+user is encouraged to try to correct the interference by one or more of the 
+following measures: 
+• Reorient or relocate the receiving antenna. 
+• Increase the separation between the equipment and receiver. 
+• Connect the equipment into an outlet on a circuit different from that 
+to which the receiver is connected. 
+• Consult the dealer or an experienced radio/TV technician for help. 
+WARNING 
+Any changes or modifications not expressly approved by the manufacturer 
+could void the user’s authority to operate the equipment. 
+===== page 12 =====
+121GW User Manual  Last Revised: 3 March 2025 
+12 
+INTRODUCTION 
+Congratulations on purchasing the EEVblog 121GW multimeter. It's one of 
+the most feature packed small form factor meters on the market, designed to 
+provide maximum functionality in as little bench space as possible.  It pro-
+vides many unique features not found on other multimeters, like low burden 
+voltage measurement and display, simultaneous voltage and current (VA 
+power) measurement, 15 V diode test voltage, Bluetooth built-in, and Micro 
+SD card data logging. 
+You've made a wise choice buying this instead of some questionable quality 
+cheapie, it should return the favour with many years of safe and accurate ser-
+vice. 
+That ETL logo you see stamped on the back of the meter ensures that the me-
+ter design has been independently tested to the latest IEC/UL/EN61010-1 3rd 
+edition safety standard by Intertek. 
+With a genuine 600 V CAT III rating and proper 1000V HRC fuses and 
+MOV+PTC protection you can feel confident and safe that you can use this 
+meter on most high energy mains rated equipment. 
+And remember, don't turn it on, take it apart! 
+This meter is hackable, go for it. 
+Have fun. 
+Dave Jones 
+www.eevblog.com 
+  
+===== page 13 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 13 
+FEATURES 
+Summary 
+• True RMS sensing up to crest factor 10 (AD8436 chipset) 
+• 600 V CAT III ETL Listed Rating 
+• 1000 V HRC fuses 
+• High voltage 15V diode test mode 
+• Dual 55,000 count display 
+• Relative Mode 
+• 1ms Peak Capture 
+• MIN, MAX or AVG on all functions 
+• Low BurdenTM current measurement feature 
+• OPEN and CLOSED continuity testing (for wire breaks) 
+• Temperature, Capacitance, Frequency and Duty Cycle 
+• Unique burden voltage measurement & display in current mode 
+• Simultaneous voltage and current measurement and VA calculation 
+• Low Z input mode eliminates ghost voltages (not for under 12V)  
+• Automatic touch measurement data hold 
+• Audible and visual incorrect input jack warning 
+• Closed case calibration of individual ranges 
+Logging Capabilities 
+• Bluetooth LE (Low Energy) Communication 
+• Data logging onto a Micro SD card (CSV format) 
+Mechanical 
+• Compact size 
+• Backlit display 
+  
+===== page 14 =====
+121GW User Manual  Last Revised: 3 March 2025 
+14 
+Software 
+• Android, iPhone, and Windows 10 support, [Mac]1 
+• Updatable Firmware (via micro SD Card) 
+Batteries 
+• RTC Battery (CR1220) 
+• Main Battery (4 x AA) 
+• Long battery life of >500 hrs 
+  
+  
+1 Under development 
+===== page 15 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 15 
+SPECIFICATIONS 
+GENERAL 
+The following table represents general specifications (at 23°C ± 5°C): 
+Item Specification 
+Display 4 ⅘ digits 55,000 counts, dual display 
+Update Rate 5 times per second nominal 
+Operating Temperature 0°C to 50°C (32°F to 122°F) 
+Relative Humidity < 75% 
+Altitude Operating below 2000 m 
+Storage Temperature -20°C to 50°C (-44°F to 122°F) 
+Temperature  
+Coefficient 
+Temperature coefficient (Nominal):  
+𝑇𝑐 = 0.1 ×  (𝑆𝑝𝑒𝑐𝑖𝑓𝑖𝑒𝑑 𝑎𝑐𝑐𝑢𝑟𝑎𝑐𝑦) / °𝐶 
+RMS Sensing True RMS sensing (AD8436) 
+Ingress Protection IP41 
+Pollution Degree 2 
+Safety cETLus 3rd Edition, CAT III 600 V, CE Conformity, 
+IP41, RoHS Compliant, IEC/EN61010-1: 2010 3rd 
+Edition 
+Drop Protection 1 m 
+Transient Protection 6 kV 2 Ω, Pulsed Source 
+E.M.C. Commercial limits compliance with EN61326-1 
+Bluetooth BLE112 Class 2 
+Chipset Hycon HY3131 
+ST ARM STM32L152D 
+Overload Protection  
+mA and µA 400 mA / 600 V DC/AC 
+IR 10kA HRC FAST + DIODE 
+A and 500mA 11 A / 1000 V DC/AC  
+IR 20 kA HRC FAST + DIODE 
+V & Auto V 600 V DC/AC RMS PTC & MOV Protection 
+mV, Ohm & others 600 V DC/AC RMS PTC & MOV Protection 
+===== page 16 =====
+121GW User Manual  Last Revised: 3 March 2025 
+16 
+Low Battery Voltage Below approx. 4.2 V 
+Battery Type 4 x 1.5 V AA alkaline battery2 
+(ANSI/NEDA 15 A or IEC LR6) 
+Current Consumption 5 mA Typical 
+Battery Life 500 hours typical on Alkaline 
+Dimension 84 mm x 165 mm x 57 mm 
+(3.31" x 6.50" x 2.24") 
+Weight 485 g (17.1 oz.) with batteries 
+Accessories Rubber Boot, Temperature probe, Test leads  
+Optional  
+Purchase Accessories 
+Magnetic hanger 
+Carry Case 
+ 
+  
+  
+2 Use of lithium batteries may cause an issue due to their higher voltage. It is 
+recommended to discharge them a little top lower the terminal voltage 
+before use. 
+===== page 17 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 17 
+VOLTAGE MEASUREMENT 
+The following specifications are given in SI units with their accuracy notated 
+as ± (% of reading digits) + (number of digits) unless otherwise indicated. 
+ Range Resolution Accuracy Test 
+DC V 50 mV3  1 µV ±0.1% + 10 N/A 
+ 500 mV 10 µV ±0.1% + 10 N/A 
+ 5 V 0.1 ±0.05% + 5 N/A 
+ 50 V 1 mV ±0.05% + 5 N/A 
+ 500 V 10 mV ±0.05% + 5 N/A 
+ 600 V 0.1 V ±0.1% + 10 N/A 
+AC V 50 mV2 1 µV ±1.2% + 15 45 to 400 Hz 
+True RMS 500 mV 10 µV ±0.8% + 10 45 to 400 Hz 
+ 5 V 0.1 mV ±0.3% + 10 45 to 400 Hz 
+Crest-Factor  50 V 1 mV ±0.3% + 10 45 to 400 Hz 
+<10 500 V 10 mV ±0.3% + 10 45 to 400 Hz 
+ 600 V 0.1 V ±0.5% + 10 45 to 400 Hz 
+ 50 mV 1 µV ±2.0% + 20 0.4 to 5 kHz 
+ 500 mV 10 µV ±1.5% + 10 0.4 to 5 kHz 
+ 5 V 0.1 mV ±1.5% + 10 0.4 to 5 kHz 
+ 50 V 1 mV ±1.5% + 10 0.4 to 5 kHz 
+ 500 V 10 mV ±1.5% + 10 0.4 to 5 kHz 
+ 600 V 0.1 V ±1.5% + 10 0.4 to 5 kHz 
+AC V+DC V 5 V 0.1 mV ±1.0% + 10 45 to 1000 Hz 
+True RMS 50 V 1 mV ±1.0% + 10 45 to 1000 Hz 
+ 500 V 10 mV ±1.0% + 10 45 to 1000 Hz 
+ 600 V 0.1 V ±1.0% + 10 45 to 1000 Hz 
+This channel has overload protection for up to 600 V. 
+  
+3 Using Relative Mode, zero with shorted test leads. 
+===== page 18 =====
+121GW User Manual  Last Revised: 3 March 2025 
+18 
+The AC Bandwidth extends beyond 5 kHz, but the meter is only specified and 
+calibrated at 5 kHz. The AD8436 used specifies an additional 1% error up to 
+65 kHz. Higher frequency is possible with additional error above that again. 
+CURRENT MEASUREMENT 
+The following section refers to the current measurement ranges and their re-
+spective performances. The current measurement module is protected by a 
+400 mA / 600 V HRC Fuse and an 11 A / 1000 V HRC Fuse. 
+ Range Resolu-
+tion 
+Accuracy Tested @ Burden Volt-
+age4 
+DC A 50 µA5 1 nA ±1.5%+15 N/A 100 µV/µA 
+ 500 µA 10 nA ±1.5%+15 N/A 100 µV/µA 
+ 5 mA 0.1 µA ±0.25%+5 N/A 2 mV/mA 
+ 50 mA 1 µA ±0.25%+5 N/A 2 mV/mA 
+ 0.5 A 10 µA 0.75%+15 N/A 0.03 V/A6 
+ 5 A 100 µA 0.75%+15 N/A 0.03 V/A6 
+ 10 A 1000 µA 0.75%+15 N/A 0.03 V/A6 
+AC A 50 µA 1 nA ±2.0%+20 45 to 1000 Hz 100 µV/µA 
+ 500 µA 10 nA ±2.0%+20 45 to 1000 Hz 100 µV/µA 
+ 5 mA 0.1 µA ±1.0%+5 45 to 1000 Hz 2 mV/mA 
+ 50 mA 1 µA ±1.0%+5 45 to 1000 Hz 2 mV/mA 
+ 0.5 A 10 µA ±1.5%+15 45 to 1000 Hz 0.03 V/A6 
+ 5 A 100 µA ±1.5%+15 45 to 1000 Hz 0.03 V/A5 
+ 10 A 1000 µA ±1.5%+15 45 to 1000 Hz 0.03 V/A5 
+ 
+  
+4 The measured burden voltage is displayed on the secondary display. 
+5 This mode will use the x10 amplified and may have additional offset error 
+that can be cancelled out with the REL function before measurement. 
+6 The burden voltage can change with the type of fuse fitted. 
+===== page 19 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 19 
+RESISTANCE & CAPACITANCE MEASUREMENT 
+The following section outlines the specifications for the impedance ranges 
+ Range Resolution Accuracy 
+R Ω 50 Ω7 0.001 Ω ±0.5%+20 
+ 500 Ω 0.01 Ω ±0.3%+5 
+ 5 kΩ 0.1 Ω ±0.2%+5 
+ 50 kΩ 1 Ω ±0.2%+5 
+ 500 kΩ 10 Ω ±0.2%+5 
+ 5 MΩ 0.1 kΩ ±0.3%+5 
+ 50 MΩ 1 kΩ ±1.2%+20 
+C µF 10 nF 0.01 nF ±2.5%+5 
+ 100 nF 0.1 nF ±2.5%+5 
+ 1 µF 1 nF ±2.5%+5 
+ 10 µF 10 nF ±2.5%+5 
+ 100 µF 100 nF ±2.5%+5 
+ 9999 uF 1 µF ±3.0%+58 
+This channel has overload protection for up to 600 V. 
+  
+  
+7 Using Relative Mode, zero with shorted test leads. 
+8 Accuracies depend on capacitor type. 
+===== page 20 =====
+121GW User Manual  Last Revised: 3 March 2025 
+20 
+DIODE MEASUREMENT 
+ Range Resolution Test Current Accuracy 
+Diode V 3 V 0.001 V 1.4 mA Not specified 
+ 15 V 0.001 V 7 mA Not specified 
+This channel has overload protection for up to 600 V. 
+ 
+A nominal 2.2 K resistor (includes PTC) is in series with the voltage source and 
+is what limits the test current.  
+===== page 21 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 21 
+FREQUENCY & DUTY CYCLE MEASUREMENT 
+ Range Resolution Accuracy 
+F Hz9 99.999 Hz 0.001 Hz ±0.1%+3 
+ 999.99 Hz  0.01 Hz ±0.1%+3 
+ 9.9999 KHz  0.1 Hz ±0.1%+3 
+ 99.999 KHz  1 Hz ±0.1%+3 
+ 999.99 KHz  10 Hz ±0.1%+3 
+Duty 
+Cycle 
+%10 
+99 % 0.1 % ±0.2% + 5 + 0.2/kHz 
+This channel has overload protection for up to 600 V. 
+This range has an apparent 99,999 counts. 
+  
+  
+9 Sensitivity > 2.5 V RMS 
+10 0.01 to 200 kHz, Pulse Width: >5 us, Sensitivity: > 2.5 V RMS 
+===== page 22 =====
+121GW User Manual  Last Revised: 3 March 2025 
+22 
+VA MEASUREMENT 
+Function Range Resolution Accuracy 
+DC VA 250.00 uVA 0.01 uVA ±1.0% + 5 digits 
+ 2500.0 uVA 0.1 uVA ±0.5% + 5 digits 
+ 25000 uVA 1 uVA ±0.5% + 5 digits 
+ 25.000 mVA 0.001 mVA ±0.5% + 5 digits 
+ 250.00 mVA 0.01 mVA ±0.5% + 5 digits 
+ 2500.0 mVA 0.1 mVA ±0.5% + 5 digits 
+ 25000 mVA 1 mVA ±0.5% + 5 digits 
+ 50.000 VA 0.001 VA ±1.0% + 10 digits 
+  500.00 VA11 0.01 VA ±1.0% + 10 digits 
+AC VA 250.00 uVA 0.01 uVA ±2.0% + 10 digits 
+ 2500.0 uVA 0.1 uVA ±2.0% + 10 digits 
+ 25000 uVA 1 uVA ±1.5% + 10 digits 
+ 25.000 mVA 0.001 mVA ±1.5% + 10 digits 
+ 250.00 mVA 0.01 mVA ±1.5% + 10 digits 
+ 2500.0 mVA 0.1 mVA ±1.5% + 10 digits 
+ 25000 mVA 1 mVA ±1.5% + 10 digits 
+ 50.000 VA 0.001 VA ±2.0% + 20 digits 
+  500.00 VA11 0.01 VA ±2.0% + 20 digits 
+The TRMS bandwidth of the AC VA range is from 45 to 1 kHz. 
+This channel has overload protection for up to 600V. 
+Protection includes 440mA/1000V HRC Fuse 11A/1000V HRC Fuse. 
+ 
+ 
+ 
+ 
+  
+11 500 VA, with 50 V and 10 A. 
+===== page 23 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 23 
+TEMPERATURE & CONTINUITY 
+ Range Resolution Accuracy 
+Temp 
+°C 
+ 
+-200 to 1350°C 
+K-Type 
+0.1°C ±0.5%+3°C 
+Continuity 
+ 
+ 
+30 Ω or 300 Ω 
+User Selectable 
+OPEN or CLOSED 
+10 mΩ Not Specified 
+This channel has overload protection for up to 600 V. 
+External temperature measurement uses a K-Type thermocouple. 
+Internal temperature measurement is inside a sealed case, so will have some 
+thermal lag. 
+The continuity tester can be set for beep on CLOSED or beep on OPEN (for 
+wire breaks) with a user adjustable threshold level.  
+===== page 24 =====
+121GW User Manual  Last Revised: 3 March 2025 
+24 
+BLUETOOTH SPECIFICATIONS 
+• The 121GW uses a BLE112-A Class 2 certified Low Energy Bluetooth 
+module. 
+• This device complies with Part 15 of the FCC Rules. 
+• This device complies with Industry Canada licence-exempt RSS stand-
+ard(s). 
+• This device complies with Japan MIC certification ARIB STD-T66. 
+Contains Transmitter Module FCC ID:  QOQBLE112 
+Contains Transmitter Module IC:  5123A-BGTBLE112 
+The Bluetooth module is in conformity with the essential requirements and 
+other relevant requirements of the CE RED (2014/53/EU). 
+The product is in conformity with the following standards and/or normative 
+documents. 
+Essential Requirement Applicable Standards / Specifications 
+Safety Requirements EN 60950-
+1:2006+A11:2009+A1:2010+A12:2011+A2:2013 
+EMC Requirements EN 301 489-1 V2.1.1 
+EN 301 489-17 V3.1.1 
+Radio Spectrum EN 300 328 V2.1.1 
+ 
+The BLE112 Bluetooth module is KCC certified with following certification 
+numbers: 
+• BLE112-A: KCC-CRM-BGT-BLE112-A 
+• BLE112-E: KCC-CRM-BGT-BLE112-E 
+• BLE112-N: KCC-CRM-BGT-BLE112-N 
+ 
+  
+===== page 25 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 25 
+STANDARDS 
+This Multimeter complies to the following standards. 
+COMPLIANCE SYMBOLS 
+The device is marked with the following symbols, these have the following 
+meanings: 
+Symbol Definition 
+ RCM, this is the Regulatory Compliance Mark. It indicates that the product is compliant to required Australian Standards. 
+ 
+CE, this is the Conformité Européenne mark. It indicates that the 
+product complies with required European standards. 
+ 
+ETL, the listed CUS Mark. It Indicates that the product is the 
+mark that indicates testing by Intertek. 
+IEC STANDARDS 
+The product is Extra-Low voltage system, as per IEC 60038. 
+The product VAC does not supply 50 or 120 VDC. 
+The product is classified as IP41 as per IEC 60529 standards. Tested for IEC 
+60950-1 and IEC/EN61010-1: 2010 3rd Edition. 
+ANSI STANDARDS 
+Safety requirements tested as per ANSI 61010-1 and testing for hand-held 
+equipment as per ANSI 61010-2. 
+CAT III rating as per ANSI. 61010-1. 
+SAFETY 
+This manual contains information and warnings that must be followed when 
+operating the device. Following these instructions will protect you from dam-
+aging the device or risking your well-being. The device can only protect you 
+up to a point and it should not be used in situations that do not comply with 
+the device’s ratings and the recommendations in this section. 
+
+===== page 26 =====
+121GW User Manual  Last Revised: 3 March 2025 
+26 
+ 
+The following symbols are used on the device and through this manual to in-
+dicate whether something is a warning or a precaution. 
+Symbol Definition 
+ 
+Caution: Possibility of electric shock 
+ 
+Caution: See explanation in section 
+WARNING 
+A condition or action that could result in serious injury or death to the user. 
+1. Using the device outdoors risks electric shock or fire. The device is 
+not designed to operate in rain or moisture. 
+2. The product is rated IP41 and should be treated accordingly. This 
+means that the product should not be exposed to liquids or dust. 
+3. Inspect leads and ensure that no defects or damage exists on the 
+leads, connectors or probes. Defective parts must not be used and 
+need to be replaced before use. 
+4. Only use UL Listed Probe Assemblies with ratings that are greater or 
+equal to the meter rating. 
+5. CAT III & CAT IV test probe tips must be 4 mm  
+(As per IEC 61010-031). 
+6. All accessories must possess a greater than or equal to CAT rating to 
+that of the Multimeter. 
+7. The ACV Autoraning mode should be not be used with large DC off-
+sets in the presence of AC voltages. This can result in failure to cor-
+rectly detect the autorange potentially resulting in incorrect readings. 
+Use manual ranging mode in this case. 
+
+===== page 27 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 27 
+French: 
+Sécurité 
+Ce manuel contient des informations et des avertissements qui doivent être 
+suivis lors de l'utilisation de l'appareil. En suivant ces instructions, vous proté-
+gerez d'endommager l'appareil ou de risquer votre bien-être. L'appareil ne 
+peut que vous protéger jusqu'à un certain point et ne doit pas être utilisé 
+dans des situations qui ne sont pas conformes à la note des appareils et aux 
+recommandations de cette section. 
+Les symboles suivants sont utilisés sur le périphérique et par le biais de ce 
+manuel pour indiquer si quelque chose est un avertissement ou une précau-
+tion. 
+Symbole Définition 
+ 
+Attention: Possibilité de choc électrique 
+ 
+Attention: voir l'explication dans la section 
+ 
+Attention 
+Une condition ou une action qui pourrait entraîner des blessures graves ou la 
+mort de l'utilisateur. 
+1. L'utilisation de l'appareil à l'extérieur risque d'être électrique ou 
+d'incendie. L'appareil n'est pas conçu pour fonctionner sous la pluie 
+ou l'humidité. 
+2. Le produit est classé IP41 et devrait être traité en conséquence. Cela 
+signifie que le produit ne doit pas être exposé aux liquides ou à la 
+poussière. 
+3. Inspectez les câbles et assurez-vous qu'aucun défaut ou dommage 
+n'existe sur les conducteurs, les connecteurs ou les sondes. Les 
+
+===== page 28 =====
+121GW User Manual  Last Revised: 3 March 2025 
+28 
+pièces défectueuses ne doivent pas être utilisées et doivent être 
+remplacées avant utilisation. 
+4. N'utilisez que des ensembles de sonde homologués UL avec des 
+valeurs nominales supérieures ou égales à celles du compteur. 
+5. Les pointes de la sonde de test CAT III et VAT IV doivent être de 4 mm 
+(selon CEI 61010-031). 
+6. Tous les accessoires doivent posséder une valeur nominale 
+supérieure ou égale à celle du multimètre. 
+  
+===== page 29 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 29 
+CAUTION 
+A condition or action that could result in damage or malfunctions in the in-
+strument. 
+1. Before changing functions, remove test leads from any measurement 
+point. 
+2. Before any measurement, ensure test leads are connected to appro-
+priate connector on the device and in an appropriate manner to the 
+test points. 
+French: 
+Une condition ou une action pouvant entraîner des dégâts ou des dysfonc-
+tionnements dans l'instrument. 
+1. Avant de modifier les fonctions, retirez les fils de test de n'importe 
+quel point de mesure. 
+2. Avant toute mesure, assurez-vous que les fils de test sont connectés 
+au connecteur approprié sur l'appareil et de manière appropriée aux 
+points de test. 
+  
+===== page 30 =====
+121GW User Manual  Last Revised: 3 March 2025 
+30 
+OPERATION 
+The following section will outline how to operate the device. This section uti-
+lises some symbols which are defined in the table below: 
+ 
+
+===== page 31 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 31  
+
+===== page 32 =====
+121GW User Manual  Last Revised: 3 March 2025 
+32 
+ 
+Digital Display: Readings are displayed on dual 4 ⅘ -digit 50,000 count LCD 
+display. One Primary and one smaller secondary function display. The sec-
+ondary function display is only used when a function that requires it is se-
+lected. A fast updating bargraph is below the main display. 
+ 
+ 
+Rotary Switch: Used to turn the power off and on and select the test func-
+tion. There are two OFF positions for convenience, both functions identically. 
+ 
+ 
+
+===== page 33 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 33 
+RANGE Button: Used to swap between ranges of a function. 
+This could be moving the decimal point for the voltage range, 
+swapping between 3 V or 15 V diode mode etc... 
+ 
+HOLD Button: Used to select the Auto HOLD function 
+ 
+ 
+REL Button: Used to select the relative measurement mode. 
+Secondary use as the UP arrow key for setup selection. Holding 
+down this button in AC mode selects the 1 kHz low pass filter. 
+ 
+1ms PEAK Button: Used to select the 1 ms peak capture mode 
+(VAC only). Secondary use as the DOWN arrow key for setup se-
+lection. 
+Holding down this button turns on and off the Bluetooth data 
+transfer functionality. 
+ 
+MODE Button: Used to select and cycle through the different 
+function modes displayed in RED on the mode dial. Holding 
+down this button will activate and deactivate the display back-
+light. 
+ 
+MIN/MAX Button: Cycles through and selects the MIN, MAX, 
+and AVG measurement modes. 
+ 
+MEM Button: Holding down this button starts the SD card data 
+logging. Pressing once allows viewing of the stored data. 
+ 
+SETUP Button: Displays the setup menu and cycles through the 
+options. Press and hold the button when on the required option 
+to edit that option. 
+ 
+
+===== page 34 =====
+121GW User Manual  Last Revised: 3 March 2025 
+34 
+ 
+A / 500mA Jack: This input jack is used for the 10 A, 5 A and  
+500 mA current ranges. It is 11 A HRC fused. An input warning 
+alert functions for this jack. 
+ 
+mA / µA Jack: This input jack is used for the 50 mA, 500 µA and  
+50 μA current ranges. It is 400 mA HRC fused. An input warning 
+alert functions for this jack. 
+ 
+COM Jack: The negative common jack for all ranges and functions. 
+ 
+ 
+ 
+VΩ Jack: The positive input jack used for voltage, re-
+sistance, capacitance, diode, continuity, and temperature 
+functions. This input jack is PTC and MOV protected. 
+ 
+ 
+ 
+
+===== page 35 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 35 
+MEASURING 
+VOLTAGE  
+ 
+
+===== page 36 =====
+121GW User Manual  Last Revised: 3 March 2025 
+36 
+AC 
+When measuring AC voltages, you need to select the AC mode using the 
+mode button. You will see the AC icon appear on the screen when you are in 
+the correct mode. 
+In VAC mode, you can use the 1ms PEAK function, this will determine the 
+maximum peak voltage, instead of the RMS voltage. 
+ 
+CAUTION: The ACV Autoraning mode should be not be used with large DC 
+offsets in the presence of AC voltages. This can result in failure to correctly 
+detect the autorange potentially resulting in incorrect ACV readings. Use 
+manual ranging mode in this case 
+DC 
+To measure DC voltages, you must select the DC mode.  
+This is done by pressing the mode button. The DC icon will be shown on the 
+screen when you are in the correct mode. 
+Modes  
+Pressing the MODE button will cycle through the following modes: 
+The following modes are available on the voltage range : 
+1. DC 
+2. AC 
+3. DC+AC 
+The following modes are available on the millivolts range : 
+1. DC 
+2. AC 
+3. Temperature 
+  
+
+===== page 37 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 37 
+DBM 
+In AC mode the multimeter supports standard dBm measurement to view 
+this measurement press SETUP until the screen shows dBm in the top right. 
+ 
+The value of dBm is defined as follows, 𝑅𝑅𝐸𝐹 is by convention: 
+𝑃 = 10 log10 ( 𝑃𝑃0) 𝑃 = 𝑉𝑟𝑚𝑠2𝑅𝑅𝐸𝐹 𝑅𝑅𝐸𝐹 = 600 Ω 𝑃0 = 1 𝑚𝑊   
+∴ 𝑑𝐵𝑚 = 10 log10 (
+𝑉𝑟𝑚𝑠2
+600
+0.001) = 10 log10 (53 𝑉𝑟𝑚𝑠2 ) 
+  
+
+===== page 38 =====
+121GW User Manual  Last Revised: 3 March 2025 
+38 
+VOLTAGE  
+The Low Z mode of the multimeter is vastly different to the VAC mode. The 
+mode provides a means of draining ghost-voltages. The impedance of this 
+range is particularly low when compared to other ranges.  
+The range connected to ground through 1K resistor and a 1.2K PTC.  
+ 
+This range is used in the same manner to the VAC mode. 
+The range is not designed to be operated at low voltages (below 12V), it is 
+also not designed for high frequencies. This range is typically used between 
+50Hz and 400Hz. 
+  
+
+===== page 39 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 39 
+TEMPERATURE  
+ 
+When measuring temperature be sure to have the leads connected as above 
+and in the correct range. 
+To enter the temperature mode, press the mode button twice after selecting 
+mV on the dial. 
+
+===== page 40 =====
+121GW User Manual  Last Revised: 3 March 2025 
+40 
+CURRENT  
+ 
+
+===== page 41 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 41 
+When measuring current be sure to have the leads connected as above and 
+in the correct range, for higher currents ensure that the red lead is connected 
+to the A 500 mA socket. 
+AC 
+When measuring AC current, you must press the mode button until the AC 
+icon appears on screen. 
+DC 
+The factory default mode (new settings will be preserved between resets) 
+will be DC measurement. If the DC icon is not shown on the screen press the 
+mode button until it is. 
+Modes  
+Pressing the MODE button will cycle through the following modes: 
+The following modes are available on the amp/milliamp range : 
+1. DC 
+2. AC 
+The following modes are available on the microamp range : 
+1. DC 
+2. AC 
+  
+
+===== page 42 =====
+121GW User Manual  Last Revised: 3 March 2025 
+42 
+BURDEN VOLTAGE 
+When measuring current on the multimeter there is a voltage drop across the 
+resistor used to measure the current. This voltage is called the “burden volt-
+age”.  
+To enable or disable the burden voltage measurement, perform the following 
+steps: 
+1. Press and hold , until bd.XXX flashes. 
+2. Press UP or DOWN to toggle on or off the burden voltage. 
+3. Press and hold , until bd.XXX no longer flashes. 
+4. Press  again to display the burden voltage on the secondary 
+display. 
+  
+
+===== page 43 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 43 
+To measure the burden voltage an additional lead is required, this must be 
+connected between the active current terminal and the voltage input, as 
+shown below: 
+ 
+ 
+
+===== page 44 =====
+121GW User Manual  Last Revised: 3 March 2025 
+44 
+RESISTANCE  
+ 
+When measuring resistance select the range as shown above with the leads 
+connected as shown above. 
+Resistance is measured between the two leads. 
+Modes  
+Pressing the MODE button will cycle through the following modes: 
+The following modes are available on the resistance range : 
+1. Resistance 
+2. Continuity tester 
+3. Diode tester 
+4. Capacitance measurement 
+
+===== page 45 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 45 
+CONTINUITY TESTING  
+ 
+When taking measurements, you must connect the leads as shown above. 
+To check if a short (Selectable <30 Ω or <300 Ω) exists you can use the conti-
+nuity tester. To use this range, you need to press the MODE button once. To 
+change the continuity threshold level between >30 Ω or >300 Ω, select the 
+Continuity mode and: 
+1. Press SETUP until “UP xxx” or “dN xxx” appears on the small display. 
+2. Hold SETUP to change the mode. 
+3. Press the UP and DOWN buttons to toggle between continuity testing 
+mode and cable break testing mode. Continuity mode is the “dN” mode, 
+and you can select either dN 30 or dN 300 for 30 Ω or 300 Ω respectively. 
+4. Hold SETUP to store the required mode (Until it beeps). 
+
+===== page 46 =====
+121GW User Manual  Last Revised: 3 March 2025 
+46 
+CABLE BREAK TESTING  
+ 
+When taking measurements, you must connect the leads as shown above. 
+To check if a break exists (Selectable > 30 Ω or > 300 Ω) you can use the cable 
+break tester. To use this range, you need to select the Continuity mode and: 
+1. Press SETUP until “UP xxx” or “dN xxx” appears on the small display. 
+2. Hold SETUP to change the mode. 
+3. Press the UP and DOWN buttons to toggle between continuity testing 
+mode and cable break testing mode. Cable break mode is the “UP” 
+mode, and you can select either UP 30 or UP 300 for 30 Ω or 300 Ω 
+respectively. 
+4. Hold SETUP to store the mode (Until it beeps). 
+
+===== page 47 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 47 
+CAPACITANCE  
+ 
+When taking measurements, you must connect the leads as shown above. 
+To enter the capacitance mode, press the MODE button three times. 
+You can zero out the residual lead and meter capacitance with the REL func-
+tion. 
+Ensure that the capacitor is discharged before measurement. 
+
+===== page 48 =====
+121GW User Manual  Last Revised: 3 March 2025 
+48 
+FREQUENCY  
+ 
+When taking measurements, you must connect the leads as shown above. 
+Frequency measurement is the factory default mode (new settings will be 
+preserved between resets) for the dial position shown above. 
+Modes  
+Pressing MODE will result in a change in the measurement mode 
+The following modes are available on the frequency range : 
+1. Frequency 
+2. Pulse width 
+3. Duty Cycle 
+
+===== page 49 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 49 
+DUTY CYCLE  
+ 
+When taking measurements, you must connect the leads as shown above. 
+To enter the duty cycle mode press mode twice after selecting the Hz dial po-
+sition. 
+
+===== page 50 =====
+121GW User Manual  Last Revised: 3 March 2025 
+50 
+PULSE WIDTH  
+ 
+When taking measurements, you must connect the leads as shown above. 
+To enter the Pulse Width measurement mode press MODE once after select-
+ing the Hz dial position. The pulse width of the positive going pulse in milli-
+seconds will be displayed. 
+ 
+
+===== page 51 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 51 
+DIODE MEASUREMENT  
+ 
+When taking measurements, you must connect the leads as shown above. 
+The diode measurement range also supports a high voltage mode (up to 15 
+V) that enables the measurement of Zener voltages, LED string arrays and 
+other similar potentials. 
+The output current is limited by the nominal 2.2 kΩ total PTC + Resistor pro-
+tection devices, and the voltage mode selected. It is not a constant current 
+generator, so take this into account when measuring devices. 
+Voltage mode is toggled between 3 V and 15 V by pressing the RANGE button 
+after selecting the diode measurement mode, the secondary display will then 
+show the maximum diode voltage measurable. 
+
+===== page 52 =====
+121GW User Manual  Last Revised: 3 March 2025 
+52 
+ 
+The voltage range is displayed on the secondary display as follows: 
+ 
+ 
+
+===== page 53 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 53 
+POWER (VA)  
+ 
+Power measurements require measurements of both voltage and current, be 
+careful to connect the system in a manner that the common terminal is com-
+mon for both the voltage measurement and the current measurement. 
+An example is shown below:  
+ 
+ 
+ 
+ 
+
+===== page 54 =====
+121GW User Manual  Last Revised: 3 March 2025 
+54 
+DATA LOGGING 
+Data logging is started by holding the MEM button until a beep is heard and 
+the MEM icon flashes on screen. 
+ 
+Logged data is stored to an internal Micro SD card which is accessible behind 
+the battery cover. Data is by default recorded once per second. 
+The logging data is stored on the SD card in the following format as a CSV: 
+ Main Secondary 
+Sample Function Value Units Function Value Units 
+1 DCV 0.0000 V etc. etc. etc. 
+ 
+The data that is recorded is taken from the currently displayed function, if 
+you are measuring voltage then voltage is recorded. The number of accumu-
+lated logged data points is displayed on the secondary display. 
+To stop data logging press and hold the MEM button. 
+  
+
+===== page 55 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 55 
+BACKLIGHT 
+ 
+To enable the backlight, hold the MODE button. 
+BLUETOOTH 
+To enable Bluetooth communications, hold the “1ms PEAK” button until BT is 
+displayed on the LCD. 
+Ensure that Bluetooth is enabled on the host device before running the appli-
+cation on the remote computing device. 
+The multimeter will continue to functional as normal in Bluetooth mode, but 
+the display data will be transmitted via the Bluetooth connection. 
+To disable Bluetooth mode press and hold the 1ms Peak button until BT is 
+not displayed. 
+  
+
+===== page 56 =====
+121GW User Manual  Last Revised: 3 March 2025 
+56 
+MEASUREMENT HOLD 
+There are two measurement HOLD functions. 
+1. Manual Hold 
+To pause the measurement on the main display, press the HOLD button. To 
+resume measurement, you need to press the button again until A- and HOLD 
+are no longer visible. 
+The bargraph display will continue to update in “live” mode while the cap-
+tured value is held on the screen. 
+2. Automatic Hold 
+Press the HOLD button twice until A-HOLD is displayed. 
+This mode will wait for a stable reading and automatically lock that value on 
+the display. A beep will be heard to indicate this capture. 
+It will continue to hold this value until the measurement changes significantly 
+and a new stable reading is found. This mode is great for when you must 
+keep your hands on the probes. 
+  
+===== page 57 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 57 
+RELATIVE MEASUREMENT (REL) 
+ 
+If you are measuring something relative to another measurement or need to 
+calibrate any non-zero error out, you can press the REL button to zero the 
+currently displayed value. 
+All subsequent measurements will have this stored relative value subtracted 
+from the result. The displayed measurement is the difference between the 
+actual measured value and the stored relative value. 
+It is useful for example to cancel out the resistance of test probes in the ohms 
+range. But can be used in all functions. 
+  
+
+===== page 58 =====
+121GW User Manual  Last Revised: 3 March 2025 
+58 
+MIN/MAX/AVG 
+ 
+To find the minimum and maximum value found during sampling you can use 
+the MIN/MAX button. 
+This button also provides an average function AVG. This can be entered by 
+pressing the button until the AVG symbol appears. 
+To capture min, max and average results press the MIN/MAX button until all 
+three icons are shown on the LCD. 
+To exit out of these modes hold the button until a beep is heard, and the 
+icons are cleared from the screen. 
+Pressing the MIN/MAX button will cycle through the displayed results of each 
+measurement. 
+
+===== page 59 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 59 
+SETUP MENU 
+ 
+To configure and read settings for the multimeter you can press the SETUP 
+button to view the settings. If you press the setup button multiple times you 
+will cycle through the menu, the order of the menu is as follows: 
+1. Temperature 
+2. Battery Voltage 
+3. Auto Power Off (APo) 
+4. Buzzer On/Off (b-Off) 
+5. LCD Contrast 
+6. Year 
+7. Month-Day 
+8. Hour-Minute 
+9. Multimeter ID 
+10. Logging Interval (ln 0) 
+11. Additional settings dependent upon the function selected. 
+  
+
+===== page 60 =====
+121GW User Manual  Last Revised: 3 March 2025 
+60 
+TEMPERATURE 
+The multimeter has an internal temperature which can be used for rough am-
+bient temperature measurement. Note that there will be thermal lag due to 
+the sealed enclosure. It is displayed on the secondary display. 
+The displayed temperature can be changed from Celsius to Fahrenheit using 
+the SETUP menu. To do this: 
+1. Navigate to the temperature item using SETUP. 
+2. Press and hold SETUP, until display flashes. 
+3. Use the UP/DOWN arrow keys to toggle between “c” and “F”. 
+4. To save the setting press and hold SETUP, until display no longer 
+flashes. 
+BATTERY VOLTAGE 
+To check the status of the batteries in the multimeter press the SETUP button 
+until “bAt” is displayed. The Low Battery icon will activate when the battery 
+voltage falls below approximately 4.2 V 
+It is recommended that you change the battery when the battery icon is dis-
+played, as the unit’s specifications are no longer guaranteed.  
+Lithium primary batteries have a higher initial terminal voltage and may 
+cause issues if they are used fresh. If you wish to use Lithium primary batter-
+ies, ensure they are partially discharged to 1.5V terminal voltage before use. 
+Alkaline batteries are recommended.  
+NiMH can also be used but will have the lowest battery life. 
+  
+===== page 61 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 61 
+AUTO POWER OFF (APO) 
+With some measurements you may not want the multimeter to automatically 
+power off (After 30 minutes). To disable automatic power off: 
+1. Navigate to the APo menu item using SETUP. 
+2. Press and hold SETUP, until display flashes. 
+3. Press UP/DOWN to toggle between “APO.oN” and “APO.oF”. 
+4. To save the setting press and hold SETUP, until display no longer 
+flashes. 
+APO is disabled in data logging mode. 
+BUZZER ON/OFF  
+If you wish to disable/enable the buzzer to perform the following steps: 
+1. Navigate to the b-OFF or b-ON menu item using the SETUP button. 
+2. Press and hold SETUP, until display flashes. 
+3. Press UP/DOWN to toggle between “b-OFF” and “b-ON”. 
+4. To save the setting press and hold SETUP, until display no longer 
+flashes. 
+LCD CONTRAST 
+If the multimeter has ghosted characters you may want to turn the contrast 
+down, if the screen is not dark enough you may need to turn up the contrast. 
+This may need to be changed due to variations in ambient operating temper-
+ature. 
+To change the contrast: 
+1. Navigate to the menu item that says LCD X using the SETUP button. 
+2. Press and hold SETUP, until display flashes. 
+3. Press UP and DOWN to configure the screen contrast, change until 
+the screen contrast is as desired. 
+4. To save the setting press and hold SETUP, until display no longer 
+flashes.  
+===== page 62 =====
+121GW User Manual  Last Revised: 3 March 2025 
+62 
+DATE 
+There are three menu items that can be used to read and set the currently 
+configured date. These are the following menu items: 
+1. Year  “YYYY” 
+2. Month-Day “MM-DD” 
+3. Hour-Minute “HH-mm” 
+To change the date items: 
+1. Navigate to the menu item. 
+2. Press and hold SETUP, until display flashes. 
+3. Press UP and DOWN to configure the date/time item. 
+4. To save the setting press and hold SETUP, until display no longer 
+flashes. 
+  
+===== page 63 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 63 
+MULTIMETER ID 
+This is a user configurable ID which is used to differentiate between multiple 
+121GW units. This value is what appears in the App and can be changed by 
+doing the following:  
+1. Navigate to the menu item “XXXXX” using SETUP (Where X are num-
+bers) 
+2. Press and hold SETUP, until display flashes. 
+3. Press UP and DOWN keys to configure the value. 
+4. Hold SETUP until a beep is heard to save the value. 
+LOGGING INTERVAL 
+The logging interval can range from 200 ms to 999 seconds. If you need to 
+change the interval, then you should: 
+5. Navigate to the menu item “In   x” using SETUP. 
+6. Press and hold SETUP, until display flashes. 
+7. Press UP and DOWN keys to configure the time interval in seconds.  
+If “x” is set to zero, the sample rate will be set to the ADC’s maximum 
+rate (approximately 200 ms). 
+8. Hold SETUP until a beep is heard to save the value. 
+ 
+  
+===== page 64 =====
+121GW User Manual  Last Revised: 3 March 2025 
+64 
+MAINTENANCE 
+The 121GW maintenance is outlined in this section. 
+Before opening case for maintenance, disconnect test leads from the 
+meter and turn off the meter. 
+DEBUGGING 
+1. If a low battery alert appears on the device as indicated in the opera-
+tion section, the back of the device must be opened to replace the 
+AA batteries. 
+2. If the measurements fail to respond to changes in measured devices 
+check the fuse, leads and test probe connections. 
+CLEANING AND STORAGE 
+The device should be kept in a clean condition, this requires periodic clean-
+ing. The device should be cleaned slightly damp cloth with mild detergent. Do 
+not use solvents or abrasives as they could damage the device. 
+When the device is placed into long term storage (>50 days) the batteries 
+should be removed to reduce the risk of leakage or unnecessary drain. 
+FUSE REPLACEMENT 
+To check whether you need to replace a fuse perform the following steps: 
+1. Switch to the voltage range and connect a lead as shown in the below 
+diagram. 
+2. If the multimeter beeps the fuse is functioning, if it fails to beep it  
+indicates that the fuse is blown. 
+  
+
+===== page 65 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 65 
+If it fails to beep when connected to the “A” jack, then it is likely that the 
+larger A fuse is blown. 
+If it fails to beep when connected to the “mA” jack, then it is likely that the 
+smaller mA fuse is blown. 
+  
+• mA/µA current input fuse: 400 mA / 600 V DC/AC, IR 10 kA HRC FAST 
+• Designed to UL 248-1 
+• Dimension: 6mm x 32 mm 
+• Recommended: ASTM HV610.0.4 400 mA (600V) or HV620.0.4 
+(1000V) 
+• A/500 mA current input fuse: 11 A/1000 V DC/AC, IR 20 kA HRC FAST 
+• Dimension: 10mm x 38 mm 5AG 
+• Recommended: ASTM HV110.11A, Bussmann DMM-B-11A, or Little-
+fuse FLU011 
+
+===== page 66 =====
+121GW User Manual  Last Revised: 3 March 2025 
+66 
+CALIBRATION 
+WARNING: 
+Entering the calibration mode can render your unit non-operational or out of 
+specification. Factory calibration will be VOID if this function is used. This 
+mode is only intended for those with the experienced knowledge and equip-
+ment necessary to calibrate their own equipment. 
+The calibration procedure can be performed for only one, or all desired 
+ranges and functions. When complete, re-power the meter to exit calibration 
+mode. 
+It is possible to recalibrate a single range and function if desired, there is no 
+need to calibrate all ranges once started. 
+The calibration values are stored in EEPROM and are not affected by firm-
+ware updates. 
+  
+===== page 67 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 67 
+CALIBRATION MODE 
+To enable calibration mode the following procedure must be followed: 
+1. Turn off the meter 
+2. Press and hold the MODE button. 
+3. Turn on device. 
+4. If the screen says, “CAL 1”. Press REL button, enter calibration mode. 
+5. The secondary screen will display “CAL” when the device is in calibra-
+tion mode. 
+6. Switch to the function mode you want to calibrate as per normal me-
+ter operation. (voltage, current, resistance etc) 
+7. Press the RANGE button to enter the range you need to calibrate.  
+To double check the current range notice the SI units displayed and 
+the position of the decimal point. Calibrating the incorrect range 
+could ruin your day. 
+8. After selecting the range and mode you can perform calibration, see 
+next section. 
+NOTE: Calibration should be performed in this order: 
+1. Offset calibration 
+2. Scale calibration 
+  
+===== page 68 =====
+121GW User Manual  Last Revised: 3 March 2025 
+68 
+SAVING CALIBRATION DATA 
+To backup calibration data you can perform the following procedure: 
+1. Ensure an SD card is in the multimeter. 
+2. Hold MEM. 
+3. Turn on the meter. 
+4. Release MEM. 
+5. Press the UP button. 
+6. Press the Mode button. 
+7. The calibration data will now be saved to the SD card. 
+LOADING CALIBRATION DATA 
+To load calibration data from SD card you can perform the following proce-
+dure: 
+8. Ensure an SD card is in the multimeter. 
+9. Hold MEM. 
+10. Turn on the meter. 
+11. Release MEM. 
+12. Press the DOWN button. 
+13. Press the Mode button. 
+14. The calibration data will now be loaded from the SD card. 
+  
+===== page 69 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 69 
+ZERO OFFSET CALIBRATION 
+To calibrate the offset of a mode and range the following procedure must be 
+followed: 
+1. Follow the steps shown in the section “Cal-
+ibration Mode”. 
+2. Disconnect or short the input that would 
+result in a zero reading as required for that 
+function: 
+Mode Action 
+Low Z N/A 
+Voltage DC Short Inputs 
+Voltage AC 10% of full Scale 
+Current DC Open Circuit 
+Current AC 10% of full scale 
+Resistance Short Inputs with Low Z Shunt 
+Temperature Pending Procedure 
+Frequency N/A 
+3. Press the SETUP button to begin offset calibration 
+4. Hold your breath, cross your fingers, and don't make any sudden 
+movements that could frighten the meter. Beard stroking is allowed. 
+5. There will be a timer countdown. When the timer reaches zero the 
+zero-offset calibration will complete and will be stored. 
+NOTE: If you do not setup the leads prior to starting the offset calibration 
+then the final calibration value will be affected. If at any time during the 
+timer countdown the measurement is interrupted the offset calibration pro-
+cedure should be restarted. 
+ 
+ 
+  
+
+===== page 70 =====
+121GW User Manual  Last Revised: 3 March 2025 
+70 
+FULL SCALE GAIN CALIBRATION 
+Before attempting any full-scale gain calibration, you need to be sure that 
+you have the required reference values for the ranges that calibration is 
+needed. These values are given in the calibration table. 
+To calibrate the full-scale gain of a range the fol-
+lowing procedure must be followed: 
+1. Follow the steps shown in the section 
+“Calibration Mode”. 
+2. Connect a reference generator with the test parameter value as out-
+lined in the following calibration table for the specific range. Ensure 
+that appropriate and desired uncertainly and traceability conditions 
+are met.  
+3. Hold your breath, cross your fingers, and don't make any sudden 
+movements that could frighten the meter or calibration equipment. 
+Beard stroking is allowed. 
+4. Press the MEM button to begin gain calibration. 
+5. There will be a timer countdown. When the timer reaches zero the 
+gain calibration will complete and will be stored. 
+NOTE: If you do not setup the leads prior to starting the offset calibration 
+then the final calibration value will be affected. If at any time during the 
+timer countdown the measurement is interrupted the offset calibration pro-
+cedure should be restarted. 
+  
+
+===== page 71 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 71 
+CALIBRATION REFERENCE TABLE 
+ 
+
+===== page 72 =====
+121GW User Manual  Last Revised: 3 March 2025 
+72 
+FIRMWARE UPDATE 
+The 121GW features updatable firmware that enables upgrades to be per-
+formed by the user from the SD card. To perform a firmware update, follow 
+the following procedure: 
+1. Ensure the low battery indicator is not present. 
+See Battery Voltage, Page 60.  
+ 
+2. Turn off the multimeter. 
+3. Insert an SD card into the  
+multimeter with the latest EEVblog.bin firmware file.  
+4. Press and hold the  and  buttons simultaneously. 
+5. Switch on the multimeter. 
+ 
+6. “IAP” will appear on the screen, 
+then press  to enter firmware 
+upgrade mode. 
+ 
+ 
+7. The multimeter will restart itself once 
+the update is complete, do not do this 
+manually. 
+ 
+ 
+NOTE 1: Do not disconnect the SD card or power down the multimeter until 
+the upgrade is complete. The bootloader should be robust enough to handle 
+this, but just don't, ok! 
+
+===== page 73 =====
+Last Revised: 3 March 2025 121GW User Manual  
+ 73 
+WARRANTY 
+The 121GW is warranted to be free from defects in materials and workman-
+ship for a period of one year from the date of purchase. If within the war-
+ranty period your instrument should become inoperative from such defects, 
+the unit will be repaired or replaced at the company’s option. 
+This warranty covers normal use and does not cover damage which occurs in 
+shipment or failure which results from alteration, tampering, hacking, acci-
+dent, misuse, abuse, neglect or improper maintenance. 
+Batteries and consequential damage resulting from failed batteries are not 
+covered by warranty. 
+Any implied warranties, including but not limited to implied warranties of 
+merchantability and fitness for a purpose, are limited to the express war-
+ranty. The company shall not be liable for loss of use of the instrument or 
+other incidental or consequential damages, expenses, or economic loss, or 
+for any claim or claims for such damage, expenses or economic loss.  
+A purchase receipt or other proof of original purchase date will be required 
+before warranty repairs or replacement will be rendered.  
+ 
+ 
