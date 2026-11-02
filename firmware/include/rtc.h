@@ -40,4 +40,6 @@ uint8_t bcd_to_bin(uint8_t bcd);
 uint8_t rtc_days_in_month(uint8_t yy, uint8_t month);
 void rtc_poll_second(void);
 
+uint8_t rtc_clamp_day(uint8_t yy, uint8_t month, uint8_t day);
+
 #endif /* RTC_H */

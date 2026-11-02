@@ -1006,3 +1006,10 @@ void sd_process_dma_irq(void)
         dma_clear_flags(DMA2_FLAGS_CH4);
     }
 }
+
+/* orig: 0x0801F8BA - initialise the card and mount the volume; 1 on failure */
+uint8_t sd_mount(void)
+{
+    (void)sd_init();
+    return (f_mount(0, &g_fatfs) != FR_OK) ? 1 : 0;
+}

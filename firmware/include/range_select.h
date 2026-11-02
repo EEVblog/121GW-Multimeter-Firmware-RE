@@ -26,4 +26,6 @@ void reconfigure_borrow_f1(uint8_t borrow);
 void autorange_primary(int32_t value);
 void autorange_secondary(int32_t value);
 
+uint8_t range_fixed_function(uint8_t ignore_range);
+
 #endif /* RANGE_SELECT_H */

@@ -215,7 +215,7 @@ void sym_w5_b7_update(uint8_t refresh)
     if (g_apo_warning_active != 0) {
         return;
     }
-    set_bits(&g_lcd_shadow[5], 0x80u, g_apo_disabled == 0 && g_logging_active == 0 && g_apo_long == 0);
+    set_bits(&g_lcd_shadow[5], 0x80u, g_apo_disabled == 0 && g_logging_active == 0 && g_minmax_mode == 0);
     maybe_refresh(refresh);
 }
 
@@ -288,7 +288,7 @@ void sym_w2_w4_b16_update(uint8_t refresh)
 
 /*
  * orig: 0x08019E24 - bit 30 of shadow[2]/[4]/[6]: with g_flag_80b7 by
- * g_peak_select, otherwise by g_apo_long 1..4; none while logging or in
+ * g_peak_select, otherwise by g_minmax_mode 1..4; none while logging or in
  * the menu.
  */
 void sym_b30_update(uint8_t refresh)
@@ -306,7 +306,7 @@ void sym_b30_update(uint8_t refresh)
                 g_lcd_shadow[4] |= b30;
             }
         } else {
-            switch (g_apo_long) {
+            switch (g_minmax_mode) {
             case 1: g_lcd_shadow[4] |= b30; break;
             case 2: g_lcd_shadow[6] |= b30; break;
             case 3: g_lcd_shadow[2] |= b30; break;

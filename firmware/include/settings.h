@@ -48,4 +48,10 @@ uint8_t settings_marker_1f_missing(void);
 uint8_t settings_read_byte(uint32_t offset);
 void settings_write_byte(uint32_t offset, uint8_t value);
 
+extern uint8_t g_flag_808b;      /* 0x2000808B */
+
+void acdc_mode_toggle(void);
+void settings_temp_unit_key(uint8_t key);
+void settings_serial_yymm_from_clock(void);
+
 #endif /* SETTINGS_H */

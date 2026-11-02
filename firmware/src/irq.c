@@ -6,6 +6,7 @@
 #include "app_globals.h"
 #include "board_io.h"
 #include "buzzer.h"
+#include "display_text.h"
 #include "sd_card.h"
 #include "stm32l1xx.h"
 
@@ -144,4 +145,20 @@ void TIM3_IRQHandler(void)
             }
         }
     }
+}
+
+/* orig: 0x08024F06 - power-off screen and a beep of 100 scheduler ticks */
+void power_off_beep(void)
+{
+    uint8_t ticks = 0;
+
+    show_power_off();
+    gpio_set(GPIOE, BUZZER_PIN);
+    do {
+        while (g_task_flag_a == 0) {
+        }
+        g_task_flag_a = 0;
+        ticks++;
+    } while (ticks < 100);
+    gpio_reset(GPIOE, BUZZER_PIN);
 }

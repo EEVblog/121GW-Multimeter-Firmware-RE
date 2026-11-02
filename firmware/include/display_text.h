@@ -69,4 +69,8 @@ void show_cal1(void);
 void show_version(void);
 void lcd_all_segments_on(void);
 
+extern char g_number_text[16];   /* 0x20007BE0  (the original addresses only its end, 0x20007BEF) */
+
+void number_to_text(uint32_t n);
+
 #endif /* DISPLAY_TEXT_H */

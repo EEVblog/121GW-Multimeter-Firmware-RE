@@ -263,3 +263,14 @@ void overload_latch(void)
 {
     g_flag_8049 = (g_flag_8046 != 0) ? 1 : 0;
 }
+
+/* orig: 0x08015974 - start MIN/MAX recording */
+void minmax_start(void)
+{
+    g_minmax_mode = 1;
+    g_minmax_max = INT32_MIN;
+    g_minmax_min = INT32_MAX;
+    g_minmax_d90 = 0;
+    g_minmax_d98 = 0;
+    g_minmax_d94 = 0;
+}

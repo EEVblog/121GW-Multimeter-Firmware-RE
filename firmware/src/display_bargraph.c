@@ -64,7 +64,7 @@ static void bargraph_set(uint8_t i)
 /*
  * orig: 0x08018FA8 - bar graph sign and scale symbols, and its length
  * (|g_scaled_value| / 400 with fine == 1, else / 2000). With an overload
- * (g_flag_8046) the bar is full: always without g_apo_long, otherwise when
+ * (g_flag_8046) the bar is full: always without g_minmax_mode, otherwise when
  * the value is at or above g_bar_limit (unsigned compare) or not positive.
  * Function 11 is limited to 15 segments.
  */
@@ -98,7 +98,7 @@ void bargraph_compute(uint8_t fine)
     mag = (v < 0) ? (int32_t)(0u - (uint32_t)v) : v;
     g_bar_length = (uint8_t)(mag / (int32_t)divisor);
     if (g_flag_8046 != 0) {
-        if (g_apo_long == 0) {
+        if (g_minmax_mode == 0) {
             g_bar_length = BARGRAPH_SEGMENTS - 1u;
         } else if ((uint32_t)g_scaled_value >= g_bar_limit ||
                    (int32_t)(0u - (uint32_t)g_scaled_value) >= g_scaled_value) {

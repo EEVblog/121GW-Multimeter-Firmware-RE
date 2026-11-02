@@ -43,4 +43,8 @@ extern uint8_t g_recall_dp;          /* 0x20007FED  decimal point of the recalle
 
 void display_recall_symbols(void);
 
+extern uint16_t g_count_7fd8;        /* 0x20007FD8 */
+
+void secondary_dp_refresh(void);
+
 #endif /* DISPLAY_UPDATE_H */

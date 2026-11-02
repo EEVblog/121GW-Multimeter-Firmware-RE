@@ -191,7 +191,7 @@ void reconfigure_borrow_f1(uint8_t borrow)
 
 static int autorange_allowed(void)
 {
-    return (uint8_t)(g_flag_808a | g_flag_8042) == 0 && g_apo_long == 0;
+    return (uint8_t)(g_flag_808a | g_flag_8042) == 0 && g_minmax_mode == 0;
 }
 
 /* |value| for functions 22..24 (wrapping, as the original), else value. */
@@ -280,4 +280,21 @@ void autorange_secondary(int32_t value)
     if (g_mode_8037 == 11) {
         g_disp_flag_8062 = 1;
     }
+}
+
+/*
+ * orig: 0x08015728 - 1 for functions 0, 7, 8, and for 6, 11, 12 in ranges
+ * 2 and up unless ignore_range is set
+ */
+uint8_t range_fixed_function(uint8_t ignore_range)
+{
+    uint8_t f = g_function;
+
+    if (f == 0 || f == 7 || f == 8) {
+        return 1;
+    }
+    if (f == 6 || f == 11 || f == 12) {
+        return (ignore_range == 0 && g_range >= 2) ? 1 : 0;
+    }
+    return 0;
 }

@@ -33,4 +33,8 @@ void EXTI15_10_IRQHandler(void);
 void ADC1_IRQHandler(void);
 void TIM3_IRQHandler(void);
 
+extern volatile uint8_t g_task_flag_a;   /* 0x200080D0 */
+
+void power_off_beep(void);
+
 #endif /* IRQ_H */

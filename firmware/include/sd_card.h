@@ -187,4 +187,9 @@ sd_error_t sd_wait_write_operation(void);
 sd_error_t sd_process_irq(void);
 void sd_process_dma_irq(void);
 
+#include "ff.h"
+extern FATFS g_fatfs;                    /* 0x20006830 */
+
+uint8_t sd_mount(void);
+
 #endif /* SD_CARD_H */

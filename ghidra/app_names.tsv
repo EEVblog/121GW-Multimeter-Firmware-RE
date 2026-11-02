@@ -281,7 +281,7 @@
 2000803a	label	g_power_off_request
 2000803c	label	g_function	current measurement function index
 2000803d	label	g_range	current range within the function
-2000804e	label	g_apo_long
+2000804e	label	g_minmax_mode
 20008050	label	g_flag_8050	selects partial LCD updates; role unknown
 20008053	label	g_flag_8053	forces a full LCD update
 2000805b	label	g_display_dirty
@@ -964,3 +964,22 @@
 20008033	label	g_clock_set_by_ble
 20008034	label	g_flag_8034
 20008070	label	g_edit_idle_ticks
+080103a8	func	rtc_clamp_day
+08014708	func	acdc_mode_toggle
+08015be0	func	settings_temp_unit_key
+08015f44	func	settings_serial_yymm_from_clock
+0800d6e0	func	secondary_dp_refresh
+08015728	func	range_fixed_function
+08015974	func	minmax_start
+0801f8ba	func	sd_mount
+0801f7ac	func	number_to_text
+08024f06	func	power_off_beep
+2000808b	label	g_flag_808b
+20007fd8	label	g_count_7fd8
+20007d88	label	g_minmax_max
+20007d8c	label	g_minmax_min
+20007d90	label	g_minmax_d90
+20007d94	label	g_minmax_d94
+20007d98	label	g_minmax_d98
+20006830	label	g_fatfs
+20007be0	label	g_number_text

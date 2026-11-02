@@ -1481,6 +1481,24 @@ SPECS.update({
     "ble_field_temperature": dict(ret=None, trials=500, ram_set=_BLE_RAM, extra=_BLE_EXTRA, args=lambda r: (9,)),
 })
 
+
+# ---- misc leaves (part 20) ----
+SPECS.update({
+    "rtc_clamp_day": dict(ret=8, trials=2000, args=lambda r: (r.getrandbits(8), r.randrange(1, 13), r.getrandbits(8))),
+    "acdc_mode_toggle": dict(ret=None, ram_set=lambda r: {0x200080BA: r.choice([0, 1]), 0x2000803C: r.randrange(0, 26)}),
+    "settings_temp_unit_key": dict(ret=None, trials=300, args=lambda r: (r.choice([0, 1, 2, 3, r.getrandbits(8)]),),
+                                   ram_set=lambda r: {0x200080AB: r.choice([0, 1]), 0x20007FE4: r.choice([0, 1])},
+                                   extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
+    "settings_serial_yymm_from_clock": dict(ret=None, ram_set=lambda r: {0x2000808B: r.choice([0, 1]), 0x200080D7: r.getrandbits(8), 0x200080D8: r.getrandbits(8)}),
+    "secondary_dp_refresh": dict(ret=None, ram_set=lambda r: {0x200080C2: r.choice([0, 1]), 0x2000803C: r.randrange(0, 26), 0x200080C6: r.choice([0, 1]), 0x200080C7: r.choice([0, 1])}),
+    "range_fixed_function": dict(ret=8, trials=600, args=lambda r: (r.choice([0, 1, 2]),), ram_set=lambda r: {0x2000803C: r.randrange(0, 26), 0x2000803D: r.randrange(0, 8)}),
+    "minmax_start": dict(ret=None),
+    "sd_mount": dict(ret=8, trials=3, model=dict(sd_image=SD_IMAGE)),
+    "number_to_text": dict(ret=None, trials=1000, args=lambda r: (r.choice([0, 7, 10, 99999, r.getrandbits(32), r.randrange(0, 1000)]),),
+                           extra=[(0x20007BE0 + 4 * i, 4) for i in range(4)]),
+    "power_off_beep": dict(ret=None, trials=2, extra=[(0x20007790 + 4 * i, 4) for i in range(16)]),
+})
+
 # ---- BLE commands ----
 _HEX = b"0123456789ABCDEF"
 def _ble_cmd_ram(r):

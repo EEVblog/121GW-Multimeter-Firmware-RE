@@ -14,7 +14,7 @@
 
 extern uint16_t g_buzzer_ticks;        /* 0x20007FB4 */
 extern uint16_t g_beep_duration;       /* 0x20007FB6 */
-extern uint8_t g_apo_long;             /* 0x2000804E  select the 60-minute auto power-off */
+extern uint8_t g_minmax_mode;             /* 0x2000804E  MIN/MAX mode (0 = off); also selects the 60-minute auto power-off */
 extern uint8_t g_beep_enabled;         /* 0x20008078 */
 extern uint8_t g_buzzer_on;            /* 0x20008079 */
 extern uint8_t g_beep_count;           /* 0x2000807A */

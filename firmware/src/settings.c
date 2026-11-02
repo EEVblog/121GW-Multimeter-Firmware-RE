@@ -29,6 +29,9 @@
 #include "measure_derived.h"
 #include "measure_funcs.h"
 #include "trim_correction.h"
+#include "annunciators.h"
+#include "display_state.h"
+#include "rtc.h"
 
 #define EE_SERIAL_YYMM    0x01u
 #define EE_SERIAL_NUMBER   0x03u
@@ -355,4 +358,36 @@ uint8_t settings_read_byte(uint32_t offset)
 void settings_write_byte(uint32_t offset, uint8_t value)
 {
     eeprom_write_byte(offset, value);
+}
+
+/* orig: 0x08014708 - toggle AC+DC (leaving it returns to function 1) */
+void acdc_mode_toggle(void)
+{
+    if (g_flag_80ba == 0) {
+        acdc_mode_enter();
+    } else {
+        g_flag_80ba = 0;
+        g_function = 1;
+    }
+}
+
+/* orig: 0x08015BE0 - temperature unit setting: keys 1/2 toggle it, others store it */
+void settings_temp_unit_key(uint8_t key)
+{
+    if (key == 1 || key == 2) {
+        g_temp_unit_c ^= 1u;
+        annunciator_temp_unit();
+    } else {
+        settings_save_temp_unit(g_temp_unit_c);
+    }
+    g_disp_flag_8062 = 1;
+}
+
+/* orig: 0x08015F44 - with g_flag_808b set, the serial prefix becomes the clock year/month (YYMM) */
+void settings_serial_yymm_from_clock(void)
+{
+    if (g_flag_808b != 0) {
+        g_serial_yymm = (uint16_t)(g_rtc_set_reg2 * 100u + g_rtc_set_reg4);
+        settings_save_serial_yymm();
+    }
 }

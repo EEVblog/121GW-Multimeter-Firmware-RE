@@ -29,7 +29,7 @@ void buzzer_start_forced(uint16_t ticks)
 /* orig: 0x0800ED26 */
 void apo_reset(void)
 {
-    g_apo_seconds_left = (g_apo_long == 0) ? APO_SECONDS_NORMAL : APO_SECONDS_LONG;
+    g_apo_seconds_left = (g_minmax_mode == 0) ? APO_SECONDS_NORMAL : APO_SECONDS_LONG;
     g_apo_warn_request = 0;
     g_apo_warn_beeps = 0;
     g_apo_warning_active = 0;

@@ -807,3 +807,15 @@ void lcd_all_segments_on(void)
     }
     g_display_dirty = 1;
 }
+
+/* orig: 0x0801F7AC - decimal text of n, ending at g_number_text[15] (NUL) */
+void number_to_text(uint32_t n)
+{
+    char *p = &g_number_text[15];
+
+    *p = 0;
+    do {
+        *--p = (char)('0' + n % 10u);
+        n /= 10u;
+    } while (n != 0);
+}

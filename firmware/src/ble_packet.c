@@ -386,8 +386,8 @@ void ble_build_packet(void)
     }
     if (g_flag_80b7 != 0) {
         s = (uint8_t)(s + ((g_peak_select == 0) ? 0x01 : 0x02));
-    } else if (g_apo_long != 0) {
-        s = (uint8_t)(g_apo_long + s);
+    } else if (g_minmax_mode != 0) {
+        s = (uint8_t)(g_minmax_mode + s);
     }
     g_ble_packet[15] = b;
     g_ble_packet[16] = s;

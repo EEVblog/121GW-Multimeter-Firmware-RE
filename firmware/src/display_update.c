@@ -80,7 +80,7 @@ void main_display_update(void)
 
     g_new_reading = 0;
     g_flag_805f = 0;
-    if (g_function == 9 && g_flag_8042 == 0 && g_flag_808a == 0 && g_apo_long == 0 &&
+    if (g_function == 9 && g_flag_8042 == 0 && g_flag_808a == 0 && g_minmax_mode == 0 &&
         g_count_805a != 0) {
         g_count_805a--;
     } else if (g_flag_8076 != 0) {
@@ -334,4 +334,17 @@ void display_recall_symbols(void)
     sym_function_units(g_function_7feb, g_range_7fec, g_flag_7fe5, g_flag_7fe6);
     bargraph_off();
     lcd_update();
+}
+
+/* orig: 0x0800D6E0 - secondary decimal point for the dual readings, then redraw */
+void secondary_dp_refresh(void)
+{
+    if (g_flag_80c2 == 0) {
+        dp_from_sel_c6();
+    } else {
+        dp_for_dual();
+    }
+    g_count_7fd8 = 0;
+    g_flag_8063 = 1;
+    g_disp_flag_8062 = 1;
 }

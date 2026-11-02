@@ -175,3 +175,11 @@ void rtc_poll_second(void)
         g_flag_80e7 = (g_flag_80e7 == 1) ? 0 : 1;
     }
 }
+
+/* orig: 0x080103A8 - day limited to the length of the month */
+uint8_t rtc_clamp_day(uint8_t yy, uint8_t month, uint8_t day)
+{
+    uint8_t days = rtc_days_in_month(yy, month);
+
+    return (days < day) ? days : day;
+}

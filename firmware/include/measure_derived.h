@@ -40,4 +40,12 @@ extern uint8_t g_flag_8049;         /* 0x20008049  copy of g_flag_8046 */
 uint8_t outside_limit(int32_t value, int32_t limit);
 void overload_latch(void);
 
+extern int32_t g_minmax_max;        /* 0x20007D88 */
+extern int32_t g_minmax_min;        /* 0x20007D8C */
+extern int32_t g_minmax_d90;        /* 0x20007D90  cleared at start (sum/count?) */
+extern int32_t g_minmax_d94;        /* 0x20007D94 */
+extern int32_t g_minmax_d98;        /* 0x20007D98 */
+
+void minmax_start(void);
+
 #endif /* MEASURE_DERIVED_H */
