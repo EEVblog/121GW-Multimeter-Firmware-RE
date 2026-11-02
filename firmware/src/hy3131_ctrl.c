@@ -2,6 +2,8 @@
  * HY3131 measurement control.
  */
 #include "hy3131_ctrl.h"
+#include "measure_peak.h"
+#include "measure_counter.h"
 #include "hy3131_bus.h"
 #include "hy3131_tables.h"
 #include "board_io.h"

@@ -119,6 +119,9 @@ When every function is reconstructed, the globals are defined normally and the h
 | AC frequency response (functions 2/4) and function 2 range 0 frequency offset | `firmware/src/ac_response.c` | 2 | equivalent |
 | Trim-based AC correction (functions 2, 4, 16, 18, 20) | `firmware/src/trim_correction.c` | 4 | equivalent |
 | Dual-readout functions 13–15, 22–24 (phase alternation, in-cycle calibration, 2-D grid correction) | `firmware/src/dual_correction.c` | 4 | equivalent over 24-step sequences |
+| Peak-hold results (max/min peak registers, held peak) | `firmware/src/measure_peak.c` | 1 | equivalent |
+| Counter results (capture, frequency with auto/manual range, functions 6, 7, 8, 12, counter calibration) | `firmware/src/measure_counter.c` | 15 | equivalent below the 10^9-count frequency overload (see deviations) |
+| Secondary-display unit annunciators | `firmware/src/annunciators.c` | 4 | equivalent |
 | Type K thermocouple table, °C → °F | `firmware/src/temperature.c` | 2 | equivalent |
 | IAR `log10`, reproduced bit-for-bit | `firmware/src/iar_math.c` | 1 | equivalent on 4000 inputs incl. NaN/inf/zero/subnormal/negative and errno |
 
@@ -128,6 +131,7 @@ Known deviations, all for inputs that valid firmware state never produces:
 - `lcd_reapply_pulse_duration()` with a contrast outside 10–17 uses 0 where the original passes an uninitialised register.
 - `hy3131_write_mode_registers()` / `hy3131_set_irq_enables()` with a function index above 0x18 use zeros / AD1 where the original uses an uninitialised stack buffer.
 - `smooth3()` and the moving averages are tested with their counters in range (0–3 and 0–10), which is where the firmware keeps them. A corrupted counter could divide by zero: the Cortex-M3 returns 0 for that, while C leaves it undefined.
+- Frequency overload (function 6 value of 10^9 counts or more, decade 9): the original stores an uninitialised register as the frequency or reading while flagging the overload. The rebuild leaves the previous value and stores only the decimal and the flag.
 - Table rows beyond the end of the original's register-table blocks read code in the original. Every function has at most 4 rows in its smallest table, and real ranges stay inside the blocks.
 
 Original quirks that are reproduced deliberately:
@@ -138,7 +142,7 @@ Original quirks that are reproduced deliberately:
 
 `tools/emu/identify_math.py` calls helpers in the original with test operands and compares the results with reference IEEE/integer operations. The IAR routines found are float add/sub/mul/div, int/unsigned→float, float↔double, double add/mul/div, double/float→int and float→unsigned (all saturating; see `numeric.h`), unsigned→double, signed/unsigned 64-bit divide, int64→float, flag-setting float compares, double `sqrt` and double `log10`.
 
-In the rebuild, the basic IEEE operations are left to GCC's libgcc, which gives bit-identical results for finite operands. Truncating conversions use `iar_d2i()`/`iar_f2i()`, which reproduce IAR's saturation. `(int)sqrt((double)n)` on 32-bit integers is replaced by an exact integer square root, which gives identical results. `log10` isn't required to be correctly rounded, so `iar_math.c` reproduces IAR's routine operation by operation (bit-identical, including errno).
+In the rebuild, the basic IEEE operations are left to GCC's libgcc, which gives bit-identical results for finite operands. Where a NaN can arise from realistic data, `iar_fdiv()` reproduces IAR's negative default NaN. Function 12 is one such case: an uncalibrated (all-zero) record makes 0/0. `iar_f2u()` reproduces IAR's saturating float→unsigned conversion: negatives give 0, values ≥ 2^32 give 0xFFFFFFFF, and NaN goes by its sign. IAR's 64-bit divides return the dividend unchanged when dividing by zero, and the Cortex-M3 hardware divide returns 0; `iar_uldiv()`, `iar_ldiv()` and `m3_udiv()` reproduce both. All three behaviours were checked by calling the original routines in emulation. Truncating conversions use `iar_d2i()`/`iar_f2i()`, which reproduce IAR's saturation. `(int)sqrt((double)n)` on 32-bit integers is replaced by an exact integer square root, which gives identical results. `log10` isn't required to be correctly rounded, so `iar_math.c` reproduces IAR's routine operation by operation (bit-identical, including errno).
 
 ## Calibration (found so far)
 
@@ -169,6 +173,15 @@ In the rebuild, the basic IEEE operations are left to GCC's libgcc, which gives 
 - **Functions 13–15 and 22–24 (two readings):** these alternate between a reference reading and a level reading (phase 0x200080C4). Functions 13–15 take them via functions 2 and 16, and functions 22–24 via functions 1 and 17. Each phase discards 3 or 6 readings after a switch. Each reading auto-ranges independently with its own range bit (0x200080C6/C7): up above 55000, down below 3200 or 4000 (11000/400 for functions 15/24 in the upper range). The range is then `sel_code()` of the two bits. The product of the two readings is computed after every pair. In calibration the two offsets or gains are averaged over 3 cycles inside the dispatcher.
 - **Reference correction for those functions:** a bilinear interpolation in 9×8 grids (one per function, range and PF8 state), indexed by level band and reference band. Level band 8, used when 0x200080CC doesn't match the function, reads row 9, which is the first row of the next grid. Function 15 ranges 2/3 (PF8 high) use 7-word rows at offsets inside another grid. The rebuild keeps all grids as one block addressed by flash offset, so these reads are identical.
 - The second moving average is used with up to 20 samples (function 9 range 6). Its buffer at 0x20007238 has 400 bytes free before the next variable, so the rebuild declares 20 entries.
+
+## Counter functions (found so far)
+
+- Each counter interrupt captures CTA (0x15), CTB (0x18) and CTC (0x1B) and restarts the counter. The reference count is CTC + (0x1000000 − preset·256), where the preset is at 0x2000001C.
+- The function 6 value is gain·CTB·10/(reference/10). It is divided (rounded) by 10^decade and either shown (function 6) or stored as the secondary frequency (functions 0, 2, 4, 16, 18, 20). Auto-range moves up at each decade and down at 80 % of it. Manual range (0x20008042 outside calibration) flags an overload instead.
+- Function 6 calibration sets gain = reference·150000000/(CTB·100).
+- Function 7 = reference·100000/(gain/1000·CTB) · (CTA per ms of reference)/1000, over ranges 0–2.
+- Function 8 = CTA per ms of reference.
+- Function 12 = CTA/CTB (×100 for the higher ranges), less the zero offset, divided by the gain. It is averaged with a window of 1/50 of the value (at least 20). Readings below 21 in ranges 2–4 read 0. In range 4 with manual range, 0x200080A4 readings are held back.
 
 ## Start-up summary
 

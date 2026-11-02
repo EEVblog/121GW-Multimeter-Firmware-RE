@@ -13,8 +13,6 @@ void FUN_08014c3c(uint8_t code);    /* short-press key handler */
 void FUN_0801622c(uint8_t code);    /* long-press key handler */
 
 /* HY3131 result handlers (measurement processing) */
-void hy3131_on_peak_hold(void);      /* 0x0800A7FC */
-void hy3131_on_counter_ready(void);  /* 0x0800AA00 */
 void FUN_0800b540(void);             /* polled in function 12, ranges 0..4 */
 
 #endif /* ORIG_CALLS_H */

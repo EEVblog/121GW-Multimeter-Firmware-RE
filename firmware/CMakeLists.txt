@@ -36,6 +36,9 @@ set(APP_SOURCES
     src/ac_response.c
     src/trim_correction.c
     src/dual_correction.c
+    src/measure_peak.c
+    src/measure_counter.c
+    src/annunciators.c
 )
 
 add_library(app_modules STATIC ${APP_SOURCES})
