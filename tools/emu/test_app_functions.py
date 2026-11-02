@@ -99,6 +99,22 @@ SPECS = {
     "flash_ob_unlock": dict(ret=None, trials=20),
     "flash_get_status": dict(ret=8, trials=20),
     "flash_wait_for_last_operation": dict(ret=8, args=lambda r: (r.choice([0, 1, 2, 0x8000]),)),
+    # ---- HY3131 control ----
+    # Rows are kept within the original table blocks (4 rows in the smallest
+    # tables); beyond them the original reads the code that follows.
+    "hy3131_write_mode_registers": dict(ret=None, trials=600,
+        args=lambda r: (r.randrange(0, 0x19), r.randrange(0, 4)),
+        ram_set=lambda r: {0x200080C6: r.randrange(0, 4), 0x200080C7: r.randrange(0, 4)}),
+    "hy3131_set_irq_enables": dict(ret=None, trials=300, args=lambda r: (r.randrange(0, 0x19),)),
+    "hy3131_restart_counter": dict(ret=None, trials=60, idr=pin_pattern("F", 3),
+                                   extra=[(0x2000001C, 4)]),
+    "hy3131_configure_mode": dict(ret=None, trials=80, idr=pin_pattern("F", 3),
+        args=lambda r: (r.randrange(0, 0x19), r.randrange(0, 4)),
+        ram_set=lambda r: {0x200080C6: r.randrange(0, 4), 0x200080C7: r.randrange(0, 4)},
+        with_globals_of=["hy3131_write_mode_registers", "hy3131_set_irq_enables",
+                         "hy3131_restart_counter"]),
+    "hy3131_service": dict(ret=None, trials=40, idr=pin_pattern("F", 3)),
+    "hy3131_poll": dict(ret=None, trials=40, idr=pin_pattern("F", 3)),
     # ---- LCD driver ----
     "lcd_update": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),
     "lcd_update_partial": dict(ret=None, extra=[(0x20007790 + 4 * i, 4) for i in range(8)]),

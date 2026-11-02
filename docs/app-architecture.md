@@ -100,8 +100,38 @@ When every function is reconstructed, the globals are defined normally and the h
 | HY3131 serial bus, PF8 detect | `firmware/src/hy3131_bus.c` | 6 | equivalent |
 | NJU6350 RTC | `firmware/src/rtc.c` | 11 | equivalent |
 | LCD driver | `firmware/src/lcd_driver.c` | 12 | equivalent |
+| Start-up (clocks, power, GPIO, ADC, NVIC, timers) | `firmware/src/system_init.c` | 15 | equivalent, including BOR-set, wake-from-standby and no-HSE variants |
+| Flash/option-byte helpers | `firmware/src/flash_ob.c` | 8 | equivalent (tested directly or via `system_init`) |
+| HY3131 control (mode registers, IRQ enables, counter, service, poll) | `firmware/src/hy3131_ctrl.c`, generated `hy3131_tables.c` | 6 | equivalent for valid function/range indices |
 
-Known deviation: `lcd_reapply_pulse_duration()` with a contrast outside 10–17 uses 0 where the original passes an uninitialised register. Valid settings never reach that case.
+Known deviations, all for inputs that valid firmware state never produces:
+- `lcd_reapply_pulse_duration()` with a contrast outside 10–17 uses 0 where the original passes an uninitialised register.
+- `hy3131_write_mode_registers()` / `hy3131_set_irq_enables()` with a function index above 0x18 use zeros / AD1 where the original uses an uninitialised stack buffer.
+- Table rows beyond the end of the original's register-table blocks read code in the original. Every function has at most 4 rows in its smallest table, and real ranges stay inside the blocks.
+
+Original quirks that are reproduced deliberately:
+- `adc_init()`: the external-trigger-edge field of the original's init struct is uninitialised. It is always 0 in the start-up sequence (checked in emulation with different RAM fills).
+- `rotary_pins_config()`: for a non-one-hot code the pin mask is whatever the caller left in r2. In the only non-trivial call that is `RCC->AHBENR`, which the C caller passes explicitly.
+
+## Start-up summary
+
+- `SystemInit` (before C start-up) briefly runs the 16 MHz HSE PLL, with a 0x5000-iteration HSE timeout.
+- `system_init()`, called from `main`:
+  1. Handles wake from standby (flag in 0x20007FDE).
+  2. Forces the BOR level to 0.
+  3. Sets voltage range 1, then switches to **MSI 4.194 MHz with HSE and LSE off and HSI on** (for the ADC).
+  4. Clocks the RTC/LCD from LSI and enables debug in low-power modes.
+  5. Sets up board GPIO: control outputs, HY3131/RTC buses, rotary/key pins with pull-ups, ADC inputs PA4/PA5/PF11/PF13/PF14.
+  6. Initialises ADC1 (12-bit, single, software trigger), the NVIC (group 2: SDIO and DMA2 channel 4 at 0/0, TIM3 at 1/1, TIM2 at 2/2), **TIM2 ≈ 99.8 Hz** (scheduler) and **TIM3 ≈ 1 kHz**.
+- `front_end_select(function)` drives PD0, PF4, PF5, PC11 and PD7 per measurement function (100 = idle).
+
+## HY3131 configuration
+
+- Each measurement function index (0–0x18) and range selects a 20-byte image of HY3131 registers 0x20–0x33 (R20 counter control … R33 oscillator) from tables in flash. The data is generated into `firmware/src/hy3131_tables.c` by `tools/gen_hy3131_tables.py`.
+- Some functions select rows by range, others by 0x200080C6/C7 under a flag at 0x200080C4.
+- INTE per function: AD1 only for most functions; AD1 + counter for functions 13–16, 18 and 20; counter only for 6–8 and 12; RMS + counter for 2/4 when 0x200080B7 = 1.
+- The counter restart presets CTA from 0x2000001C (default 0xE000).
+- `hy3131_service` reads registers 0x00–0x33 in one burst and dispatches to four result handlers still to be reconstructed: AD1 0x080061E4, RMS 0x08008208, peak 0x0800A7FC, counter 0x0800AA00.
 
 ## Findings from the reconstruction so far
 

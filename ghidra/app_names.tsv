@@ -129,6 +129,7 @@
 08028d12	func	__iar_zero_init3
 08028fe4	func	__iar_data_init3
 08029174	func	Reset_Handler
+2000001c	label	g_counter_preset	u32, default 0xE000; preset written to CTA
 2000022c	label	g_log_interval_s
 2000022e	label	g_cfg_022e	u16 setting, default 500; role unknown (key timing)
 20000230	label	g_apo_seconds_left	Auto power-off countdown (beeps at 60 s, off at 0)
@@ -138,15 +139,19 @@
 20007c30	label	g_digit_text	5 chars
 20007d0c	label	g_bor_level
 20007db0	label	g_digits	5 x u32
+20007dc4	label	g_hy_scratch
 20007fa8	label	g_log_tick_count
 20007fde	label	g_woke_from_standby
 20007fdf	label	g_pf8_detected_low
+20007fe0	label	g_flag_7fe0
 20007fe1	label	g_logging_active
 20007fe2	label	g_log_due
 20007fe4	label	g_menu_active	tentative: setup menu open
 2000801b	label	g_flag_801b
 2000801d	label	g_flag_801d
 2000803a	label	g_power_off_request
+2000803c	label	g_function	current measurement function index
+2000803d	label	g_range	current range within the function
 20008050	label	g_flag_8050	selects partial LCD updates; role unknown
 20008053	label	g_flag_8053	forces a full LCD update
 2000805b	label	g_display_dirty
@@ -164,7 +169,14 @@
 2000807d	label	g_hy_r20
 2000807e	label	g_hy_r29
 2000807f	label	g_hy_irq_pending
+20008098	label	g_flag_8098
+200080b7	label	g_flag_80b7
 200080b9	label	g_flag_80b9
+200080ba	label	g_flag_80ba
+200080bd	label	g_flag_80bd
+200080c4	label	g_flag_80c4
+200080c6	label	g_sel_80c6
+200080c7	label	g_sel_80c7
 200080ce	label	g_flag_80ce
 200080d0	label	g_task_flag_a
 200080d1	label	g_task_flag_b
