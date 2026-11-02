@@ -252,8 +252,16 @@ class Stm32l1:
             r = (r & ~0x202) | ((r & 1) << 1) | ((r & 0x100) << 1)
         elif word == PWR + 0x04:
             r = self.pwr_csr
-        elif word == ADC1:                     # SR: ADONS follows CR2.ADON
-            r = (r & ~0x40) | ((self._get(ADC1 + 0x08) & 1) << 6)
+        elif word == ADC1:                     # SR: ADONS (and EOC) follow CR2.ADON
+            on = self._get(ADC1 + 0x08) & 1
+            r = (r & ~0x42) | (on << 6) | (on << 1)
+        elif word == ADC1 + 0x58:              # DR: from idr["ADC"] (value or callable)
+            src = self.idr.get("ADC")
+            if callable(src):
+                r = src(self) & 0xFFFF
+            elif src is not None:
+                r = src & 0xFFFF
+            self.idr_reads["ADC"] = self.idr_reads.get("ADC", 0) + 1
         elif word == LCD + 0x08:
             en = self._get(LCD) & 1
             r = (r & 0x4) | 0x20 | (en * 0x11)

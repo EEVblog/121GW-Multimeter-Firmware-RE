@@ -143,6 +143,7 @@ When every function is reconstructed, the globals are defined normally and the h
 | SETUP menu items (temperature unit, APO, beep, contrast, date/time, serial number, log interval, per-function options), start-up state, RTC clock load | `firmware/src/setup_menu.c` | 16 | equivalent (invalid months excluded: documented `rtc_days_in_month` deviation) |
 | Key actions: HOLD/REL/MIN-MAX values, MODE key, bargraph limits, MEM store/recall display, calibration start | `firmware/src/modes.c` | 17 | equivalent |
 | Rotary switch debounce and function selection, RANGE key, BLE button events | `firmware/src/keys.c`, `firmware/src/range_select.c` | 7 | equivalent |
+| ADC task: battery (channel 5, 20-sample trimmed mean, low-battery debounce) and thermistor (channel 4, 10-sample mean, internal temperature with calibration offset, type K cold-junction voltage) | `firmware/src/battery.c`, `firmware/src/temperature.c` | 10 incl. inlined ADC SPL helpers | equivalent (the emulator models ADC EOC and DR) |
 | IAR `log10`, reproduced bit-for-bit | `firmware/src/iar_math.c` | 1 | equivalent on 4000 inputs incl. NaN/inf/zero/subnormal/negative and errno |
 
 Known deviations, all for inputs that valid firmware state never produces:

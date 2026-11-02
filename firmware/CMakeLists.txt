@@ -53,6 +53,7 @@ set(APP_SOURCES
     src/power.c
     src/setup_menu.c
     src/modes.c
+    src/battery.c
     ${COMMON_DIR}/fatfs/ff.c
 )
 

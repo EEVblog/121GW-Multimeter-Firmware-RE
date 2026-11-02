@@ -1739,6 +1739,59 @@ SPECS.update({
                                                     0x20007FE1: r.choice([0, 1]), 0x2000803C: r.randrange(0, 25)}),
 })
 
+
+# ---- ADC task: battery and thermistor ----
+def bat_ram(r):
+    d = {0x20007FBC: r.choice([0, 1, 5, 19, 20, 20, 20]), 0x20007FBD: 0,
+         0x200080F9: r.choice([0, 1]), 0x2000803B: r.choice([0, 1]),
+         0x20007FDC: r.choice([0, 9, 10, 11]), 0x20007FDD: 0,
+         0x20008086: r.choice([0, 1, 2, r.getrandbits(8)])}
+    for i in range(20):
+        d.update(le32(0x200076F0 + 4 * i, r.choice([0, 1000, 1050, r.randrange(0, 1100), r.getrandbits(32)])))
+    return d
+
+
+def therm_ram(r):
+    d = {0x20007FD4: r.choice([0, 1, 9, 10, 10]), 0x20007FD5: 0,
+         0x20007FD6: r.choice([0, 9, 10, 11]), 0x20007FD7: 0,
+         0x200080AC: r.choice([0, 1]), 0x200080AF: r.choice([0, 1]), 0x200080B0: r.choice([0, 9, 10, 11]),
+         0x2000808A: r.choice([0, 0, 1]), 0x20008096: r.choice([0, 1]),
+         0x20008086: r.choice([0, 1, 2, r.getrandbits(8)])}
+    fbe = r.choice([0, 100, -100, r.randrange(-1000, 1000)]) & 0xFFFF
+    d[0x20007FBE] = fbe & 0xFF
+    d[0x20007FBF] = fbe >> 8
+    for i in range(10):
+        v = r.choice([0x33, 0x206, 0xE58, r.randrange(0, 0x1000)])
+        d[0x20007BA8 + 2 * i] = v & 0xFF
+        d[0x20007BA9 + 2 * i] = v >> 8
+    return d
+
+
+ADC_IDR = lambda r: {"ADC": r.choice([0, 0x32, 0x33, 0x205, 0x206, 0x3FB, 0x3FC, 0xC30, 0xC31, 0xE58, 0xE59,
+                                      0x7FFF, 0x8000, r.randrange(0, 0x1000), r.getrandbits(16)])}
+SPECS.update({
+    "adc_read": dict(ret=16, trials=60, args=lambda r: (r.choice([0, 1, 2]),), idr=ADC_IDR,
+                     regs={0x40012414: 0x12345678, 0x40012440: 0x3FF}),
+    "bat_sort_history": dict(ret=None, trials=200, ram_set=bat_ram),
+    "bat_filter": dict(ret=32, trials=400, ram_set=bat_ram, args=lambda r: (r.choice([0, 1050, r.randrange(0, 1100)]),),
+                       with_globals_of=["bat_sort_history"]),
+    "bat_adc_to_value": dict(ret=16, trials=600, args=lambda r: (r.randrange(0x3FC, 0xC31),)),
+    "battery_measure": dict(ret=None, trials=300, ram_set=bat_ram, idr=ADC_IDR,
+                            with_globals_of=["bat_filter", "bat_sort_history", "sym_w7_b7_update"]),
+    "thermistor_to_c100": dict(ret=16, trials=600, args=lambda r: (r.choice([0x205, 0x206, 0xE58, 0xE59, r.randrange(0, 0x1000)]),)),
+    "cold_junction_update": dict(ret=None, trials=600, args=lambda r: (r.choice([0, 1, 2]),
+                                                                      r.choice([0, 200, 201, 1000, 1001, r.randrange(-50, 1100)]) & 0xFFFFFFFF),
+                                 extra=[(0x20007E7C, 4)]),
+    "thermistor_process": dict(ret=None, trials=400, ram_set=therm_ram,
+                               args=lambda r: (r.choice([0, 0x32, 0x33, 0x206, 0xE58, r.randrange(0, 0x1000), r.randrange(0, 0x8000)]),),
+                               extra=[(0x20007E7C, 4)],
+                               with_globals_of=["thermistor_to_c100", "cold_junction_update", "cal_store_value"]),
+    "thermistor_measure": dict(ret=None, trials=300, ram_set=therm_ram, idr=ADC_IDR, extra=[(0x20007E7C, 4)],
+                               with_globals_of=["thermistor_process", "cal_store_value"]),
+    "adc_task": dict(ret=None, trials=300, ram_set=lambda r: {**bat_ram(r), **therm_ram(r)}, idr=ADC_IDR,
+                     extra=[(0x20007E7C, 4)], with_globals_of=["thermistor_process", "bat_filter"]),
+})
+
 # ---- BLE commands ----
 _HEX = b"0123456789ABCDEF"
 def _ble_cmd_ram(r):
