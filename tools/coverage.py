@@ -69,6 +69,10 @@ def main():
             status, where = "reconstructed", tags[addr]
         elif addr in lib:
             status, where = "library", lib[addr]
+        elif name == "app" and (r["name"].startswith("iar_") or r["name"] == "__errno"):
+            # IAR soft-float/integer runtime: GCC's libgcc, with numeric.h where
+            # IAR's results differ (saturation, NaN sign, divide by zero)
+            status, where = "library", "IAR runtime -> libgcc / firmware/include/numeric.h"
         elif r["name"].endswith("IRQHandler") and int(r["size"]) <= 4:
             status, where = "default handler", "%s/src/startup.c Default_Handler" % src_dir
         else:

@@ -39,6 +39,7 @@ set(APP_SOURCES
     src/measure_peak.c
     src/measure_counter.c
     src/annunciators.c
+    src/display_symbols.c
 )
 
 add_library(app_modules STATIC ${APP_SOURCES})

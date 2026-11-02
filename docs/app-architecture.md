@@ -89,6 +89,8 @@ The application is rebuilt module by module and verified before the whole firmwa
 
 When every function is reconstructed, the globals are defined normally and the hybrid bindings disappear.
 
+**Narrow parameters.** IAR callees extend their own `uint8_t`/`int16_t` arguments (`uxtb`/`sxth` on entry), while GCC relies on the caller having done it. Rebuilt functions whose original truncates an argument internally take the full register and truncate explicitly (for example `temp_for_display()`). In the final all-GCC build callers always extend, so this only matters while unrebuilt IAR code calls rebuilt functions in the hybrid image.
+
 ## Reconstruction status
 
 `python -P tools/coverage.py app` → `docs/coverage_app.csv`.
@@ -122,6 +124,8 @@ When every function is reconstructed, the globals are defined normally and the h
 | Peak-hold results (max/min peak registers, held peak) | `firmware/src/measure_peak.c` | 1 | equivalent |
 | Counter results (capture, frequency with auto/manual range, functions 6, 7, 8, 12, counter calibration) | `firmware/src/measure_counter.c` | 15 | equivalent below the 10^9-count frequency overload (see deviations) |
 | Secondary-display unit annunciators | `firmware/src/annunciators.c` | 4 | equivalent |
+| Display: 7-segment font, LCD symbol setters, small display selectors | `firmware/src/display_symbols.c` | 19 | equivalent; symbol setters named by shadow word/bit until the glass map is known |
+| Function 12 measurement timeout (polled) | `firmware/src/measure_counter.c` | 1 | equivalent |
 | Type K thermocouple table, °C → °F | `firmware/src/temperature.c` | 2 | equivalent |
 | IAR `log10`, reproduced bit-for-bit | `firmware/src/iar_math.c` | 1 | equivalent on 4000 inputs incl. NaN/inf/zero/subnormal/negative and errno |
 

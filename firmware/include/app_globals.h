@@ -41,5 +41,16 @@ extern uint8_t g_flag_801b;             /* 0x2000801B  cleared on key events */
 extern uint8_t g_flag_801d;             /* 0x2000801D  cleared on key events */
 extern uint8_t g_flag_806e;             /* 0x2000806E  enables auto-repeat */
 extern uint8_t g_flag_80ce;             /* 0x200080CE */
+extern uint8_t g_flag_7fe3;             /* 0x20007FE3 */
+extern uint8_t g_flag_7fe7;             /* 0x20007FE7  menu copy of g_flag_80b9 */
+extern uint8_t g_flag_7fe8;             /* 0x20007FE8  menu copy of g_flag_80b7 */
+extern uint8_t g_flag_802b;             /* 0x2000802B */
+extern uint8_t g_flag_8039;             /* 0x20008039 */
+extern uint8_t g_flag_803b;             /* 0x2000803B */
+extern uint8_t g_sub_digits;            /* 0x20008040  secondary display digit count */
+extern uint8_t g_flag_804d;             /* 0x2000804D  symbol state 0..2 */
+extern uint8_t g_flag_804f;             /* 0x2000804F */
+extern uint8_t g_flag_8058;             /* 0x20008058 */
+extern uint8_t g_flag_80b1;             /* 0x200080B1 */
 
 #endif /* APP_GLOBALS_H */

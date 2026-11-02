@@ -20,6 +20,10 @@ extern uint8_t g_flag_8047;        /* 0x20008047  secondary frequency overload *
 extern int32_t g_f12_avg;          /* 0x20007D08  function 12 16-sample mean */
 extern uint16_t g_func12_count_copy; /* 0x20007FC8 */
 extern uint8_t g_f12_skip;         /* 0x200080A4 */
+extern uint8_t g_flag_807c;        /* 0x2000807C */
+extern uint8_t g_flag_804a;        /* 0x2000804A */
+extern uint8_t g_flag_804b;        /* 0x2000804B */
+extern uint8_t g_flag_80a2;        /* 0x200080A2 */
 
 void counter_capture(void);
 void counter_rate_per_ms(void);
@@ -35,5 +39,6 @@ void freq_process(uint8_t dest, uint8_t range);
 void counter_process_func7(void);
 void counter_process_func12(void);
 void hy3131_on_counter_ready(void);
+void func12_timeout_poll(void);
 
 #endif /* MEASURE_COUNTER_H */

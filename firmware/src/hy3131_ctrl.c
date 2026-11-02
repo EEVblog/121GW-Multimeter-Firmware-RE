@@ -214,6 +214,6 @@ void hy3131_poll(void)
         hy3131_service();
     }
     if (g_function == 12 && g_range < 5) {
-        FUN_0800b540();
+        func12_timeout_poll();
     }
 }

@@ -41,13 +41,13 @@ address,ghidra_name,size,status,where
 080082d4,rms_average,106,reconstructed,firmware/src/measure_rms.c:48
 08008344,moving_average,284,reconstructed,firmware/src/filters.c:73
 08008468,scale_reading,90,reconstructed,firmware/src/measure_derived.c:68
-080084e0,FUN_080084e0,732,reconstructed,firmware/src/dual_correction.c:662
+080084e0,ad1_process_func22,732,reconstructed,firmware/src/dual_correction.c:662
 080087f8,sign_offset,858,reconstructed,firmware/src/measure_funcs.c:330
-08008b8c,FUN_08008b8c,716,reconstructed,firmware/src/dual_correction.c:668
-08008ed0,FUN_08008ed0,1024,reconstructed,firmware/src/dual_correction.c:458
-08009364,FUN_08009364,3676,reconstructed,firmware/src/dual_correction.c:340
-0800a260,FUN_0800a260,228,reconstructed,firmware/src/range_select.c:207
-0800a358,FUN_0800a358,332,reconstructed,firmware/src/range_select.c:239
+08008b8c,ad1_process_func13,716,reconstructed,firmware/src/dual_correction.c:668
+08008ed0,dual_correction,1024,reconstructed,firmware/src/dual_correction.c:458
+08009364,dual_grid_corners,3676,reconstructed,firmware/src/dual_correction.c:340
+0800a260,autorange_primary,228,reconstructed,firmware/src/range_select.c:207
+0800a358,autorange_secondary,332,reconstructed,firmware/src/range_select.c:239
 0800a4ac,product_scaled,176,reconstructed,firmware/src/measure_derived.c:80
 0800a560,measure_display_reset,82,reconstructed,firmware/src/display_state.c:20
 0800a5b2,rms_post_func0,8,reconstructed,firmware/src/measure_rms.c:73
@@ -60,18 +60,18 @@ address,ghidra_name,size,status,where
 0800a7fa,rms_post_func16,2,reconstructed,firmware/src/measure_rms.c:84
 0800a7fc,hy3131_on_peak_hold,514,reconstructed,firmware/src/measure_peak.c:28
 0800aa00,hy3131_on_counter_ready,328,reconstructed,firmware/src/measure_counter.c:396
-0800ab48,FUN_0800ab48,166,reconstructed,firmware/src/measure_counter.c:33
-0800ac1c,FUN_0800ac1c,694,reconstructed,firmware/src/measure_counter.c:256
-0800aee8,FUN_0800aee8,338,reconstructed,firmware/src/measure_counter.c:176
-0800b070,FUN_0800b070,446,reconstructed,firmware/src/measure_counter.c:311
-0800b244,FUN_0800b244,140,reconstructed,firmware/src/measure_counter.c:95
-0800b2d8,FUN_0800b2d8,34,reconstructed,firmware/src/measure_counter.c:56
-0800b33c,FUN_0800b33c,502,reconstructed,firmware/src/measure_counter.c:339
-0800b540,FUN_0800b540,194,UNACCOUNTED,
-0800b610,FUN_0800b610,98,reconstructed,firmware/src/measure_counter.c:74
-0800b67c,FUN_0800b67c,74,reconstructed,firmware/src/measure_counter.c:86
-0800b6d4,FUN_0800b6d4,28,reconstructed,firmware/src/measure_counter.c:50
-0800b6f0,FUN_0800b6f0,70,reconstructed,firmware/src/measure_counter.c:65
+0800ab48,counter_capture,166,reconstructed,firmware/src/measure_counter.c:33
+0800ac1c,freq_process,694,reconstructed,firmware/src/measure_counter.c:256
+0800aee8,freq_scale_store,338,reconstructed,firmware/src/measure_counter.c:176
+0800b070,counter_process_func7,446,reconstructed,firmware/src/measure_counter.c:311
+0800b244,counter_set_range_func7,140,reconstructed,firmware/src/measure_counter.c:95
+0800b2d8,counter_process_func8,34,reconstructed,firmware/src/measure_counter.c:56
+0800b33c,counter_process_func12,502,reconstructed,firmware/src/measure_counter.c:339
+0800b540,func12_timeout_poll,194,reconstructed,firmware/src/measure_counter.c:442
+0800b610,counter_value_func6,98,reconstructed,firmware/src/measure_counter.c:74
+0800b67c,counter_value_func7,74,reconstructed,firmware/src/measure_counter.c:86
+0800b6d4,counter_rate_per_ms,28,reconstructed,firmware/src/measure_counter.c:50
+0800b6f0,counter_calibrate_func6,70,reconstructed,firmware/src/measure_counter.c:65
 0800b754,moving_average_b,300,reconstructed,firmware/src/filters.c:80
 0800b888,smooth3,166,reconstructed,firmware/src/filters.c:10
 0800b974,hy3131_configure_mode,32,reconstructed,firmware/src/hy3131_ctrl.c:174
@@ -144,7 +144,7 @@ address,ghidra_name,size,status,where
 0800eed0,buzzer_start_forced,24,reconstructed,firmware/src/buzzer.c:21
 0800eef0,offset_stage,52,reconstructed,firmware/src/measure_scale.c:185
 0800ef44,cal_zero_stage,222,reconstructed,firmware/src/calibration.c:185
-0800f034,FUN_0800f034,110,reconstructed,firmware/src/measure_counter.c:124
+0800f034,average16_unsigned,110,reconstructed,firmware/src/measure_counter.c:124
 0800f0ac,average16,106,reconstructed,firmware/src/measure_scale.c:50
 0800f13c,FUN_0800f13c,434,UNACCOUNTED,
 0800f2fc,remove_offset,108,reconstructed,firmware/src/measure_scale.c:174
@@ -153,7 +153,7 @@ address,ghidra_name,size,status,where
 0800f3b8,apply_gain,130,reconstructed,firmware/src/measure_scale.c:34
 0800f470,cal_gain_stage,466,reconstructed,firmware/src/calibration.c:223
 0800f648,select_gain,100,reconstructed,firmware/src/measure_scale.c:23
-0800f6c0,FUN_0800f6c0,218,reconstructed,firmware/src/measure_counter.c:143
+0800f6c0,calibrate_counter,218,reconstructed,firmware/src/measure_counter.c:143
 0800f7b8,calibrate_zero_and_gain,268,reconstructed,firmware/src/calibration.c:127
 0800f8e4,cal_set_trim,234,reconstructed,firmware/src/calibration.c:436
 0800f9f0,gain_select_for_range,302,reconstructed,firmware/src/measure_scale.c:122
@@ -270,18 +270,18 @@ address,ghidra_name,size,status,where
 080124f4,trim_correction,1274,reconstructed,firmware/src/trim_correction.c:177
 080129ee,trim_correction_ac,1118,reconstructed,firmware/src/trim_correction.c:115
 08012f28,scale_by_decimal,56,reconstructed,firmware/src/measure_scale.c:203
-08012f60,iar_i2f,20,UNACCOUNTED,
-08012f74,iar_ui2f,4,UNACCOUNTED,
-08012f78,iar_ui2f_core,26,UNACCOUNTED,
-08012f94,iar_fdiv,252,UNACCOUNTED,
-08013090,iar_fmul,216,UNACCOUNTED,
-08013168,iar_f2d,78,UNACCOUNTED,
-080131b8,iar_dadd,232,UNACCOUNTED,
-080132a0,iar_d2iz,44,UNACCOUNTED,
-080132cc,iar_d2iz_core,32,UNACCOUNTED,
-080132ec,iar_fadd,132,UNACCOUNTED,
-08013370,iar_f2iz,68,UNACCOUNTED,
-080133b4,iar_fsub,230,UNACCOUNTED,
+08012f60,iar_i2f,20,library,IAR runtime -> libgcc / firmware/include/numeric.h
+08012f74,iar_ui2f,4,library,IAR runtime -> libgcc / firmware/include/numeric.h
+08012f78,iar_ui2f_core,26,library,IAR runtime -> libgcc / firmware/include/numeric.h
+08012f94,iar_fdiv,252,library,IAR runtime -> libgcc / firmware/include/numeric.h
+08013090,iar_fmul,216,library,IAR runtime -> libgcc / firmware/include/numeric.h
+08013168,iar_f2d,78,library,IAR runtime -> libgcc / firmware/include/numeric.h
+080131b8,iar_dadd,232,library,IAR runtime -> libgcc / firmware/include/numeric.h
+080132a0,iar_d2iz,44,library,IAR runtime -> libgcc / firmware/include/numeric.h
+080132cc,iar_d2iz_core,32,library,IAR runtime -> libgcc / firmware/include/numeric.h
+080132ec,iar_fadd,132,library,IAR runtime -> libgcc / firmware/include/numeric.h
+08013370,iar_f2iz,68,library,IAR runtime -> libgcc / firmware/include/numeric.h
+080133b4,iar_fsub,230,library,IAR runtime -> libgcc / firmware/include/numeric.h
 0801349c,FUN_0801349c,62,UNACCOUNTED,
 080134da,FUN_080134da,214,UNACCOUNTED,
 080135b0,FUN_080135b0,218,UNACCOUNTED,
@@ -296,13 +296,13 @@ address,ghidra_name,size,status,where
 08013cf8,FUN_08013cf8,220,UNACCOUNTED,
 08013dd4,adc_init,72,reconstructed,firmware/src/system_init.c:335
 08013ec4,FUN_08013ec4,20,UNACCOUNTED,
-08013ed8,iar_ui2d,4,UNACCOUNTED,
+08013ed8,iar_ui2d,4,library,IAR runtime -> libgcc / firmware/include/numeric.h
 08013edc,FUN_08013edc,24,UNACCOUNTED,
-08013ef4,iar_sqrt,252,UNACCOUNTED,
-08013fe4,iar_ldivmod,66,UNACCOUNTED,
-08014028,iar_uldivmod,240,UNACCOUNTED,
-08014118,iar_l2f,38,UNACCOUNTED,
-08014140,iar_ul2f,58,UNACCOUNTED,
+08013ef4,iar_sqrt,252,library,IAR runtime -> libgcc / firmware/include/numeric.h
+08013fe4,iar_ldivmod,66,library,IAR runtime -> libgcc / firmware/include/numeric.h
+08014028,iar_uldivmod,240,library,IAR runtime -> libgcc / firmware/include/numeric.h
+08014118,iar_l2f,38,library,IAR runtime -> libgcc / firmware/include/numeric.h
+08014140,iar_ul2f,58,library,IAR runtime -> libgcc / firmware/include/numeric.h
 0801417c,FUN_0801417c,616,UNACCOUNTED,
 080143e4,FUN_080143e4,10,UNACCOUNTED,
 080143ee,FUN_080143ee,274,UNACCOUNTED,
@@ -365,17 +365,17 @@ address,ghidra_name,size,status,where
 08017700,lcd_bar_flag_dual,46,reconstructed,firmware/src/display_state.c:8
 0801772e,FUN_0801772e,64,UNACCOUNTED,
 0801776e,FUN_0801776e,62,UNACCOUNTED,
-080177ac,FUN_080177ac,70,UNACCOUNTED,
-080177f2,FUN_080177f2,102,UNACCOUNTED,
-08017858,FUN_08017858,102,UNACCOUNTED,
+080177ac,FUN_080177ac,70,reconstructed,firmware/src/display_symbols.c:139
+080177f2,FUN_080177f2,102,reconstructed,firmware/src/display_symbols.c:166
+08017858,FUN_08017858,102,reconstructed,firmware/src/display_symbols.c:173
 0801797c,FUN_0801797c,1448,UNACCOUNTED,
 08017f28,FUN_08017f28,108,UNACCOUNTED,
 08017f94,FUN_08017f94,32,UNACCOUNTED,
 08017fb4,lcd_set_main_dp,106,reconstructed,firmware/src/lcd_driver.c:157
-0801801e,FUN_0801801e,30,UNACCOUNTED,
-0801803c,FUN_0801803c,110,UNACCOUNTED,
+0801801e,FUN_0801801e,30,reconstructed,firmware/src/display_symbols.c:69
+0801803c,FUN_0801803c,110,reconstructed,firmware/src/display_symbols.c:75
 080180aa,FUN_080180aa,88,UNACCOUNTED,
-08018102,FUN_08018102,56,UNACCOUNTED,
+08018102,FUN_08018102,56,reconstructed,firmware/src/display_symbols.c:87
 0801813a,FUN_0801813a,124,UNACCOUNTED,
 080181b6,FUN_080181b6,100,UNACCOUNTED,
 08018228,FUN_08018228,302,UNACCOUNTED,
@@ -395,13 +395,13 @@ address,ghidra_name,size,status,where
 0801896c,FUN_0801896c,58,UNACCOUNTED,
 080189b0,FUN_080189b0,54,UNACCOUNTED,
 08018a00,FUN_08018a00,212,UNACCOUNTED,
-08018ad8,FUN_08018ad8,60,UNACCOUNTED,
+08018ad8,FUN_08018ad8,60,reconstructed,firmware/src/display_symbols.c:101
 08018b14,FUN_08018b14,58,UNACCOUNTED,
 08018b80,FUN_08018b80,916,UNACCOUNTED,
 08018f14,FUN_08018f14,124,UNACCOUNTED,
 08018fa8,FUN_08018fa8,376,UNACCOUNTED,
 0801912c,FUN_0801912c,302,UNACCOUNTED,
-08019268,FUN_08019268,140,UNACCOUNTED,
+08019268,FUN_08019268,140,reconstructed,firmware/src/display_symbols.c:241
 080192fc,FUN_080192fc,90,UNACCOUNTED,
 08019364,FUN_08019364,140,UNACCOUNTED,
 08019408,FUN_08019408,632,UNACCOUNTED,
@@ -426,30 +426,30 @@ address,ghidra_name,size,status,where
 08019b12,FUN_08019b12,18,UNACCOUNTED,
 08019b24,FUN_08019b24,36,UNACCOUNTED,
 08019b48,FUN_08019b48,268,UNACCOUNTED,
-08019c5c,FUN_08019c5c,88,UNACCOUNTED,
+08019c5c,FUN_08019c5c,88,reconstructed,firmware/src/display_symbols.c:208
 08019cbc,FUN_08019cbc,52,UNACCOUNTED,
-08019cf0,FUN_08019cf0,60,UNACCOUNTED,
-08019d2c,FUN_08019d2c,60,UNACCOUNTED,
+08019cf0,FUN_08019cf0,60,reconstructed,firmware/src/display_symbols.c:125
+08019d2c,FUN_08019d2c,60,reconstructed,firmware/src/display_symbols.c:132
 08019d68,FUN_08019d68,58,UNACCOUNTED,
-08019da2,FUN_08019da2,124,UNACCOUNTED,
+08019da2,FUN_08019da2,124,reconstructed,firmware/src/display_symbols.c:226
 08019e24,FUN_08019e24,266,UNACCOUNTED,
-08019f2e,FUN_08019f2e,116,UNACCOUNTED,
+08019f2e,FUN_08019f2e,116,reconstructed,firmware/src/display_symbols.c:218
 08019fa2,FUN_08019fa2,134,UNACCOUNTED,
-0801a028,FUN_0801a028,84,UNACCOUNTED,
-0801a07c,FUN_0801a07c,148,UNACCOUNTED,
-0801a110,FUN_0801a110,86,UNACCOUNTED,
+0801a028,FUN_0801a028,84,reconstructed,firmware/src/display_symbols.c:188
+0801a07c,FUN_0801a07c,148,reconstructed,firmware/src/display_symbols.c:259
+0801a110,FUN_0801a110,86,reconstructed,firmware/src/display_symbols.c:200
 0801a17c,FUN_0801a17c,430,UNACCOUNTED,
-0801a32a,FUN_0801a32a,70,UNACCOUNTED,
-0801a370,FUN_0801a370,38,UNACCOUNTED,
-0801a3a4,FUN_0801a3a4,122,reconstructed,firmware/src/annunciators.c:30
-0801a440,FUN_0801a440,660,reconstructed,firmware/src/annunciators.c:77
-0801a6d8,FUN_0801a6d8,110,reconstructed,firmware/src/annunciators.c:47
-0801a760,FUN_0801a760,178,reconstructed,firmware/src/annunciators.c:58
+0801a32a,FUN_0801a32a,70,reconstructed,firmware/src/display_symbols.c:180
+0801a370,FUN_0801a370,38,reconstructed,firmware/src/display_symbols.c:119
+0801a3a4,annunciator_temp_unit,122,reconstructed,firmware/src/annunciators.c:30
+0801a440,annunciators_secondary,660,reconstructed,firmware/src/annunciators.c:77
+0801a6d8,annunciator_dual,110,reconstructed,firmware/src/annunciators.c:47
+0801a760,annunciator_sub_clear,178,reconstructed,firmware/src/annunciators.c:58
 0801a81c,lcd_clear_shadow,50,reconstructed,firmware/src/lcd_driver.c:97
 0801a854,FUN_0801a854,62,UNACCOUNTED,
 0801a89c,FUN_0801a89c,122,UNACCOUNTED,
 0801a950,FUN_0801a950,1702,UNACCOUNTED,
-0801affc,FUN_0801affc,136,UNACCOUNTED,
+0801affc,FUN_0801affc,136,reconstructed,firmware/src/display_symbols.c:33
 0801b090,number_to_digits,140,reconstructed,firmware/src/lcd_driver.c:108
 0801b130,digits_to_text,464,reconstructed,firmware/src/lcd_driver.c:119
 0801b304,lcd_update,146,reconstructed,firmware/src/lcd_driver.c:62
@@ -458,12 +458,12 @@ address,ghidra_name,size,status,where
 0801b4d6,lcd_gpio_init,562,reconstructed,firmware/src/lcd_driver.c:220
 0801b708,lcd_set_pulse_duration,114,reconstructed,firmware/src/lcd_driver.c:193
 0801b77a,lcd_reapply_pulse_duration,136,reconstructed,firmware/src/lcd_driver.c:202
-0801b874,iar_ddiv,598,UNACCOUNTED,
-0801bacc,iar_d2f,144,UNACCOUNTED,
+0801b874,iar_ddiv,598,library,IAR runtime -> libgcc / firmware/include/numeric.h
+0801bacc,iar_d2f,144,library,IAR runtime -> libgcc / firmware/include/numeric.h
 0801bb5c,iar_log10,6,reconstructed,firmware/src/iar_math.c:35
-0801bb64,iar_dmul,418,UNACCOUNTED,
-0801bd08,iar_cfcmpeq,28,UNACCOUNTED,
-0801bd24,iar_f2uiz,36,UNACCOUNTED,
+0801bb64,iar_dmul,418,library,IAR runtime -> libgcc / firmware/include/numeric.h
+0801bd08,iar_cfcmpeq,28,library,IAR runtime -> libgcc / firmware/include/numeric.h
+0801bd24,iar_f2uiz,36,library,IAR runtime -> libgcc / firmware/include/numeric.h
 0801bd48,GPIO_Init,164,reconstructed,firmware/src/board_io.c:20
 0801bdec,GPIO_StructInit,24,UNACCOUNTED,
 0801be04,FUN_0801be04,90,UNACCOUNTED,
@@ -586,7 +586,7 @@ address,ghidra_name,size,status,where
 080202fa,FUN_080202fa,26,UNACCOUNTED,
 08020314,FUN_08020314,52,UNACCOUNTED,
 08020348,FUN_08020348,18,UNACCOUNTED,
-0802035c,iar_cfrcmple,36,UNACCOUNTED,
+0802035c,iar_cfrcmple,36,library,IAR runtime -> libgcc / firmware/include/numeric.h
 08020390,FUN_08020390,36,UNACCOUNTED,
 080203b4,LCD_Init,70,UNACCOUNTED,
 080203fa,FUN_080203fa,8,UNACCOUNTED,
@@ -684,7 +684,7 @@ address,ghidra_name,size,status,where
 08023d56,FUN_08023d56,146,UNACCOUNTED,
 08023de8,FUN_08023de8,112,UNACCOUNTED,
 08023e58,FUN_08023e58,112,UNACCOUNTED,
-08023edc,__errno,8,UNACCOUNTED,
+08023edc,__errno,8,library,IAR runtime -> libgcc / firmware/include/numeric.h
 08023ee8,FUN_08023ee8,68,UNACCOUNTED,
 08023f2c,FUN_08023f2c,46,UNACCOUNTED,
 08023f5c,disk_initialize,18,UNACCOUNTED,

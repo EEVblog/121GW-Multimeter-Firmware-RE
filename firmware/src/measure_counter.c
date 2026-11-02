@@ -437,3 +437,40 @@ void hy3131_on_counter_ready(void)
         g_disp_flag_8062 = 1;
     }
 }
+
+/*
+ * orig: 0x0800B540 - function 12, polled while measuring
+ * On a measurement timeout (g_flag_80a3): restarts the interval; with
+ * auto-range moves up to range 2 or 5 (back to range 0 once if
+ * g_flag_80a2 is set), otherwise flags an overload. Manual range 4 holds
+ * back the next 2 readings.
+ */
+void func12_timeout_poll(void)
+{
+    if (g_flag_80a3 == 0) {
+        return;
+    }
+    g_flag_80a3 = 0;
+    func12_set_interval();
+    if ((g_flag_8042 & (g_flag_808a ^ 1u)) != 0 && g_range == 4) {
+        g_f12_skip = 2;
+    }
+    if ((uint8_t)(g_flag_8042 | g_flag_808a) != 0) {
+        g_flag_8046 = 1;
+        g_new_reading = 1;
+        return;
+    }
+    if (g_range < 2) {
+        g_range = 2;
+    } else if (g_range < 5) {
+        g_range = 5;
+    }
+    g_flag_807c = 0;
+    g_flag_804a = 0;
+    g_flag_804b = 1;
+    if (g_range == 2 && g_flag_80a2 != 0) {
+        g_flag_80a2 = 0;
+        g_flag_8046 = 0;
+        g_range = 0;
+    }
+}
