@@ -7,3 +7,4 @@ ghidra/*.lock*
 build/
 __pycache__/
 ghidra/export/
+refs/

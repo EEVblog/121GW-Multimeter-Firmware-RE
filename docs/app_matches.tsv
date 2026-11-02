@@ -1,0 +1,71 @@
+app_addr	size	bootloader_addr	name
+0800a5b2	8	08004e02,08004e0a	SDIO_IRQHandler/DMA2_Channel4_IRQHandler
+0800c5d2	8	08004e02,08004e0a	SDIO_IRQHandler/DMA2_Channel4_IRQHandler
+0801bdec	24	08001d78	GPIO_StructInit
+0801bf92	52	0800423a	rtc_clock_init
+0801bfc6	12	0800426e	FUN_0800426e
+0801f87e	60	08004ac8	sd_open
+0801fa8e	18	080045c6	flash_ob_launch
+0801faa0	78	080045d8	flash_ob_bor_config
+0801faee	12	08004626	flash_ob_get_bor
+0801fb00	54	08004638,080050ca	flash_get_status/ram_get_status
+0801fb60	60	080046a4,08005110	flash_wait_for_last_operation/ram_wait_for_last_operation
+0801fdca	24	08001b50	RCC_MSIRangeConfig
+0801fe06	24	08001b7c	RCC_SYSCLKConfig
+0801ff34	60	08001b94	RCC_RTCCLKConfig
+0801ff80	30	080019d8,08001be0,08001bfe,08001c1c,08001c3a	sdio_it_config/FUN_08001be0/FUN_08001bfe/RCC_AHB/RCC_APB2PeriphResetCmd
+0801ff9e	30	080019d8,08001be0,08001bfe,08001c1c,08001c3a	sdio_it_config/FUN_08001be0/FUN_08001bfe/RCC_AHB/RCC_APB2PeriphResetCmd
+0801ffbc	30	080019d8,08001be0,08001bfe,08001c1c,08001c3a	sdio_it_config/FUN_08001be0/FUN_08001bfe/RCC_AHB/RCC_APB2PeriphResetCmd
+0801ffda	30	080019d8,08001be0,08001bfe,08001c1c,08001c3a	sdio_it_config/FUN_08001be0/FUN_08001bfe/RCC_AHB/RCC_APB2PeriphResetCmd
+080203b4	70	08004068	LCD_Init
+08020426	24	080040c8	LCD_ContrastConfig
+0802043e	24	080040e0	LCD_DeadTimeConfig
+08020456	28	080040f8	LCD_BlinkConfig
+08020472	24	08004114	LCD_PulseOnDurationConfig
+08020492	26	080019f6,08001a16,08004134,08004700	SDIO_GetFlagStatus/SDIO_GetITStatus/lcd_flag/PWR_GetFlagStatus
+080207b4	24	080046e8	PWR_VoltageScalingConfig
+08020808	26	080019f6,08001a16,08004134,08004700	SDIO_GetFlagStatus/SDIO_GetITStatus/lcd_flag/PWR_GetFlagStatus
+08020848	30	080019d8,08001be0,08001bfe,08001c1c,08001c3a	sdio_it_config/FUN_08001be0/FUN_08001bfe/RCC_AHB/RCC_APB2PeriphResetCmd
+0802086c	10	08004728	NVIC_PriorityGroupConfig
+08020908	78	080047b0	TIM_TimeBaseInit
+0802096c	28	08004814	tim2_enable
+08020988	22	08004830	TIM_ITConfig
+0802099e	8	08004846	TIM_ClearITPendingBit
+08020b50	26	080019f6,08001a16,08004134,08004700	SDIO_GetFlagStatus/SDIO_GetITStatus/lcd_flag/PWR_GetFlagStatus
+08020b84	28	08001e18	FatFs mem_cpy
+08020ba0	22	08001e34	FatFs mem_set
+08020bb6	36	08001e4a	FatFs mem_cmp
+08020bda	20	08001e6e	FatFs chk_chr
+08020bee	120	08001e82	FatFs move_window
+08020c66	216	08001efa	FatFs sync
+08020d3e	26	08001fd2	FatFs clust2sect
+08020f7c	114	0800224e	FatFs remove_chain
+08020fee	220	080022c0	FatFs create_chain
+080212b2	104	08002592	FatFs dir_find
+080216b2	122	08002882	FatFs check_fs
+0802224c	28	080031fa	FatFs f_close
+0802268a	34	080001d6	sd_get_transfer_status
+080226d6	16	08000222	sd_detect
+08022932	16	0800047e	sd_power_off
+08023f5c	18	08003238	disk_initialize
+08023f6e	16	0800324a	disk_status
+08024038	60	080032ec	disk_ioctl
+08024074	24	080018fc	sdio_deinit
+0802408c	42	08001914	sdio_set_clock
+080240c4	10	0800194c	SDIO_GetPowerState
+080240fe	8	08001986	SDIO_GetCommandResponse
+08024106	22	0800198e	SDIO_GetResponse
+08024150	30	080019d8,08001be0,08001bfe,08001c1c,08001c3a	sdio_it_config/FUN_08001be0/FUN_08001bfe/RCC_AHB/RCC_APB2PeriphResetCmd
+0802416e	26	080019f6,08001a16,08004134,08004700	SDIO_GetFlagStatus/SDIO_GetITStatus/lcd_flag/PWR_GetFlagStatus
+0802418e	26	080019f6,08001a16,08004134,08004700	SDIO_GetFlagStatus/SDIO_GetITStatus/lcd_flag/PWR_GetFlagStatus
+080241f0	62	08001a78	DMA_Init
+0802422e	28	08001ab6	DMA_Cmd
+0802424a	22	08001ad2	DMA_ITConfig
+08024260	16	08001ae8	dma_clear_flags
+080248b0	8	08004e02,08004e0a	SDIO_IRQHandler/DMA2_Channel4_IRQHandler
+080248b8	8	08004e02,08004e0a	SDIO_IRQHandler/DMA2_Channel4_IRQHandler
+080248c0	8	08004e02,08004e0a	SDIO_IRQHandler/DMA2_Channel4_IRQHandler
+0802910c	26	08004e98	IAR __cmain -> startup.c
+08029130	10	08004ebc	IAR exit -> startup.c
+0802913c	16	08004ec8	IAR __exit (semihosting BKPT loop) -> startup.c
+08029174	8	08004eec	Reset_Handler
