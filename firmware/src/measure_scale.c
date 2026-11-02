@@ -186,7 +186,7 @@ int32_t remove_offset(int32_t value)
 int32_t offset_stage(int32_t value)
 {
     if (g_function != 11) {
-        value = (g_avg_flag_808c == 0) ? remove_offset(value) : FUN_0800ef44(value);
+        value = (g_avg_flag_808c == 0) ? remove_offset(value) : cal_zero_stage(value);
     }
     return value;
 }
@@ -197,7 +197,7 @@ int32_t gain_stage(int32_t value)
     if (g_flag_8090 == 0 && g_cal_flag_808e == 0) {
         return apply_gain(value);
     }
-    return FUN_0800f470(value);
+    return cal_gain_stage(value);
 }
 
 /* orig: 0x08012F28 - 0: /1000, 1: /100, 2: /10, 4: *10, other: unchanged */

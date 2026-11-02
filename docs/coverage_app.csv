@@ -143,7 +143,7 @@ address,ghidra_name,size,status,where
 0800eea8,FUN_0800eea8,34,reconstructed,firmware/src/buzzer.c:11
 0800eed0,FUN_0800eed0,24,reconstructed,firmware/src/buzzer.c:21
 0800eef0,FUN_0800eef0,52,reconstructed,firmware/src/measure_scale.c:185
-0800ef44,FUN_0800ef44,222,UNACCOUNTED,
+0800ef44,FUN_0800ef44,222,reconstructed,firmware/src/calibration.c:181
 0800f034,FUN_0800f034,110,UNACCOUNTED,
 0800f0ac,average16,106,reconstructed,firmware/src/measure_scale.c:50
 0800f13c,FUN_0800f13c,434,UNACCOUNTED,
@@ -151,7 +151,7 @@ address,ghidra_name,size,status,where
 0800f368,subtract_zero_offset,22,reconstructed,firmware/src/measure_scale.c:13
 0800f37e,FUN_0800f37e,58,reconstructed,firmware/src/measure_scale.c:194
 0800f3b8,apply_gain,130,reconstructed,firmware/src/measure_scale.c:34
-0800f470,FUN_0800f470,466,UNACCOUNTED,
+0800f470,FUN_0800f470,466,reconstructed,firmware/src/calibration.c:219
 0800f648,select_gain,100,reconstructed,firmware/src/measure_scale.c:23
 0800f6c0,FUN_0800f6c0,218,UNACCOUNTED,
 0800f7b8,calibrate_zero_and_gain,268,reconstructed,firmware/src/calibration.c:123

@@ -33,11 +33,15 @@ extern int16_t g_cal_fbe;           /* 0x20007FBE  stored at 0x2E0, clamped to +
 extern int32_t g_cal_ref_e68;       /* 0x20007E68  reference reading used for function 12 */
 extern uint8_t g_cal_flag_808e;     /* 0x2000808E */
 extern uint8_t g_cal_done_808f;     /* 0x2000808F */
+extern int64_t g_cal_sum64;         /* 0x20007C38  signed 64-bit sample sum */
+extern uint8_t g_setting_238;       /* 0x20000238  set to 5 after the index-150 calibration */
 
 uint32_t cal_address_for_range(uint32_t unused);
 void cal_clamp_e14(void);
 void cal_store_dual(uint8_t index);
 void cal_store_value(uint8_t index, int32_t value);
 void calibrate_zero_and_gain(int32_t sample, int32_t reference);
+int32_t cal_zero_stage(int32_t sample);
+int32_t cal_gain_stage(int32_t sample);
 
 #endif /* CALIBRATION_H */

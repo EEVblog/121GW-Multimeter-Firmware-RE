@@ -164,3 +164,88 @@ void calibrate_zero_and_gain(int32_t sample, int32_t reference)
     }
     g_new_reading = 1;
 }
+
+/* Samples averaged for calibration: 16, or 8/4 for function 9 ranges 5/6. */
+static int32_t cal_sample_count(void)
+{
+    if (g_function == 9 && g_range == 5) {
+        return 8;
+    }
+    if (g_function == 9 && g_range == 6) {
+        return 4;
+    }
+    return 16;
+}
+
+/*
+ * orig: 0x0800EF44
+ * Zero calibration: averages the samples into the zero offset and stores it.
+ * For function 9 range 5 the first 8 samples are discarded. Returns 0.
+ */
+int32_t cal_zero_stage(int32_t sample)
+{
+    int32_t sum = sample;
+
+    if (g_avg_count != 16) {
+        if (g_function == 9 && g_range == 5 && g_avg_count >= 9) {
+            sum = 0;
+            g_avg_sum = 0;
+        } else {
+            sum = sample + g_avg_sum;
+        }
+    }
+    g_avg_sum = sum;
+    g_avg_count--;
+    if (g_avg_count == 0) {
+        g_avg_flag_808c = 0;
+        g_avg_done_808d = 1;
+        g_new_reading = 1;
+        g_zero_offset = g_avg_sum / cal_sample_count();
+        cal_store_value(CAL_INDEX_OFFSET, g_zero_offset);
+    }
+    return 0;
+}
+
+static void cal_accumulate64(int32_t sample, int discard_early)
+{
+    if (discard_early && g_avg_count >= 9) {
+        g_cal_sum64 = 0;
+    } else {
+        g_cal_sum64 += sample;
+    }
+}
+
+/*
+ * orig: 0x0800F470
+ * Gain calibration. While samples are collected the displayed value is
+ * raw / 60.80732; when complete the span gives the gain, which is stored,
+ * and the value is raw / gain. With g_flag_8090 set it instead calibrates
+ * the index-150 record from the mean of the last 8 samples.
+ */
+int32_t cal_gain_stage(int32_t sample)
+{
+    if (g_flag_8090 == 0) {
+        cal_accumulate64(sample, g_function == 9 && g_range >= 5);
+        g_avg_count--;
+        if (g_avg_count != 0) {
+            return iar_d2i((double)(float)sample / 60.80732);
+        }
+        g_cal_flag_808e = 0;
+        g_cal_done_808f = 1;
+        g_new_reading = 1;
+        g_span = (float)(int32_t)(g_cal_sum64 / cal_sample_count());
+        gain_select_for_range(0);
+        cal_store_value(CAL_INDEX_GAIN, iar_f2i(g_gain));
+        return iar_f2i((float)sample / g_gain);
+    }
+
+    cal_accumulate64(sample, 1);
+    g_avg_count--;
+    if (g_avg_count == 0) {
+        g_flag_8090 = 0;
+        g_cal_e14 = iar_f2i((float)(int32_t)(g_cal_sum64 / 8) / g_gain) - 30000;
+        cal_store_value(CAL_INDEX_REC_178, g_cal_e14);
+        g_setting_238 = 5;
+    }
+    return 0;
+}

@@ -33,11 +33,13 @@
 0800eea8	func	buzzer_start
 0800eed0	func	buzzer_start_forced
 0800eef0	func	offset_stage
+0800ef44	func	cal_zero_stage
 0800f0ac	func	average16
 0800f2fc	func	remove_offset
 0800f368	func	subtract_zero_offset
 0800f37e	func	gain_stage
 0800f3b8	func	apply_gain
+0800f470	func	cal_gain_stage
 0800f648	func	select_gain
 0800f7b8	func	calibrate_zero_and_gain	averages 16 samples, derives offset and gain, stores calibration
 0800f9f0	func	gain_select_for_range
@@ -215,9 +217,11 @@
 2000022e	label	g_cfg_022e	u16 setting, default 500; role unknown (key timing)
 20000230	label	g_apo_seconds_left	Auto power-off countdown (beeps at 60 s, off at 0)
 20000237	label	g_lcd_contrast	10..17, default 14
+20000238	label	g_setting_238
 20007790	label	g_lcd_shadow	16 words, copy of LCD->RAM
 200077d0	label	hy3131_rx_buffer
 20007c30	label	g_digit_text	5 chars
+20007c38	label	g_cal_sum64
 20007d0c	label	g_bor_level
 20007d5c	label	g_cal_address
 20007d74	label	g_ad1_value
