@@ -41,7 +41,7 @@ The same build also produces `hybrid.bin`, the test image used by the function-l
 Two CMake options change the application's behaviour. Both are off by default, and the default build stays bit-equivalent to the original v2.05 image:
 
 - `APP_FIX_BUGS`: fixes confirmed bugs in the reading and auto-range path (readings post-processed repeatedly while MEM recall is open, a fake zero reading after every function/range change, a stale bargraph limit after dual-function auto-range) and in storage and communication (SD addresses wrapping above 4 GiB, ignored SD errors and log read-back mismatches, an unchecked calibration restore, log file 99 wrapping to 00, an unchecked BLE clock set, sticky flash error flags, flash left unlocked at start-up).
-- `APP_AUTORANGE_FAST`: auto-range jumps several ranges at once instead of one per reading, for the functions whose ranges are all a decade apart.
+- `APP_AUTORANGE_FAST`: auto-range jumps several ranges at once instead of one per reading, for the functions whose ranges are all a decade apart. It turns `APP_FIX_BUGS` on (CMake prints a status line): without the fixes, the readings skipped after a range change can be used up by a fake one, and a fast step could act on an unsettled reading. `-DAPP_AUTORANGE_FAST=ON` alone builds the same image as both options.
 
 ```
 cmake -G Ninja -S firmware -B build/firmware -DAPP_FIX_BUGS=ON -DAPP_AUTORANGE_FAST=ON
@@ -50,7 +50,9 @@ cmake --build build/firmware
 
 Use a separate build directory, or turn an option off again with `=OFF`: CMake keeps option values in the cache. An image built with either option is no longer equivalent to the original, so the emulator equivalence tests are expected to fail for the changed functions. `docs/app-architecture.md` (Deviations available by option) lists each change.
 
-The bootloader has one option, `BL_FIX_BUGS`, also off by default (the default build stays bit-equivalent to the original). It fixes the SD update path: a failed or short read is no longer programmed, SD addresses no longer wrap above 4 GiB, the flash is locked again before the application starts, a failed update no longer starts the half-programmed image, and a file larger than the application area (or empty) is refused before anything is erased. `docs/bootloader.md` (Deviations available by option) lists each change.
+With `APP_FIX_BUGS`, SD errors that the original ignored now count: a write or read-back error that persists stops logging after 20 retries and 20 more with a fall-back file (`SdE 7` / `SdE 8`). Run a long logging session on the meter with this build before relying on it.
+
+The bootloader has one option, `BL_FIX_BUGS`, also off by default (the default build stays bit-equivalent to the original). It fixes the SD update path: a failed or short read is no longer programmed, SD addresses no longer wrap above 4 GiB, the flash is locked again before the application starts, a failed update no longer starts the half-programmed image, and a file larger than the application area (or empty) is refused before anything is erased (FAIL for about 2 s, then the intact application starts). `docs/bootloader.md` (Deviations available by option) lists each change.
 
 ```
 cmake -G Ninja -S bootloader -B build/bootloader -DBL_FIX_BUGS=ON

@@ -43,5 +43,7 @@ The emulator is a behavioural model, not a silicon-accurate one; equivalence res
 - `tick_blocks` defaults to 0, so timer interrupts are off unless a test enables them.
 - Interrupts ignore PRIMASK and priorities.
 
+The equivalence tests compare default builds (all options off) with the original. Builds with `APP_FIX_BUGS`, `APP_AUTORANGE_FAST` or `BL_FIX_BUGS` are expected to fail them where behaviour changed. In particular `tools/emu/test_bootloader.py` `update_verify_fail` expects the jump to the application after FAIL, which `BL_FIX_BUGS` removes by design (FAIL then waits for the start key).
+
 ## Reference text
 `docs/manual.txt` is extracted from `EEVblog-121GW-Manual.pdf` (73 pages) and is used for feature behaviour and the test matrix.
