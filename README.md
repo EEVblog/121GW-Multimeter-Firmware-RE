@@ -6,7 +6,7 @@ Clean reverse-engineering of the EEVblog 121GW multimeter firmware (STM32L152xD 
 |---|---|---|
 | ST system bootloader (ROM) | `st-bootloader/` | Documentation only (ST code, not reproduced) |
 | Custom SD-card bootloader | `bootloader/` | Reconstructed; equivalent to the original in emulation (see `docs/bootloader.md`); not yet run on hardware |
-| Multimeter application (v2.05) | `firmware/` | Reconstructed (691 functions plus FatFs and the C runtime); equivalent to the original in emulation, function by function and as a whole image (see `docs/app-architecture.md`); not yet run on hardware |
+| Multimeter application (v2.05) | `firmware/` | Reconstructed (691 functions plus FatFs and the C runtime); equivalent to the original in emulation, function by function and as a whole image (see `docs/app-architecture.md`); runs on the meter, behind the original bootloader |
 
 ## Building
 
@@ -24,7 +24,13 @@ cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake -S firmware -B b
 cmake --build build/firmware
 ```
 
-Output: `build/firmware/app.bin`, the application linked at 0x08006000 (the address the SD bootloader starts). The same build also produces `hybrid.bin`, the test image used by the function-level equivalence tests.
+Output: `build/firmware/app.bin`, the application linked at 0x08006000 (the address the SD bootloader starts). It is a plain image like the released `EEVBlog*.bin` files, so it installs the same way (copied to the root of the SD card as `EEVBlog.bin`, then the update procedure in the manual), or over SWD with the chip held in reset:
+
+```
+STM32_Programmer_CLI -c port=SWD mode=UR -w build/firmware/app.bin 0x08006000 -v -hardRst
+```
+
+Write only from 0x08006000: the bootloader below it and the data EEPROM at 0x08080000 (the meter's calibration) must not be touched. The same build also produces `hybrid.bin`, the test image used by the function-level equivalence tests.
 
 ## Verifying
 
