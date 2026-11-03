@@ -10,7 +10,7 @@ Clean reverse-engineering of the EEVblog 121GW multimeter firmware (STM32L152xD 
 
 ## Building
 
-Requires the GNU Arm Embedded toolchain (`arm-none-eabi-gcc`), CMake ≥ 3.16 and Ninja, all on the PATH (or add `-DCMAKE_MAKE_PROGRAM=<path to ninja>`). Run the commands from the repository root; the projects find `cmake/arm-none-eabi.cmake` by themselves. The released binaries were built with GCC 9.2.1 (GNU Arm Embedded 9-2019-q4).
+Requires the GNU Arm Embedded toolchain (`arm-none-eabi-gcc`), CMake ≥ 3.16, Ninja and Python ≥ 3.11 (the firmware build runs `python -P`), all on the PATH (or add `-DCMAKE_MAKE_PROGRAM=<path to ninja>`). Run the commands from the repository root; the projects find `cmake/arm-none-eabi.cmake` by themselves. The released binaries were built with GCC 9.2.1 (GNU Arm Embedded 9-2019-q4).
 
 ```
 cmake -G Ninja -S bootloader -B build/bootloader
@@ -30,7 +30,11 @@ Output: `build/firmware/app.bin`, the application linked at 0x08006000 (the addr
 STM32_Programmer_CLI -c port=SWD mode=UR -w build/firmware/app.bin 0x08006000 -v -hardRst
 ```
 
-Write only from 0x08006000: the bootloader below it and the data EEPROM at 0x08080000 (the meter's calibration) must not be touched. The same build also produces `hybrid.bin`, the test image used by the function-level equivalence tests.
+Write only from 0x08006000: the bootloader below it and the data EEPROM at 0x08080000 (the meter's calibration) must not be touched.
+
+**Warning:** before any SWD work, back up the data EEPROM (`STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08080000 0x3000 eeprom.bin`). A mass erase or a read-out protection (RDP) level change wipes the calibration stored there, and it cannot be recovered without that backup.
+
+The same build also produces `hybrid.bin`, the test image used by the function-level equivalence tests.
 
 ### Build options
 
@@ -65,7 +69,10 @@ python -P tools/emu/compare_app.py 20000000 0 --points --ticks=40000   # whole a
 python -P tools/coverage.py app
 ```
 
-The emulator test needs `pip install unicorn` and a private dump of the original flash in `dumps/` (not distributed).
+Requirements: Python >= 3.11 and `pip install unicorn capstone`.
+
+- The emulator tests (`tools/emu/`) need a private `dumps/` directory (not distributed) with `flash.bin`, `eeprom.bin`, `app_data_init.bin` and `bootloader.bin`, read from a meter with STM32CubeProgrammer; see "Producing the dumps" in `docs/tooling.md`. Without it they cannot run.
+- `tools/coverage.py` needs `ghidra/export/<name>/functions.tsv` (git-ignored; produced by `tools/ghidra_export.ps1`). It exits non-zero if any original function is unaccounted for.
 
 ## Layout
 

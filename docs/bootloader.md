@@ -41,7 +41,7 @@ The manual's procedure (hold two buttons at power-on, "IAP" appears, press a thi
 | 0x2000085C | — | update state, SD driver flags, tick flag |
 | 0x200008A8 | 0x1000 | stack (initial SP 0x200018A8) |
 
-The rebuild keeps the RAM code at 0x20000000. Everything else is placed by the GCC linker; nothing outside the bootloader depends on these addresses.
+The rebuild keeps the RAM code at 0x20000000. Everything else is placed by the GCC linker. The addresses are not entirely private to the bootloader: while the application starts, `SystemInit` sets `VTOR = 0x08000000` (`firmware/src/system_init.c`) until `main` moves it to 0x08006000, so a TIM2 tick in that window runs the bootloader's handler, which writes `g_tick_flag` (0x200007EE rebuilt, 0x200008A2 original). Both addresses fall inside the application's stack region, so the stray write is harmless in practice, but it differs between the two builds.
 
 ## Libraries in the original, and what replaced them
 
