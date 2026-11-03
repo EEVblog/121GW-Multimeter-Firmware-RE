@@ -10,3 +10,13 @@ ghidra/export/
 refs/
 # Tool installers
 *.zip
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+
+# Claude Code agent worktrees and local settings
+.claude/worktrees/
+.claude/settings.local.json
+
+# graft search re-admit file (local tool config)
+/.ignore
