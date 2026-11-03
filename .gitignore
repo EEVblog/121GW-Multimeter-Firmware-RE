@@ -8,3 +8,5 @@ build/
 __pycache__/
 ghidra/export/
 refs/
+# Tool installers
+*.zip

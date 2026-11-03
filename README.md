@@ -50,3 +50,7 @@ The emulator test needs `pip install unicorn` and a private dump of the original
 | `tools/` | Ghidra scripts, emulator harness, coverage checker |
 
 See `docs/memory-map.md` for the device layout and reference image hashes.
+
+## Licence
+
+MIT (see `LICENSE`), except the third-party code in `common/`, which keeps its own licence: CMSIS and the ST device headers are Apache-2.0 (`common/cmsis/core/LICENSE.txt`, `common/cmsis/device/License.md`), and FatFs is under ChaN's licence (in its source files).
