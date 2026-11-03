@@ -18,6 +18,17 @@
 #define READ_CHUNK      512u
 #define PROGRESS_STEPS  25u
 
+#if BL_FIX_BUGS
+/* program_application(): file refused before anything was erased */
+#define PROGRAM_REFUSED      2u
+/* TIM2 ticks (~24.8 Hz) FAIL stays up before a refused file boots the
+ * application: about 2 s */
+#define REFUSED_FAIL_TICKS   50u
+/* consecutive polls the start key must read released before FAIL waits for
+ * the next press (a few ms at least, to ride out contact bounce) */
+#define KEY_RELEASE_POLLS    0x10000u
+#endif
+
 static FATFS fs;                              /* orig: 0x20000104 */
 static FIL update_file;                       /* orig: 0x20000334 */
 static uint32_t read_buffer[READ_CHUNK / 4];  /* orig: 0x20000558 */
@@ -86,9 +97,9 @@ static int open_update_file(void)
  * orig: 0x080049D2
  * Erases the application area and programs the open file into it.
  * Returns 0 on success, 1 on a program or verify failure. With BL_FIX_BUGS
- * also 1, before anything is erased, for an empty file or one larger than
- * the application area, and 1 when a read fails or comes back short (the
- * original programs whatever is left in the buffer).
+ * PROGRAM_REFUSED (2), before anything is erased, for an empty file or one
+ * larger than the application area, and 1 when a read fails or comes back
+ * short (the original programs whatever is left in the buffer).
  */
 static uint8_t program_application(void)
 {
@@ -97,7 +108,7 @@ static uint8_t program_application(void)
 
 #if BL_FIX_BUGS
     if (update_file_size == 0 || update_file_size > APP_FLASH_SIZE) {
-        return 1;
+        return PROGRAM_REFUSED;
     }
 #endif
     (void)flash_erase_application(APP_FLASH_BASE);   /* result ignored, as the original */
@@ -149,11 +160,17 @@ static int update_keys_held(void)
  * programmed image (its stack pointer word is usually already written).
  * With BL_FIX_BUGS it keeps FAIL on the display instead and, once the start
  * key has been released, waits for it again to retry the update (TIM2 is
- * stopped, so there is no time-out).
+ * stopped, so there is no time-out). A file refused before anything was
+ * erased shows FAIL for about 2 s and then starts the intact application
+ * (TIM2 running again, as on a normal start).
  */
 static void run_update_mode(void)
 {
     uint16_t ticks;
+#if BL_FIX_BUGS
+    uint8_t programmed;
+    uint32_t released;
+#endif
 
     lcd_clear();
     lcd_show_secondary_message(LCD_MSG_IAP);
@@ -182,7 +199,12 @@ static void run_update_mode(void)
             boot_stage(1);
             if (open_update_file() == 0) {
                 boot_stage(2);
+#if BL_FIX_BUGS
+                programmed = program_application();
+                if (programmed == 0) {
+#else
                 if (program_application() == 0) {
+#endif
                     boot_stage(3);
                     lcd_show_main_message(LCD_MSG_GOOD);
                 } else {
@@ -191,7 +213,24 @@ static void run_update_mode(void)
 #if BL_FIX_BUGS
                     (void)f_close(&update_file);
                     sd_power_off();
-                    while ((KEYS_PORT->IDR & (1u << KEY_START_PIN)) == 0) {
+                    if (programmed == PROGRAM_REFUSED) {
+                        tim2_enable(1);
+                        g_tick_flag = 0;
+                        while (ticks < REFUSED_FAIL_TICKS) {
+                            if (g_tick_flag) {
+                                g_tick_flag = 0;
+                                ticks++;
+                            }
+                        }
+                        return;
+                    }
+                    released = 0;
+                    while (released < KEY_RELEASE_POLLS) {
+                        if (KEYS_PORT->IDR & (1u << KEY_START_PIN)) {
+                            released++;
+                        } else {
+                            released = 0;
+                        }
                     }
                     continue;
 #endif
