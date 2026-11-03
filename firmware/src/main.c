@@ -176,6 +176,14 @@ int main(void)
                 lowz_detect();
             }
             g_flag_8061 = 1;
+#if APP_FIX_BUGS
+            /* display_update() does nothing in the menu, so nothing would
+             * clear the reading and it would be post-processed on every
+             * pass: each reading is post-processed once */
+            if (g_menu_active != 0) {
+                g_new_reading = 0;
+            }
+#endif
         }
         display_update();
         if (g_task_flag_a != 0) {

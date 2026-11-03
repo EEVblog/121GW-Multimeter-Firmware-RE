@@ -12,6 +12,18 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE MinSizeRel)
 endif()
 
+# Deviations from the original firmware. Both off by default: the image is
+# then bit-equivalent to v2.05. See docs/app-architecture.md.
+option(APP_FIX_BUGS "Fix confirmed bugs in the reading/auto-range path" OFF)
+option(APP_AUTORANGE_FAST "Auto-range jumps several ranges at once" OFF)
+set(APP_OPTION_DEFINITIONS)
+if(APP_FIX_BUGS)
+    list(APPEND APP_OPTION_DEFINITIONS APP_FIX_BUGS=1)
+endif()
+if(APP_AUTORANGE_FAST)
+    list(APPEND APP_OPTION_DEFINITIONS APP_AUTORANGE_FAST=1)
+endif()
+
 # Reconstructed application modules.
 set(APP_SOURCES
     src/keys.c
@@ -72,7 +84,7 @@ target_include_directories(app_modules PUBLIC
     ${COMMON_DIR}/cmsis/device
     ${COMMON_DIR}/fatfs
 )
-target_compile_definitions(app_modules PUBLIC STM32L152xD)
+target_compile_definitions(app_modules PUBLIC STM32L152xD ${APP_OPTION_DEFINITIONS})
 target_compile_options(app_modules PRIVATE -std=c11 -Wall -Wextra)
 # FatFs R0.08a, unmodified. Its two file-scope variables get sections of
 # their own so the hybrid image can place them at the original addresses.
@@ -114,7 +126,7 @@ add_custom_command(
 )
 add_executable(app.elf src/startup.c src/ram_init.c ${CMAKE_CURRENT_BINARY_DIR}/ram_syms.s)
 target_include_directories(app.elf PRIVATE include ${COMMON_DIR}/cmsis/core ${COMMON_DIR}/cmsis/device)
-target_compile_definitions(app.elf PRIVATE STM32L152xD)
+target_compile_definitions(app.elf PRIVATE STM32L152xD ${APP_OPTION_DEFINITIONS})
 target_compile_options(app.elf PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c11 -Wall -Wextra>)
 target_link_options(app.elf PRIVATE
     -T${CMAKE_CURRENT_SOURCE_DIR}/stm32l152xd_app.ld

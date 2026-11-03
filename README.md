@@ -32,6 +32,22 @@ STM32_Programmer_CLI -c port=SWD mode=UR -w build/firmware/app.bin 0x08006000 -v
 
 Write only from 0x08006000: the bootloader below it and the data EEPROM at 0x08080000 (the meter's calibration) must not be touched. The same build also produces `hybrid.bin`, the test image used by the function-level equivalence tests.
 
+### Build options
+
+Two CMake options change the application's behaviour. Both are off by default, and the default build stays bit-equivalent to the original v2.05 image:
+
+- `APP_FIX_BUGS`: fixes confirmed bugs in the reading and auto-range path (readings post-processed repeatedly while MEM recall is open, a fake zero reading after every function/range change, a stale bargraph limit after dual-function auto-range).
+- `APP_AUTORANGE_FAST`: auto-range jumps several ranges at once instead of one per reading, for the functions whose ranges are all a decade apart.
+
+```
+cmake -G Ninja -S firmware -B build/firmware -DAPP_FIX_BUGS=ON -DAPP_AUTORANGE_FAST=ON
+cmake --build build/firmware
+```
+
+Use a separate build directory, or turn an option off again with `=OFF`: CMake keeps option values in the cache. An image built with either option is no longer equivalent to the original, so the emulator equivalence tests are expected to fail for the changed functions. `docs/app-architecture.md` (Deviations available by option) lists each change.
+
+The constants of `APP_AUTORANGE_FAST` (in `firmware/src/range_select.c`) are not yet validated on the meter. Before relying on it, check each function with a calibrator at 1, 9, 30 and 90 % of each range, starting from the top range. Then log `g_ad1_average` at 2×, 10× and 100× full scale and with the input open, and set `AUTORANGE_AD1_RAIL` just below the level the ADC actually clips at.
+
 ## Verifying
 
 ```

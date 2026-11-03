@@ -224,13 +224,26 @@ void autohold_mode_set(uint8_t on, uint8_t clear_modes)
     }
 }
 
-/* orig: 0x080153AC - leave the setup menu: default secondary mode, everything redrawn */
+/*
+ * orig: 0x080153AC - leave the setup menu: default secondary mode, everything
+ * redrawn. The original sets g_new_reading, which post-processes the last
+ * reading again (REL subtracted twice, an extra MIN/MAX sample). With
+ * APP_FIX_BUGS the main readout is only redrawn; in HOLD and auto-hold it is
+ * left alone, as there the extra post-processing mostly discarded the
+ * reading too.
+ */
 void menu_exit(void)
 {
     g_menu_active = 0;
     secondary_mode_default();
     g_scaled_ready = 1;
+#if APP_FIX_BUGS
+    if (g_hold_active == 0 && g_autohold_mode == 0) {
+        g_flag_805f = 1;
+    }
+#else
     g_new_reading = 1;
+#endif
     g_flag_8060 = 1;
     g_flag_8061 = 1;
     g_disp_flag_8062 = 1;

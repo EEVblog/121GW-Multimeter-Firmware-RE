@@ -120,7 +120,7 @@ The globals keep their original addresses in the standalone image too; giving th
 | Measurement helpers, calibration stages | `firmware/src/measure_scale.c`, `firmware/src/calibration.c` | 7 | equivalent |
 | Derived values (power/VA product, vector magnitude, thresholds, hold-off, dBm, AD1 staging, function 12 interval) | `firmware/src/measure_derived.c` | 10 | equivalent (dBm for ranges 0–3) |
 | Reading filters (3-sample smoother, two moving-average instances) | `firmware/src/filters.c` | 3 | equivalent for in-range counters |
-| Function/range change (HY3131 + calibration reload, decimal point, display mode, VA borrow), dual-readout auto-range | `firmware/src/range_select.c` | 10 | equivalent for valid table rows |
+| Function/range change (HY3131 + calibration reload, decimal point, readings skipped after a change, VA borrow), dual-readout auto-range | `firmware/src/range_select.c` | 10 | equivalent for valid table rows |
 | Per-function AD1 processing: functions 0–5, 9–11, 16–21 (incl. AC+DC and VA phase alternation) | `firmware/src/measure_funcs.c` | 22 | equivalent; also tested through the dispatcher over all functions |
 | AC frequency response (functions 2/4) and function 2 range 0 frequency offset | `firmware/src/ac_response.c` | 2 | equivalent |
 | Trim-based AC correction (functions 2, 4, 16, 18, 20) | `firmware/src/trim_correction.c` | 4 | equivalent |
@@ -298,6 +298,24 @@ Accepted commands are echoed back over USART2.
 - INTE per function: AD1 only for most functions; AD1 + counter for functions 13–16, 18 and 20; counter only for 6–8 and 12; RMS + counter for 2/4 when 0x200080B7 = 1.
 - The counter restart presets CTA from 0x2000001C (default 0xE000).
 - `hy3131_service` reads registers 0x00–0x33 in one burst and dispatches to four result handlers still to be reconstructed: AD1 0x080061E4, RMS 0x08008208, peak 0x0800A7FC, counter 0x0800AA00.
+
+## Deviations available by option
+
+The default build reproduces the original, bugs included. Two CMake options (off by default, see the README) change behaviour. Each change sits under `#if APP_FIX_BUGS` or `#if APP_AUTORANGE_FAST`, so the default preprocessed code is the original.
+
+`APP_FIX_BUGS`:
+
+- **MEM recall re-processing** (`main.c`, `modes.c` `menu_exit`). While the MEM-recall menu is open, `display_update()` returns early and nothing clears `g_new_reading`. The main loop therefore runs `measure_postprocess()` (and `lowz_detect()` in function 0) on the same reading on every pass. Auto-range collapses to range 0 or hunts between 0 and 1, the hazardous-voltage beep never sounds, MIN/MAX counts one reading thousands of times, REL subtracts the reference until OL, and LowZ detection toggles. With the fix the main loop clears the reading after post-processing it while the menu is open. `menu_exit()` requests a redraw (`g_flag_805f`) instead of a new reading, so leaving the menu (or any other caller) does not apply REL twice or add a MIN/MAX sample. In HOLD and auto-hold it requests nothing, which matches what the original showed for a steady input.
+- **Fake reading after every reconfiguration** (`display_state.c` `measure_display_reset`, `range_select.c` `function_change`). `function_change()` zeroes `g_derived_value`, and `measure_display_reset()` sets `g_new_reading`, so the zero is post-processed once as if it were a reading. It uses up one of the `g_setting_238` readings that `autorange()` skips while the HY3131 settles. The voltage warnings run on it, and `lowz_detect()` gets a quiet reading. If an AD1 sample arrives first, the dual and VA dispatchers (`dual_dispatch()`, `va_phase_step()`) count that raw sample as one of the readings they discard after a change. As a result only N−1 real readings are skipped. For function 3, function 9 ranges below 5 and function 12 ranges up to 5 (N = 1), none are. The first average after a change includes the settling, is displayed and used for range decisions, and is seeded into `moving_average_b`. With the fix the reset requests a redraw: `g_flag_805f` unless HOLD or auto-hold is on (as `function_change()` itself does), and `g_flag_8061` unless auto-hold is on. Of what the fake reading's post-processing did, only the overload state is kept. Outside auto-hold, `function_change()` clears `g_flag_8046` for the functions `autorange()` clears it for and updates `g_flag_8048`/`g_flag_8049`.
+- **Stale bargraph limit after dual-function auto-range** (`range_select.c` `range_change`). `range_change()` did not call `bar_limit_update()`, so after functions 13–15/22–24 auto-range, `g_bar_limit` (used by auto-hold and the MIN/MAX bargraph) kept the old range's value. Functions 15/24 have different limits by range.
+
+`APP_AUTORANGE_FAST` (`range_select.c` `autorange`), only for functions 1, 2, 3, 4, 9 and 16–21, whose ranges are all a decade apart in counts. Other functions, including 12, keep single steps:
+
+- **Down:** to range r−k, for the largest k ≥ 1 with (|reading| + |reading|/8 + `AUTORANGE_DOWN_NOISE`) × 10^k ≤ 90 % of the bargraph limit of range r−k. `AUTORANGE_DOWN_NOISE` is 5 counts, which covers the offset and noise of the coarse higher-range reading.
+- **Up:** to the top range when |`g_ad1_average`| ≥ `AUTORANGE_AD1_RAIL` (0x7F0000, a placeholder until the clip level is measured on the meter). Otherwise to range r+k for the smallest k ≥ 1 with |reading| / 10^k ≤ 90 % of the limit of range r+k, capped at the top range. A clipped reading that is not caught underestimates the input, which only costs another step later.
+- All existing guards are kept: MIN/MAX, manual range, the range count, HOLD and auto-hold, the function 9 step blocking (`range_step_blocked()`) and the function 9 range 6 auto-hold return. `function_change()` sets up the final range in one go, so a jump costs one HY3131 reconfiguration and one set of skipped readings.
+
+Not changed: the calibration steps (`calibration.c`) set `g_new_reading` to show their end texts, which post-processes the last value again. `autorange()` does nothing in calibration mode, so this was left alone. In `dual_dispatch()`, the reading that changes the range is still post-processed with the single phase's value in `g_derived_value` (the display shows dashes until the next product).
 
 ## Findings from the reconstruction so far
 
