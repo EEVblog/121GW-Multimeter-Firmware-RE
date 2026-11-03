@@ -5,7 +5,7 @@ Clean reverse-engineering of the EEVblog 121GW multimeter firmware (STM32L152xD 
 | Part | Location | Status |
 |---|---|---|
 | ST system bootloader (ROM) | `st-bootloader/` | Documentation only (ST code, not reproduced) |
-| Custom SD-card bootloader | `bootloader/` | Reconstructed; equivalent to the original in emulation (see `docs/bootloader.md`); not yet run on hardware |
+| Custom SD-card bootloader | `bootloader/` | Reconstructed; equivalent to the original in emulation (see `docs/bootloader.md`); tested on the meter |
 | Multimeter application (v2.05) | `firmware/` | Reconstructed (691 functions plus FatFs and the C runtime); equivalent to the original in emulation, function by function and as a whole image (see `docs/app-architecture.md`); runs on the meter, behind the original bootloader |
 
 ## Building

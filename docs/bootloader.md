@@ -83,7 +83,7 @@ All 10 pass, with identical traces from both images.
 
 **Not covered by emulation:** the SD write path (`disk_write`, `sd_write_multi_blocks`, `sd_wait_write_operation`). FatFs never writes when files are only opened for reading, so the original never runs this code. It was checked against the disassembly only. SD CRC and data-error interrupts aren't exercised either.
 
-**Not yet tested on hardware.** The rebuilt bootloader has only been run in emulation. Flashing it to the meter needs your approval, as agreed in the plan.
+**Tested on hardware.** The rebuilt bootloader has been flashed to the meter and tested by hand.
 
 ## Open questions
 
