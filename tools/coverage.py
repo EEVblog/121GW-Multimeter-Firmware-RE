@@ -57,6 +57,23 @@ LIBRARY = {
 }
 
 
+ADDR = r"0x([0-9A-Fa-f]{8})"
+
+
+def _tag_text(tags, mode, text, where):
+    if mode == "orig-list":
+        # "orig: 0xA", "orig: 0xA..0xB", "orig: 0xA, 0xB, 0xC - prose"
+        # (optionally "Label 0xA", "0xA / 0xB")
+        item = r"(?:[A-Za-z_]+\s+)?" + ADDR + r"(?:\s*\([^)]*\))?"
+        m = re.match(r"\s*" + item + r"(?:\s*(?:,|\.\.|/)\s*" + item + r")*", text)
+        if m:
+            for a in re.finditer(ADDR, m.group(0)):
+                tags.setdefault(int(a.group(1), 16), where)
+    elif mode == "inlines":
+        for a in re.finditer(ADDR + r"(?=\s*[(A-Za-z_/])", text):   # "0xADDR (name)" / "0xADDR Name"
+            tags.setdefault(int(a.group(1), 16), where)
+
+
 def orig_tags(src_dir):
     tags = {}
     for dirpath, _, files in os.walk(src_dir):
@@ -65,21 +82,35 @@ def orig_tags(src_dir):
                 continue
             path = os.path.join(dirpath, f)
             rel = os.path.relpath(path, ROOT).replace("\\", "/")
-            in_tag = False   # inside a comment that started with orig:/inlines:
+            mode = None   # "orig" / "inlines" while inside a tagged comment
+            cont = False
             for lineno, line in enumerate(open(path, encoding="utf-8"), 1):
-                if "orig:" in line or "inlines:" in line:
-                    in_tag = True
-                if in_tag:
-                    for m in re.finditer(r"0x([0-9A-Fa-f]{8})", line):
-                        tags.setdefault(int(m.group(1), 16), "%s:%d" % (rel, lineno))
-                    if "*/" in line:
-                        in_tag = False
+                where = "%s:%d" % (rel, lineno)
+                # credit only addresses actually listed after a marker,
+                # not any address mentioned in surrounding prose
+                pos = 0
+                if cont:   # previous orig: line ended with "," -> list continues
+                    _tag_text(tags, "orig-list", line.lstrip().lstrip("*"), where)
+                    cont = False
+                for m in re.finditer(r"\b(orig|inlines):", line):
+                    _tag_text(tags, mode, line[pos:m.start()], where)
+                    mode, pos = m.group(1), m.end()
+                    if mode == "orig":
+                        _tag_text(tags, "orig-list", line[pos:], where)
+                        cont = line.rstrip().endswith(",")
+                        pos = len(line)
+                _tag_text(tags, mode, line[pos:], where)
+                if "*/" in line:
+                    mode = None
     return tags
 
 
 def main():
     name = sys.argv[1] if len(sys.argv) > 1 else "bootloader"
     tsv = os.path.join(ROOT, "ghidra", "export", name, "functions.tsv")
+    if not os.path.isfile(tsv):
+        sys.exit("error: %s not found. ghidra/export/ is git-ignored; generate it with the "
+                 "Ghidra export scripts (see docs/tooling.md) first." % os.path.relpath(tsv, ROOT))
     src_dir = {"app": "firmware"}.get(name, name)
     tags = orig_tags(os.path.join(ROOT, src_dir))
     lib = LIBRARY.get(name, {})
@@ -110,12 +141,13 @@ def main():
     for row in rows:
         counts[row[3]] = counts.get(row[3], 0) + 1
     print("%d functions: %s" % (len(rows), ", ".join("%s %d" % kv for kv in sorted(counts.items()))))
-    for r in (missing if name == "bootloader" else []):
+    for r in missing:
         print("  UNACCOUNTED %s %-24s %s bytes  callers: %s" % (r["addr"], r["name"], r["size"],
                                                              r["callers"][:60]))
     print("wrote", os.path.relpath(out, ROOT))
-    if name == "bootloader":
-        sys.exit(1 if missing else 0)
+    if missing:
+        print("%d UNACCOUNTED function(s)" % len(missing))
+        sys.exit(1)
 
 
 if __name__ == "__main__":
