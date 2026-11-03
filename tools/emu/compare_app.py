@@ -68,7 +68,7 @@ def main():
     tick = int(args[1]) if len(args) > 1 else 0
     orig = bytearray(open(os.path.join(ROOT, "dumps", "flash.bin"), "rb").read())
     app = open(os.path.join(ROOT, "build", "firmware", "app.bin"), "rb").read()
-    new = bytearray(orig[:APP_BASE]) + bytearray(b"\xFF" * (len(orig) - APP_BASE))
+    new = bytearray(orig[:APP_BASE]) + bytearray(b"\x00" * (len(orig) - APP_BASE))  # erased L1 flash reads 0x00
     new[APP_BASE:APP_BASE + len(app)] = app
     eeprom = open(os.path.join(ROOT, "dumps", "eeprom.bin"), "rb").read()
 
@@ -89,6 +89,9 @@ def main():
         runs.append((m, ram))
 
     (mo, ro), (mn, rn) = runs
+    stop_differs = mo.stop_reason != mn.stop_reason
+    if stop_differs:
+        print("STOP REASONS DIFFER: original '%s', rebuilt '%s'" % (mo.stop_reason, mn.stop_reason))
     if tick or use_points:
         # With timer interrupts the two images take interrupts at different
         # points of their (differently fast) main loops, so compare the main
@@ -119,7 +122,7 @@ def main():
     print("RAM differences outside the stack: %d" % len(diffs))
     for a in diffs[:20]:
         print("  0x%08X: %02X vs %02X" % (a, ro[a - RAM_BASE], rn[a - RAM_BASE]))
-    sys.exit(1 if diffs or k < n or len(mo.trace) != len(mn.trace) else 0)
+    sys.exit(1 if stop_differs or diffs or k < n or len(mo.trace) != len(mn.trace) else 0)
 
 
 if __name__ == "__main__":
