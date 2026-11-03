@@ -906,6 +906,31 @@ sd_error_t sd_wait_write_operation(void)
     return err;
 }
 
+#if BL_FIX_BUGS
+/*
+ * Not in the original (BL_FIX_BUGS): wait for a read started by
+ * sd_read_block() to end. The block has ended when the SDIO interrupt has
+ * reported the data end (CRC good) and the DMA has moved the last word to
+ * memory, or failed when the interrupt has reported an error. Returns the
+ * transfer status, or SD_DATA_TIMEOUT after READ_WAIT_POLLS polls (several
+ * seconds at 4 MHz).
+ */
+#define READ_WAIT_POLLS 0x01000000u
+
+sd_error_t sd_wait_read_operation(void)
+{
+    for (uint32_t polls = READ_WAIT_POLLS; polls != 0; polls--) {
+        if (transfer_error != SD_OK) {
+            return (sd_error_t)transfer_error;
+        }
+        if (transfer_end != 0 && DMA2_Channel4->CNDTR == 0) {
+            return SD_OK;
+        }
+    }
+    return SD_DATA_TIMEOUT;
+}
+#endif
+
 /* ---- Interrupts ----------------------------------------------------------- */
 
 /* orig: 0x08000F5A */

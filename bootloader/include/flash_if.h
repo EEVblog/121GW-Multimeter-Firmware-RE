@@ -22,6 +22,9 @@ typedef enum {
 #define FLASH_FLAGS_NO_OPTVUSR  0x0F02u  /* EOP|WRPERR|PGAERR|SIZERR|OPTVERR */
 
 void flash_unlock(void);
+#if BL_FIX_BUGS
+void flash_lock(void);
+#endif
 void flash_ob_unlock(void);
 void flash_clear_flags(uint32_t flags);
 flash_status_t flash_wait_for_last_operation(uint32_t timeout);

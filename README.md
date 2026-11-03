@@ -36,7 +36,7 @@ Write only from 0x08006000: the bootloader below it and the data EEPROM at 0x080
 
 Two CMake options change the application's behaviour. Both are off by default, and the default build stays bit-equivalent to the original v2.05 image:
 
-- `APP_FIX_BUGS`: fixes confirmed bugs in the reading and auto-range path (readings post-processed repeatedly while MEM recall is open, a fake zero reading after every function/range change, a stale bargraph limit after dual-function auto-range).
+- `APP_FIX_BUGS`: fixes confirmed bugs in the reading and auto-range path (readings post-processed repeatedly while MEM recall is open, a fake zero reading after every function/range change, a stale bargraph limit after dual-function auto-range) and in storage and communication (SD addresses wrapping above 4 GiB, ignored SD errors and log read-back mismatches, an unchecked calibration restore, log file 99 wrapping to 00, an unchecked BLE clock set, sticky flash error flags, flash left unlocked at start-up).
 - `APP_AUTORANGE_FAST`: auto-range jumps several ranges at once instead of one per reading, for the functions whose ranges are all a decade apart.
 
 ```
@@ -45,6 +45,13 @@ cmake --build build/firmware
 ```
 
 Use a separate build directory, or turn an option off again with `=OFF`: CMake keeps option values in the cache. An image built with either option is no longer equivalent to the original, so the emulator equivalence tests are expected to fail for the changed functions. `docs/app-architecture.md` (Deviations available by option) lists each change.
+
+The bootloader has one option, `BL_FIX_BUGS`, also off by default (the default build stays bit-equivalent to the original). It fixes the SD update path: a failed or short read is no longer programmed, SD addresses no longer wrap above 4 GiB, the flash is locked again before the application starts, a failed update no longer starts the half-programmed image, and a file larger than the application area (or empty) is refused before anything is erased. `docs/bootloader.md` (Deviations available by option) lists each change.
+
+```
+cmake -G Ninja -S bootloader -B build/bootloader -DBL_FIX_BUGS=ON
+cmake --build build/bootloader
+```
 
 The constants of `APP_AUTORANGE_FAST` (in `firmware/src/range_select.c`) are not yet validated on the meter. Before relying on it, check each function with a calibrator at 1, 9, 30 and 90 % of each range, starting from the top range. Then log `g_ad1_average` at 2×, 10× and 100× full scale and with the input open, and set `AUTORANGE_AD1_RAIL` just below the level the ADC actually clips at.
 

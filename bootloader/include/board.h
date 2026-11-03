@@ -14,6 +14,8 @@
 #define APP_FLASH_BASE          0x08006000u   /* application vector table */
 #define APP_FLASH_LAST_PAGE     0x0805FF00u   /* last 256-byte page erased by an update */
 #define FLASH_PAGE_SIZE         0x100u
+/* Bytes from APP_FLASH_BASE to the end of the last erased page (0x5A000, 360 KB) */
+#define APP_FLASH_SIZE          (APP_FLASH_LAST_PAGE + FLASH_PAGE_SIZE - APP_FLASH_BASE)
 #define FLASH_HALF_PAGE_WORDS   32u           /* 128-byte half page */
 
 /* Update image on the SD card (FatFs short name, matched case-insensitively) */
