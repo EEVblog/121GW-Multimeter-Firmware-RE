@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
+# Cross-compile with the GNU Arm toolchain unless another toolchain file is given.
+if(NOT CMAKE_TOOLCHAIN_FILE)
+    set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/arm-none-eabi.cmake)
+endif()
 project(eevblog_121gw_bootloader C)
 
 set(COMMON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../common)

@@ -1,6 +1,7 @@
 # CMake toolchain file for the GNU Arm Embedded toolchain (Cortex-M3).
 #
-#   cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake -S bootloader -B build/bootloader
+# The bootloader and firmware projects use it by default:
+#   cmake -G Ninja -S bootloader -B build/bootloader
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 

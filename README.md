@@ -6,21 +6,21 @@ Clean reverse-engineering of the EEVblog 121GW multimeter firmware (STM32L152xD 
 |---|---|---|
 | ST system bootloader (ROM) | `st-bootloader/` | Documentation only (ST code, not reproduced) |
 | Custom SD-card bootloader | `bootloader/` | Reconstructed; equivalent to the original in emulation (see `docs/bootloader.md`); tested on the meter |
-| Multimeter application (v2.05) | `firmware/` | Reconstructed (691 functions plus FatFs and the C runtime); equivalent to the original in emulation, function by function and as a whole image (see `docs/app-architecture.md`); runs on the meter, behind the original bootloader |
+| Multimeter application (v2.05) | `firmware/` | Reconstructed (691 functions plus FatFs and the C runtime); equivalent to the original in emulation, function by function and as a whole image (see `docs/app-architecture.md`); tested on the meter |
 
 ## Building
 
-Requires the GNU Arm Embedded toolchain (`arm-none-eabi-gcc`), CMake ≥ 3.16 and Ninja.
+Requires the GNU Arm Embedded toolchain (`arm-none-eabi-gcc`), CMake ≥ 3.16 and Ninja, all on the PATH (or add `-DCMAKE_MAKE_PROGRAM=<path to ninja>`). Run the commands from the repository root; the projects find `cmake/arm-none-eabi.cmake` by themselves. The released binaries were built with GCC 9.2.1 (GNU Arm Embedded 9-2019-q4).
 
 ```
-cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake -S bootloader -B build/bootloader
+cmake -G Ninja -S bootloader -B build/bootloader
 cmake --build build/bootloader
 ```
 
 Output: `build/bootloader/bootloader.bin`, linked at 0x08000000.
 
 ```
-cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake -S firmware -B build/firmware
+cmake -G Ninja -S firmware -B build/firmware
 cmake --build build/firmware
 ```
 
