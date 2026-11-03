@@ -5,6 +5,11 @@ if(NOT CMAKE_TOOLCHAIN_FILE)
 endif()
 project(eevblog_121gw_firmware C ASM)
 
+if(NOT CMAKE_C_COMPILER_VERSION VERSION_EQUAL 9.2.1)
+    message(WARNING "Compiler is GCC ${CMAKE_C_COMPILER_VERSION}; bit-equivalence with the original "
+                    "was only verified for GCC 9.2.1 (GNU Arm Embedded 9-2019-q4).")
+endif()
+
 set(ROOT_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(COMMON_DIR ${ROOT_DIR}/common)
 
@@ -94,7 +99,7 @@ set_source_files_properties(${COMMON_DIR}/fatfs/ff.c PROPERTIES
 # ---- Hybrid test image -----------------------------------------------------
 # Rebuilt modules + bindings of everything else to the original image, for
 # function-level equivalence tests (tools/emu/test_app_functions.py).
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
+find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter)   # python -P needs 3.11+
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hybrid_syms.s
     COMMAND ${Python3_EXECUTABLE} -P ${ROOT_DIR}/tools/hybrid_syms.py

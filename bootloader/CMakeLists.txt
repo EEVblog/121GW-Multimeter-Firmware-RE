@@ -5,6 +5,11 @@ if(NOT CMAKE_TOOLCHAIN_FILE)
 endif()
 project(eevblog_121gw_bootloader C)
 
+if(NOT CMAKE_C_COMPILER_VERSION VERSION_EQUAL 9.2.1)
+    message(WARNING "Compiler is GCC ${CMAKE_C_COMPILER_VERSION}; bit-equivalence with the original "
+                    "was only verified for GCC 9.2.1 (GNU Arm Embedded 9-2019-q4).")
+endif()
+
 set(COMMON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../common)
 set(FATFS_DIR  ${COMMON_DIR}/fatfs)
 
