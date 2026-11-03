@@ -144,7 +144,7 @@ static int update_keys_held(void)
 }
 
 /*
- * orig: main loop body at 0x080048BA. Returns when the application should
+ * orig: 0x080048BA (main loop body). Returns when the application should
  * start. The original also returns after FAIL and so starts a partly
  * programmed image (its stack pointer word is usually already written).
  * With BL_FIX_BUGS it keeps FAIL on the display instead and, once the start
