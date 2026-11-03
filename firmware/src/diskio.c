@@ -9,6 +9,12 @@
  *  - disk_read() ignores 'count' and always reads one 512-byte block.
  *  - Byte addresses are formed as sector * 512 in 32 bits.
  *  - disk_initialize() returns the SD driver's error code as the status.
+ *
+ * With APP_FIX_BUGS the byte address is formed in 64 bits (the 32-bit
+ * product wraps above 4 GiB, and the SDHC block number derived from it then
+ * points back at the start of the card), driver errors are returned as
+ * RES_ERROR instead of being ignored, and a read waits for the data block
+ * to end and checks its CRC/transfer status.
  */
 #include "diskio.h"
 #include "sd_card.h"
@@ -44,7 +50,14 @@ DRESULT disk_read(BYTE drv, BYTE *buff, DWORD sector, BYTE count)
 {
     (void)drv;
     (void)count;
+#if APP_FIX_BUGS
+    if (sd_read_block(buff, (uint64_t)sector * SECTOR_SIZE, SECTOR_SIZE) != SD_OK
+        || sd_wait_read_operation() != SD_OK) {
+        return RES_ERROR;
+    }
+#else
     (void)sd_read_block(buff, (uint32_t)(sector * SECTOR_SIZE), SECTOR_SIZE);
+#endif
     return wait_transfer();
 }
 
@@ -53,9 +66,17 @@ DRESULT disk_write(BYTE drv, const BYTE *buff, DWORD sector, BYTE count)
 {
     (void)drv;
     for (uint32_t i = 0; i < count; i++) {
+#if APP_FIX_BUGS
+        if (sd_write_multi_blocks(buff + i * SECTOR_SIZE, ((uint64_t)sector + i) * SECTOR_SIZE,
+                                  SECTOR_SIZE, 1) != SD_OK
+            || sd_wait_write_operation() != SD_OK) {
+            return RES_ERROR;
+        }
+#else
         (void)sd_write_multi_blocks(buff + i * SECTOR_SIZE,
                                     (uint32_t)(i * SECTOR_SIZE + sector * SECTOR_SIZE), SECTOR_SIZE, 1);
         (void)sd_wait_write_operation();
+#endif
         if (wait_transfer() != RES_OK) {
             return RES_WRPRT;
         }

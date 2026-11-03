@@ -37,7 +37,7 @@ extern int32_t g_cal_ref_e68;       /* 0x20007E68  reference reading used for fu
 extern uint8_t g_cal_flag_808e;     /* 0x2000808E */
 extern uint8_t g_cal_done_808f;     /* 0x2000808F */
 extern int64_t g_cal_sum64;         /* 0x20007C38  signed 64-bit sample sum */
-extern uint8_t g_setting_238;       /* 0x20000238  set to 5 after the index-150 calibration */
+extern uint8_t g_setting_238;       /* 0x20000238  readings still to skip after a function/range change (mode_238_select()); 5 after the index-150 calibration */
 extern int32_t g_cal_extra_offset;  /* 0x20007E0C  functions 16..21 range 0, subtracted from the reading */
 extern int32_t g_cal_trim[4];       /* 0x20007E4C  16-bit trims at record + 8 */
 extern uint8_t g_flag_808a;         /* 0x2000808A */

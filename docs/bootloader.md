@@ -41,7 +41,7 @@ The manual's procedure (hold two buttons at power-on, "IAP" appears, press a thi
 | 0x2000085C | — | update state, SD driver flags, tick flag |
 | 0x200008A8 | 0x1000 | stack (initial SP 0x200018A8) |
 
-The rebuild keeps the RAM code at 0x20000000. Everything else is placed by the GCC linker; nothing outside the bootloader depends on these addresses.
+The rebuild keeps the RAM code at 0x20000000. Everything else is placed by the GCC linker. The addresses are not entirely private to the bootloader: while the application starts, `SystemInit` sets `VTOR = 0x08000000` (`firmware/src/system_init.c`) until `main` moves it to 0x08006000, so a TIM2 tick in that window runs the bootloader's handler, which writes `g_tick_flag` (0x200007EE rebuilt, 0x200008A2 original). Both addresses fall inside the application's stack region, so the stray write is harmless in practice, but it differs between the two builds.
 
 ## Libraries in the original, and what replaced them
 
@@ -63,6 +63,17 @@ The rebuild keeps the RAM code at 0x20000000. Everything else is placed by the G
 - 7-segment writes clear only the upper of the two COM0 bits for each digit.
 - Response waits in the SD driver have no timeout, apart from CMD0 and CMD8.
 - At the application jump, TIM2 is still running with its interrupt enabled whenever the update wasn't started (normal boot or timeout).
+
+## Deviations available by option (`BL_FIX_BUGS`)
+
+The default build reproduces the original. The CMake option `BL_FIX_BUGS` (off by default, see the README) fixes the following. Each change sits under `#if BL_FIX_BUGS`, so the default preprocessed code is the original. The image grows by 232 bytes, to 10,388 bytes of the 24 KB region.
+
+- **Read errors ignored** (`main.c` `program_application`, `diskio.c` `disk_read`, `sd_card.c` `sd_wait_read_operation`). The original ignores the result of `f_read()` and the byte count, so a failed or short read programs whatever is in the buffer. `disk_read()` ignores the result of `sd_read_block()` and never checks the data CRC. It waits only for the card to return to transfer state (forever if the card reports an error) and always returns `RES_OK`. Its byte address `sector * 512` is formed in 32 bits, so on an SDHC card every sector from 4 GiB up maps back to the start of the card. With the fix the address is formed in 64 bits. A failed read command, a data error (CRC, time-out, overrun) or a card error state returns `RES_ERROR`, and the read waits for the SDIO data end and for the DMA to finish (polled, at most 0x1000000 times). `program_application()` stops with FAIL when `f_read()` fails or returns fewer bytes than asked for.
+- **Flash left unlocked** (`main.c` `main`, `flash_if.c` `flash_lock`). `main()` unlocks program memory and the data EEPROM (PELOCK and PRGLOCK) at every start and never locks them again, so the application runs with both writable. With the fix PRGLOCK and OPTLOCK, then PELOCK, are set just before the jump to the application, on every path (normal boot, time-out, after an update). The application's EEPROM writes unlock PELOCK themselves.
+- **Half-programmed image started after FAIL** (`main.c` `run_update_mode`). After FAIL the original closes the file and starts the application. The stack pointer word at 0x08006000 is usually written by then, so the check passes and a partly programmed image runs. With the fix FAIL stays on the display. Once the start key (PG9) has read released on 0x10000 consecutive polls (a debounce of a few milliseconds at least), the bootloader waits for it again (with no time-out, as TIM2 is stopped) and retries the update, so a good card can be inserted and the update restarted. Turning the meter off and on boots whatever is in flash. Not fixed: a power loss during an update also leaves a partly programmed image that passes the stack pointer check. That needs a completion marker, written after the last half page and checked before the jump, which the application images do not have.
+- **No size check** (`main.c` `program_application`, `board.h` `APP_FLASH_SIZE`). The original erases 0x08006000–0x0805FFFF (0x5A000 bytes) and then programs the whole file, so a larger file runs past the erased area until a program error. An empty file erases the application and reports Good. With the fix a file of 0 bytes, or larger than `APP_FLASH_SIZE` (0x5A000, derived from the same `APP_FLASH_LAST_PAGE` as the erase loop), gives FAIL before anything is erased. As the application is then intact, FAIL stays up for 50 TIM2 ticks (about 2 s; the original shows its result text for no time at all before the jump), TIM2 is left running as on a normal start, and the application is started as usual, after the stack pointer check.
+
+Not changed: a file whose size is not a multiple of 4 still loses its last 1–3 bytes.
 
 ## Verification
 

@@ -8,6 +8,11 @@
  *  - Byte addresses are formed as sector * 512 in 32 bits (wraps above 4 GB
  *    for standard-capacity addressing).
  *  - disk_initialize() returns the SD driver's error code as the status.
+ *
+ * With BL_FIX_BUGS disk_read() forms the address in 64 bits, returns
+ * RES_ERROR when the read command fails, the data block fails (CRC, time-out,
+ * overrun) or the card reports an error state, and waits for the data block
+ * to end and the DMA to finish before returning.
  */
 #include "diskio.h"
 #include "sd_card.h"
@@ -32,10 +37,23 @@ DRESULT disk_read(BYTE drv, BYTE *buff, DWORD sector, BYTE count)
 {
     (void)drv;
     (void)count;
+#if BL_FIX_BUGS
+    uint8_t status;
+
+    if (sd_read_block(buff, (uint64_t)sector * SECTOR_SIZE, SECTOR_SIZE) != SD_OK
+        || sd_wait_read_operation() != SD_OK) {
+        return RES_ERROR;
+    }
+    do {
+        status = sd_get_transfer_status();
+    } while (status == SD_TRANSFER_BUSY);
+    return (status == SD_TRANSFER_OK) ? RES_OK : RES_ERROR;
+#else
     (void)sd_read_block(buff, (uint32_t)(sector * SECTOR_SIZE), SECTOR_SIZE);
     while (sd_get_transfer_status() != SD_TRANSFER_OK) {
     }
     return RES_OK;
+#endif
 }
 
 #if _READONLY == 0

@@ -1,6 +1,11 @@
 /*
  * Function/range change: HY3131 reconfiguration, calibration reload,
- * main display decimal point and display mode.
+ * main display decimal point and the readings skipped after a change.
+ *
+ * Build options (both off by default, which keeps the image bit-equivalent):
+ *   APP_FIX_BUGS        bar limit refreshed by range_change(), overload state
+ *                       reset in function_change() (no fake reading any more)
+ *   APP_AUTORANGE_FAST  autorange() jumps several ranges at once
  */
 #include "annunciators.h"
 #include "measure_peak.h"
@@ -28,6 +33,9 @@
 #include "measure_scale.h"
 #include "measure_counter.h"
 #include "display_symbols.h"
+#if APP_FIX_BUGS
+#include "ble_packet.h"
+#endif
 
 /*
  * orig: 0x0800D81E
@@ -114,7 +122,12 @@ void main_dp_update(void)
     lcd_update();
 }
 
-/* orig: 0x0800DB48 - display mode (0..5) for the current function/range */
+/*
+ * orig: 0x0800DB48 - g_setting_238 for the current function/range: how many
+ * readings after a function/range change autorange() skips (no auto-range,
+ * no voltage warnings, main readout blanked except in function 0) while the
+ * HY3131 settles
+ */
 void mode_238_select(void)
 {
     if ((g_function == 16 || g_function == 18 || g_function == 20
@@ -160,6 +173,9 @@ void range_change(void)
     g_flag_80c5 = 0;
     g_flag_80c4 = 0;
     range_select(1);
+#if APP_FIX_BUGS
+    bar_limit_update();   /* functions 15/24: the limit differs by range */
+#endif
     measure_display_reset();
     front_end_pe5(g_function, g_range);
     mode_238_select();
@@ -376,6 +392,33 @@ void range_key(void)
     }
 }
 
+#if APP_FIX_BUGS
+/*
+ * The original's measure_display_reset() faked a new reading, so the zeroed
+ * g_derived_value was post-processed once. measure_display_reset() now only
+ * requests a redraw; of what that post-processing did, only the overload
+ * state is kept: autorange() dropped g_flag_8046 of the old configuration
+ * (for the functions it does that for) and the latches followed. In
+ * auto-hold mode function_change() discarded the fake reading, so nothing
+ * changes there.
+ */
+static void reconfig_overload_reset(void)
+{
+    uint8_t f = g_function;
+
+    if (g_autohold_mode != 0) {
+        return;
+    }
+    if (!(f == 12 && (uint8_t)(g_manual_range & g_flag_8046) != 0)
+        && f != 6 && f != 7 && f != 8 && f != 13 && f != 14 && f != 15
+        && f != 22 && f != 23 && f != 24) {
+        g_flag_8046 = 0;
+    }
+    g_flag_8048 = (g_flag_8046 != 0);
+    overload_latch();
+}
+#endif
+
 /*
  * orig: 0x0800D2D0 - set up the current function and range: clears the
  * measurement state; after a rotary/MODE change (g_flag_804a) also resets
@@ -383,6 +426,16 @@ void range_key(void)
  */
 void function_change(uint8_t stop_logging)
 {
+#if APP_FIX_BUGS
+    /* a calibration step in progress belongs to the old function/range:
+     * abandon it, or its partial sum would be stored in the new record */
+    g_avg_flag_808c = 0;
+    g_cal_flag_808e = 0;
+    g_flag_8090 = 0;
+    g_avg_count = 0;
+    g_avg_sum = 0;
+    g_cal_sum64 = 0;
+#endif
     if (g_function == 9 && g_range != 0 && g_range < 6) {
         g_count_805a = 2;
     }
@@ -424,6 +477,14 @@ void function_change(uint8_t stop_logging)
         } else {
             g_range = 0;
         }
+#if APP_FIX_BUGS
+        /* PEAK keeps the range, which the new function may not have (VAC
+         * range 2/3 -> ACmV with 2 ranges): its tables and calibration
+         * record would be read past their end */
+        if (g_range >= g_range_count[g_function]) {
+            g_range = 0;
+        }
+#endif
         g_autohold_mode = 0;
         g_flag_8051 = 0;
         g_flag_8052 = 0;
@@ -468,6 +529,9 @@ void function_change(uint8_t stop_logging)
         g_scaled_value = 0;
     }
     measure_display_reset();
+#if APP_FIX_BUGS
+    reconfig_overload_reset();
+#endif
     front_end_configure(g_function, g_range);
     if (g_flag_804a != 0) {
         apo_reset();
@@ -483,11 +547,129 @@ void function_change(uint8_t stop_logging)
     }
 }
 
+#if APP_AUTORANGE_FAST
+/*
+ * Multi-range auto-range steps. Only for the functions whose ranges are all
+ * a decade apart in counts (1, 2, 3, 4, 9, 16..21); every other function
+ * keeps single steps. The new range is set up by function_change() as for
+ * a single step (g_flag_804b), including the readings skipped after it.
+ */
+
+/* counts added to a reading before ranging down: offset and noise of the
+ * coarse reading taken in the higher range */
+#define AUTORANGE_DOWN_NOISE 5u
+
+/* |g_ad1_average| at or above this is taken as a clipped ADC: straight to
+ * the top range. Placeholder; the real clip level must be measured on the
+ * meter (log g_ad1_average at 2x/10x/100x full scale and open circuit). */
+#define AUTORANGE_AD1_RAIL   0x7F0000u
+
+static int autorange_decade_function(uint8_t f)
+{
+    return f == 1 || f == 2 || f == 3 || f == 4 || f == 9
+           || f == 16 || f == 17 || f == 18 || f == 19 || f == 20 || f == 21;
+}
+
+/* the bargraph limit of `range` of the current function */
+static uint32_t autorange_limit(uint8_t range)
+{
+    return (uint32_t)g_bar_limit_table[g_function][range];
+}
+
+/* 90 % of it */
+static uint32_t autorange_limit_90(uint8_t range)
+{
+    return autorange_limit(range) * 9u / 10u;
+}
+
+/*
+ * Whether this reading came from g_ad1_average of the current set-up, so
+ * that its level says whether the ADC clipped. Not in PEAK (g_flag_80b7: the
+ * HY3131 runs RMS and the counter, AD1 is not updated), not in function 2
+ * AC+DC (g_flag_80ba: the phases alternate) and not in functions 16..21
+ * (the VA phases borrow the set-up of functions 1/2).
+ */
+static int autorange_reading_from_ad1(void)
+{
+    uint8_t f = g_function;
+
+    if (f == 1 || f == 3 || f == 9) {
+        return 1;
+    }
+    if (f == 4) {
+        return g_flag_80b7 == 0;
+    }
+    if (f == 2) {
+        return g_flag_80b7 == 0 && g_flag_80ba == 0;
+    }
+    return 0;
+}
+
+/*
+ * Range to go to for a reading above the upper limit: the top range when
+ * the reading comes from AD1 and the ADC is at the rail, else the lowest
+ * higher range whose limit holds the reading (magnitude / 10^k). The full
+ * limit, not 90 %: a reading between 90 and 100 % of it fits, and going one
+ * range further would read below 10 % there and step straight back down.
+ * A clipped reading that is not caught here underestimates, which only
+ * costs another step later.
+ */
+static uint8_t autorange_up_target(uint32_t magnitude)
+{
+    uint8_t top = (uint8_t)(g_range_count[g_function] - 1u);
+    uint8_t target = (uint8_t)(g_range + 1u);
+    uint32_t ad1 = (uint32_t)g_ad1_average;
+    uint32_t divisor = 10u;
+
+    if (!autorange_decade_function(g_function)) {
+        return target;
+    }
+    if (autorange_reading_from_ad1()) {
+        if (g_ad1_average < 0) {
+            ad1 = 0u - ad1;
+        }
+        if (ad1 >= AUTORANGE_AD1_RAIL) {
+            return top;
+        }
+    }
+    while (target < top && magnitude / divisor > autorange_limit(target)) {
+        target++;
+        divisor *= 10u;   /* at most 10^6: ranges 0..6 */
+    }
+    return target;
+}
+
+/*
+ * Range to go to for a reading below the lower limit: down k ranges, the
+ * largest k whose 90 % limit holds the reading plus 1/8 and the noise
+ * allowance, times 10^k. One range down is always taken (the caller's
+ * condition already holds for it).
+ */
+static uint8_t autorange_down_target(uint32_t magnitude)
+{
+    uint8_t target = (uint8_t)(g_range - 1u);
+    uint64_t needed;
+
+    if (!autorange_decade_function(g_function)) {
+        return target;
+    }
+    /* the reading with its margin, in counts of range `target` */
+    needed = ((uint64_t)magnitude + magnitude / 8u + AUTORANGE_DOWN_NOISE) * 10u;
+    while (target > 0u && needed * 10u <= autorange_limit_90((uint8_t)(target - 1u))) {
+        needed *= 10u;
+        target--;
+    }
+    return target;
+}
+#endif
+
 /*
  * orig: 0x0800DE24 - auto-range and overload: up a range above 110 %
  * (1/12 more after an overload) of the bargraph limit, down below 10 %
  * (1 % for function 12 range 5, 50 % for functions 20/21 range 2); OL in
- * the top range or with manual range
+ * the top range or with manual range. g_setting_238 readings after a
+ * function/range change are skipped (see mode_238_select()).
+ * APP_AUTORANGE_FAST: the step can span several ranges (see above).
  */
 void autorange(void)
 {
@@ -545,7 +727,11 @@ void autorange(void)
                      && g_function != 12))
                 && (int32_t)g_range < (int32_t)g_range_count[g_function] - 1) {
                 if (range_step_blocked(1) == 0) {
+#if APP_AUTORANGE_FAST
+                    g_range = autorange_up_target(magnitude);
+#else
                     g_range++;
+#endif
                     g_flag_804b = 1;
                     g_flag_805c = 1;
                     if (g_autohold_mode != 0) {
@@ -564,7 +750,11 @@ void autorange(void)
                     if (g_function == 12 && g_range == 2 && magnitude < 11) {
                         g_flag_80a2 = 1;
                     }
+#if APP_AUTORANGE_FAST
+                    g_range = autorange_down_target(magnitude);
+#else
                     g_range--;
+#endif
                     g_flag_804b = 1;
                     g_flag_805c = 1;
                     if (g_autohold_mode != 0) {

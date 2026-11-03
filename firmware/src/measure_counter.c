@@ -370,7 +370,15 @@ void counter_process_func12(void)
             }
         }
     } else if (g_cal_flag_808e == 0) {
+#if APP_FIX_BUGS
+        /* the guard ranges 0/1 have: an uncalibrated (zero) gain gave
+         * 0xFFFFFFFF, or 0 for a zero ratio */
+        if (g_gain != 0.0f && g_cal_ref_e68 != 0) {
+            g_cal_ref_e68 = (int32_t)iar_f2u(iar_fdiv((float)(uint32_t)g_cal_ref_e68, g_gain));
+        }
+#else
         g_cal_ref_e68 = (int32_t)iar_f2u(iar_fdiv((float)(uint32_t)g_cal_ref_e68, g_gain));
+#endif
     } else {
         cal_gain_stage(g_cal_ref_e68);
     }

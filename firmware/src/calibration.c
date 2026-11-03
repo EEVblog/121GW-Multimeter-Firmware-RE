@@ -47,9 +47,37 @@ void cal_clamp_e14(void)
     }
 }
 
+#if APP_FIX_BUGS
+/*
+ * A gain the record can hold: positive and below the int32 limit once
+ * scaled. A botched gain step (wrong input, reversed leads) gives zero or a
+ * negative gain; stored, a negative one reloads as a huge positive gain
+ * (the record is read as unsigned). Such a gain is refused with a triple
+ * beep and the old record kept. The caller has already put the refused gain
+ * in the working gain (gain_select_for_range()), so the stored record is
+ * loaded again and readings go on with it.
+ */
+static int cal_gain_storable(int32_t scaled)
+{
+    if (scaled <= 0 || scaled == INT32_MAX) {
+        beep_triple();
+        cal_load(g_function, g_range);
+        return 0;
+    }
+    return 1;
+}
+#endif
+
 /* orig: 0x08011DCE - functions 13..15 and 22..24 */
 void cal_store_dual(uint8_t index)
 {
+#if APP_FIX_BUGS
+    if (index == CAL_INDEX_GAIN
+        && (!cal_gain_storable(iar_f2i(1000000.0f * g_gain_e2c))
+            || !cal_gain_storable(iar_f2i(1000000.0f * g_gain_e30)))) {
+        return;
+    }
+#endif
     if (index == CAL_INDEX_OFFSET) {
         g_cal_address = cal_address_for_range(0);
         eeprom_write_u32_be(g_cal_address, (uint32_t)g_cal_dual_offset_a);
@@ -106,6 +134,11 @@ void cal_store_value(uint8_t index, int32_t value)
             if (g_function == 12) {
                 scale = (g_range == 4 && g_pf8_detected_low != 0) ? 10000.0f : 100000.0f;
             }
+#if APP_FIX_BUGS
+            if (!cal_gain_storable(iar_f2i(scale * g_gain))) {
+                break;
+            }
+#endif
             eeprom_write_u32_be(g_cal_address, (uint32_t)iar_f2i(scale * g_gain));
         }
         break;
@@ -437,7 +470,7 @@ void cal_load(uint8_t function, uint8_t range)
  * orig: 0x0800F8E4
  * Trim calibration: stores (measured - nominal) as trim `which` (1..4)
  * and writes it to EEPROM. Nominals are 5000 for trims 1 and 3 and 50000
- * for trims 2 and 4, a tenth of that for function 2 range 3. Other values
+ * for trims 2 and 4; 600 and 6000 for function 2 range 3. Other values
  * of `which` change nothing (100 rewrites all four).
  */
 void cal_set_trim(uint8_t which, int32_t measured)

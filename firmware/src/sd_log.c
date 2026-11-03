@@ -34,6 +34,15 @@
 #define CAL_FILE_NAME   "cal.bin"
 #define LOG_RECORD_MAX  600000u      /* logging stops after this many records */
 
+#if APP_FIX_BUGS
+#define LOG_NAMES_FULL      0xFFu    /* log_find_index(): today's NN 99 is taken */
+#define LOG_ERR_NAMES_FULL  6u       /* log_flush() result for it, shown as "SdE 6" */
+#define CAL_REJECTED        10u      /* cal_backup_restore(): cal.bin not for this meter */
+#define EE_SERIAL_FIRST     0x01u    /* EEPROM serial number bytes 0x01..0x06 */
+#define EE_SERIAL_LAST      0x06u
+#define EE_CAL_MARKER       0x26u    /* 0xA5 once calibrated */
+#endif
+
 /* Log field codes (log_field()) */
 enum {
     LOG_COMMA = 0, LOG_CRLF = 1, LOG_NEG_OVERFLOW = 2, LOG_OVERFLOW = 3, LOG_MINUS = 4,
@@ -562,7 +571,8 @@ uint8_t log_write_pending(void)
  * orig: 0x0801F6B4 - read back what was written since g_log_start_pos and
  * compare it with g_sd_buffer; 0 or 8. As in the original, a mismatch in one
  * block does not stop the loop: it goes on reading without advancing the
- * buffer position and ends with 0 unless a read fails.
+ * buffer position and ends with 0 unless a read fails. With APP_FIX_BUGS a
+ * mismatch ends the loop with 8, so log_flush() rolls back and retries.
  */
 uint8_t log_verify(void)
 {
@@ -593,7 +603,11 @@ uint8_t log_verify(void)
                 }
             }
             if (r != 0) {
+#if APP_FIX_BUGS
+                break;
+#else
                 continue;
+#endif
             }
             if (remaining == 0) {
                 break;
@@ -641,7 +655,25 @@ void log_name_from_count(void)
     g_log_name = g_log_filename;
 }
 
-/* orig: 0x0801D640 - highest NN of today's "YYMMDDNN.csv" files (0 if over 99) */
+#if APP_FIX_BUGS
+/* the first n characters of a file name are all decimal digits */
+static int name_digits(const char *name, unsigned n)
+{
+    for (unsigned i = 0; i < n; i++) {
+        if (name[i] < '0' || name[i] > '9') {
+            return 0;
+        }
+    }
+    return 1;
+}
+#endif
+
+/*
+ * orig: 0x0801D640 - next NN for today's "YYMMDDNN.csv" files (highest + 1;
+ * 0 if over 99). With APP_FIX_BUGS names that are not all digits are skipped
+ * and, when NN 99 is taken, LOG_NAMES_FULL is returned instead of wrapping
+ * to 00: log_open() creates with FA_CREATE_ALWAYS and would empty that file.
+ */
 uint8_t log_find_index(const char *path)
 {
     int32_t highest;
@@ -666,6 +698,11 @@ uint8_t log_find_index(const char *path)
         if (!((n[9] == 'c' && n[10] == 's' && n[11] == 'v') || (n[9] == 'C' && n[10] == 'S' && n[11] == 'V'))) {
             continue;
         }
+#if APP_FIX_BUGS
+        if (!name_digits(n, 8)) {
+            continue;
+        }
+#endif
         g_log_file_yy = (uint8_t)(n[0] * 10 + n[1] - 16);
         g_log_file_mm = (uint8_t)(n[2] * 10 + n[3] - 16);
         g_log_file_dd = (uint8_t)(n[4] * 10 + n[5] - 16);
@@ -677,6 +714,11 @@ uint8_t log_find_index(const char *path)
     }
     g_log_index = highest;
     if (highest > 99) {
+#if APP_FIX_BUGS
+        if (g_sd_result == FR_OK) {
+            return LOG_NAMES_FULL;
+        }
+#endif
         g_log_index = 0;
     }
     return g_sd_result;
@@ -720,6 +762,11 @@ uint8_t log_create(uint8_t tries)
                 break;
             }
         }
+#if APP_FIX_BUGS
+        if (g_sd_result == LOG_NAMES_FULL) {
+            break;
+        }
+#endif
     }
     return g_sd_result;
 }
@@ -783,12 +830,26 @@ uint8_t log_set_timestamp(uint8_t cal_file)
 /*
  * orig: 0x0801D1A8 - write the pending records (or a new file's header),
  * check them, stamp the file. Returns 0, or 1 (no card), 3 (create), 4/5
- * (reopen), 7 (write), 8 (read-back).
+ * (reopen), 7 (write), 8 (read-back); with APP_FIX_BUGS also 6 (no free
+ * file name today).
+ *
+ * After a failed read-back the original moves the write position back and
+ * takes 60 off the record count, but the records are no longer pending
+ * (g_value_7d44 is 0), so the retry writes nothing and they are lost; the
+ * next block overwrites them. With APP_FIX_BUGS the record count and the
+ * pending count are put back as they were, so the retry writes the same
+ * records again. A new file also starts its read-back at its own start
+ * (the original keeps the previous file's position when no header is
+ * written, so the read-back of a fall-back file always comes back short).
  */
 uint8_t log_flush(void)
 {
     uint8_t created = 0;
     uint8_t r = 0;
+#if APP_FIX_BUGS
+    int32_t records_before = g_value_7d40;
+    int32_t records_pending = g_value_7d44;
+#endif
 
     clock_init(1);
     if (sd_open_retry(10) != 0) {
@@ -806,8 +867,15 @@ uint8_t log_flush(void)
             if (g_count_7fae == 0) {
                 g_log_header_due = 1;
             }
+#if APP_FIX_BUGS
+            g_log_start_pos = fil_tell(&g_log_file);
+#endif
         } else {
+#if APP_FIX_BUGS
+            r = (g_sd_result == LOG_NAMES_FULL) ? LOG_ERR_NAMES_FULL : 3;
+#else
             r = 3;
+#endif
         }
     }
     if (r == 0 && log_write_pending() != 0) {
@@ -824,10 +892,18 @@ uint8_t log_flush(void)
         if (r != 0) {
             g_log_end_pos = g_log_start_pos;
             g_log_resync = 1;
+#if APP_FIX_BUGS
+            if (g_value_7d44 == 0 && records_pending == 60) {
+                g_log_blocks--;
+            }
+            g_value_7d40 = records_before;
+            g_value_7d44 = records_pending;
+#else
             if ((uint32_t)g_value_7d40 >= 60u) {
                 g_value_7d40 -= 60;
                 g_log_blocks--;
             }
+#endif
         }
         if (r == 0 && g_log_header_due != 0) {
             g_log_header_due = 0;
@@ -864,7 +940,9 @@ uint8_t log_flush(void)
 
 /*
  * orig: 0x0801D126 - log_flush() up to 20 times; if all fail, start a new
- * file (mem_flags_801c_set) and try 20 more times; 1 if that fails too
+ * file (mem_flags_801c_set) and try 20 more times; 1 if that fails too.
+ * With APP_FIX_BUGS "no free file name today" fails at once (no retries,
+ * and no fall-back name, which would be built from the previous file's).
  */
 uint8_t log_flush_retry(void)
 {
@@ -872,9 +950,21 @@ uint8_t log_flush_retry(void)
 
     g_log_retries = 20;
     do {
+#if APP_FIX_BUGS
+        r = log_flush();
+        if (r == 0) {
+            return 0;
+        }
+        if (r == LOG_ERR_NAMES_FULL) {
+            g_disp_flag_8062 = 1;
+            g_flag_801b = r;
+            return 1;
+        }
+#else
         if (log_flush() == 0) {
             return 0;
         }
+#endif
         g_log_retries--;
     } while (g_log_retries != 0);
 
@@ -1023,14 +1113,44 @@ static uint8_t cal_file_load(uint32_t to, UINT n)
     return 0;
 }
 
+#if APP_FIX_BUGS
+/*
+ * cal.bin (now in g_sd_buffer) may not be restored: it must be exactly what
+ * cal_backup_save() writes, carry the calibrated marker, and come from this
+ * meter (same serial number), unless this meter has never been calibrated.
+ */
+static int cal_file_rejected(DWORD size)
+{
+    if (size != SD_BUFFER_SIZE || g_sd_buffer[EE_CAL_MARKER] != 0xA5u) {
+        return 1;
+    }
+    if (settings_uncalibrated()) {
+        return 0;
+    }
+    for (uint32_t i = EE_SERIAL_FIRST; i <= EE_SERIAL_LAST; i++) {
+        if (g_sd_buffer[i] != settings_read_byte(i)) {
+            return 1;
+        }
+    }
+    return 0;
+}
+#endif
+
 /*
  * orig: 0x0801CF06 - "SdSEt": cal.bin to EEPROM bytes 0..0x4AF, read back
- * and compared; 0, 1 (no card), 4 (no file), 8 (read), 9 (compare)
+ * and compared; 0, 1 (no card), 4 (no file), 8 (read), 9 (compare).
+ * The original takes the first 0x4B0 bytes of any cal.bin. With
+ * APP_FIX_BUGS a file that cal_file_rejected() refuses gives 10 and nothing
+ * is written, and if the copy does not read back the previous contents are
+ * written back.
  */
 uint8_t cal_backup_restore(void)
 {
     uint8_t check[SD_BUFFER_SIZE];
     uint8_t r = 0;
+#if APP_FIX_BUGS
+    DWORD size = 0;
+#endif
 
     clock_init(1);
     if (sd_open_retry(10) != 0) {
@@ -1042,6 +1162,11 @@ uint8_t cal_backup_restore(void)
     if (f_open(&g_log_file, cal_file_name, FA_READ) != FR_OK) {
         r = 4;
     }
+#if APP_FIX_BUGS
+    if (r == 0) {
+        size = g_log_file.fsize;
+    }
+#endif
     if (r == 0) {
         r = cal_file_load(0, 0x200);
     }
@@ -1054,6 +1179,29 @@ uint8_t cal_backup_restore(void)
     f_close(&g_log_file);
     sd_power_off();
     clock_init(0);
+#if APP_FIX_BUGS
+    if (r == 0 && cal_file_rejected(size)) {
+        r = CAL_REJECTED;
+    }
+    if (r == 0) {
+        for (uint32_t i = 0; i < SD_BUFFER_SIZE; i++) {
+            check[i] = settings_read_byte(i);
+        }
+        for (uint32_t i = 0; i < SD_BUFFER_SIZE; i++) {
+            settings_write_byte(i, g_sd_buffer[i]);
+        }
+        for (uint32_t i = 0; i < SD_BUFFER_SIZE; i++) {
+            if (settings_read_byte(i) != g_sd_buffer[i]) {
+                for (uint32_t j = 0; j < SD_BUFFER_SIZE; j++) {
+                    if (settings_read_byte(j) != check[j]) {
+                        settings_write_byte(j, check[j]);
+                    }
+                }
+                return 9;
+            }
+        }
+    }
+#else
     if (r == 0) {
         for (uint32_t i = 0; i < SD_BUFFER_SIZE; i++) {
             settings_write_byte(i, g_sd_buffer[i]);
@@ -1067,6 +1215,7 @@ uint8_t cal_backup_restore(void)
             }
         }
     }
+#endif
     return r;
 }
 

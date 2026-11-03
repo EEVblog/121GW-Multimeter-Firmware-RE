@@ -1,6 +1,6 @@
 /*
  * Function/range change: HY3131 reconfiguration, calibration reload,
- * main display decimal point and display mode.
+ * main display decimal point and the readings skipped after a change.
  */
 #ifndef RANGE_SELECT_H
 #define RANGE_SELECT_H
@@ -19,7 +19,7 @@ void range_configure(uint8_t load_cal);
 void range_select(uint8_t load_cal);
 uint8_t main_dp_for_range(uint8_t function, uint8_t range);
 void main_dp_update(void);
-void mode_238_select(void);
+void mode_238_select(void);   /* sets g_setting_238, the readings to skip after a change */
 void range_change(void);
 void reconfigure_borrow_f2(uint8_t borrow);
 void reconfigure_borrow_f1(uint8_t borrow);

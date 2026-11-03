@@ -39,10 +39,18 @@ void data_eeprom_lock(void)
     FLASH->PECR |= PECR_PELOCK;
 }
 
-/* orig: 0x080120F0 */
+/*
+ * orig: 0x080120F0. The FLASH_SR error flags are sticky and the original
+ * clears them only at start-up, so after one failed write every later
+ * write is refused (flash_wait_for_last_operation() reports the old error).
+ * With APP_FIX_BUGS they are cleared before each attempt.
+ */
 uint8_t eeprom_program_byte(uint32_t offset, uint8_t value)
 {
     flash_data_eeprom_unlock();
+#if APP_FIX_BUGS
+    flash_clear_flags(FLASH_FLAGS_ALL);
+#endif
     uint8_t status = eeprom_program_byte_raw((volatile uint8_t *)(EEPROM_BASE + offset), value);
     data_eeprom_lock();
     return status;

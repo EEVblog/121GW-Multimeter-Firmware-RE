@@ -26,5 +26,8 @@ flash_status_t flash_wait_for_last_operation(uint32_t timeout);
 uint32_t flash_ob_get_bor(void);
 flash_status_t flash_ob_bor_config(uint8_t bor_level);
 void flash_ob_launch(void);
+#if APP_FIX_BUGS
+void flash_lock_all(void);
+#endif
 
 #endif /* FLASH_OB_H */

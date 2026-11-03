@@ -6,6 +6,7 @@
 #include "stm32l1xx.h"
 
 #define PECR_PELOCK      (1u << 0)
+#define PECR_PRGLOCK     (1u << 1)
 #define PECR_OPTLOCK     (1u << 2)
 #define PECR_OBL_LAUNCH  (1u << 18)
 #define SR_BSY           (1u << 0)
@@ -20,6 +21,24 @@ void flash_data_eeprom_unlock(void)
         FLASH->PEKEYR = 0x02030405u;
     }
 }
+
+#if APP_FIX_BUGS
+/*
+ * Not in the original: lock program memory and the option bytes, then
+ * FLASH_PECR and the data EEPROM. The original bootloader starts the
+ * application with everything unlocked, and the application only sets
+ * PELOCK after its first EEPROM write. PRGLOCK and OPTLOCK can only be set
+ * while PELOCK is clear; once PELOCK is set they are already set too (after
+ * reset, or by a bootloader built with BL_FIX_BUGS).
+ */
+void flash_lock_all(void)
+{
+    if ((FLASH->PECR & PECR_PELOCK) == 0) {
+        FLASH->PECR |= PECR_PRGLOCK | PECR_OPTLOCK;
+        FLASH->PECR |= PECR_PELOCK;
+    }
+}
+#endif
 
 /* orig: 0x0801FA68 */
 void flash_ob_unlock(void)

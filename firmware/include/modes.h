@@ -59,7 +59,7 @@ void measure_postprocess(void);
 
 extern uint8_t g_jack_prev;             /* 0x200080EA  last socket sample (bit 0 PE10, bit 1 PE11) */
 extern uint8_t g_jack_debounce;         /* 0x2000023B  (initialised RAM) */
-extern uint8_t g_jack_amps;             /* 0x20008075  plug in the A socket */
+extern uint8_t g_jack_amps;             /* 0x20008075  plug in the mA/uA socket (code 1) */
 
 void input_jack_check(void);
 void secondary_mode_next(void);

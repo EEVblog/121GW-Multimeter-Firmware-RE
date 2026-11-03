@@ -165,7 +165,9 @@ int32_t trim_correction_ac(int32_t reading, int32_t trim0, int32_t trim1, int32_
         g_trac_out = g_trac_diff - wrap_mul(g_trac_diff, g_trac_level) / 100;
         g_trac_out = g_trac_off_hi - g_trac_out;
     } else {
-        g_trac_level = iar_f2i(((float)g_trac_knee - (float)reading) / (float)g_trac_knee * 100.0f);
+        /* 0/0 when trim2 is -5000 and the reading 0: IAR's negative NaN */
+        g_trac_level = iar_f2i(iar_fdiv((float)g_trac_knee - (float)reading, (float)g_trac_knee)
+                               * 100.0f);
         g_trac_diff = g_trac_off_lo;
         g_trac_out = g_trac_off_lo - wrap_mul(g_trac_off_lo, g_trac_level) / 100;
     }
@@ -252,7 +254,8 @@ int32_t trim_correction(int32_t reading, int32_t trim0, int32_t trim1, int32_t t
         g_trc_level = (float)g_trc_b * g_trc_level;
     } else {
         g_trc_a = 0;
-        g_trc_level = (float)g_trc_off0 * ((float)reading / (float)g_trc_knee);
+        /* 0/0 when the knee and the reading are 0: IAR's negative NaN */
+        g_trc_level = (float)g_trc_off0 * iar_fdiv((float)reading, (float)g_trc_knee);
     }
     g_trc_result = wrap_add(g_trc_extra, wrap_add(iar_f2i(g_trc_level), g_trc_a));
     return g_trc_result;

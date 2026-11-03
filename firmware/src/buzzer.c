@@ -52,10 +52,18 @@ void beep_short(void)
     beep(1, 1, 100);
 }
 
-/* orig: 0x0800EE6C */
+/*
+ * orig: 0x0800EE6C - the "triple" beep. The count is the number of on/off
+ * phases after the first beep (TIM3 tick, irq.c), so 3 sounds two beeps;
+ * APP_FIX_BUGS makes it the three its name says.
+ */
 void beep_triple(void)
 {
+#if APP_FIX_BUGS
+    beep(1, 5, 50);
+#else
     beep(1, 3, 50);
+#endif
 }
 
 /* orig: 0x0800EE5E */

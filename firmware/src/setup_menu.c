@@ -402,7 +402,8 @@ static uint8_t rtc_field0(uint8_t address, uint8_t bcd_limit, uint8_t max, uint8
 
 /*
  * orig: 0x0800FF18 - read the clock from the RTC chip; implausible fields
- * become 2010-07-01 12:00:00
+ * become 2016-07-01 12:00:00 (fields are binary: the year fallback 0x10
+ * is 16)
  */
 void rtc_load_clock(void)
 {

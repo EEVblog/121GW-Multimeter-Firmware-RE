@@ -42,6 +42,21 @@ void flash_unlock(void)
     }
 }
 
+#if BL_FIX_BUGS
+/*
+ * Not in the original: undo flash_unlock() before the application starts.
+ * PRGLOCK and OPTLOCK can only be set while PELOCK is clear, so they go
+ * first; PELOCK then locks FLASH_PECR and the data EEPROM.
+ */
+void flash_lock(void)
+{
+    if ((FLASH->PECR & PECR_PELOCK) == 0) {
+        FLASH->PECR |= PECR_PRGLOCK | PECR_OPTLOCK;
+        FLASH->PECR |= PECR_PELOCK;
+    }
+}
+#endif
+
 /* orig: 0x080045A0 */
 void flash_ob_unlock(void)
 {

@@ -181,6 +181,12 @@ def check(name, sc, orig, new, new_symbols):
 
     om, oi = split(orig.trace, ORIGINAL_RAM_SYMBOLS)
     nm, ni = split(new.trace, new_symbols)
+    if budget:
+        # prefix comparison is vacuous on empty traces: require activity
+        for tag, m in (("original", orig), ("rebuilt", new)):
+            if not m.trace or not m.lcd_frames:
+                print("    %s produced an empty trace/LCD sequence in a budget run" % tag)
+                ok = False
     ok &= compare("main-context writes", om, nm, budget)
     ok &= compare("interrupt writes", oi, ni, budget)
 
@@ -192,7 +198,8 @@ def check(name, sc, orig, new, new_symbols):
         print("    option-byte writes differ: %s vs %s" % (orig.ob_writes, new.ob_writes))
         ok = False
     app_len = FLASH_BASE + 0x60000 - APP_BASE
-    if not budget and orig.flash(APP_BASE, app_len) != new.flash(APP_BASE, app_len):
+    # also for budget runs: "app not erased when the file/card is missing"
+    if orig.flash(APP_BASE, app_len) != new.flash(APP_BASE, app_len):
         print("    final application flash differs")
         ok = False
     return ok

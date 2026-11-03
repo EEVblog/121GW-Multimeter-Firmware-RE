@@ -5,11 +5,36 @@ if(NOT CMAKE_TOOLCHAIN_FILE)
 endif()
 project(eevblog_121gw_firmware C ASM)
 
+if(NOT CMAKE_C_COMPILER_VERSION VERSION_EQUAL 9.2.1)
+    message(WARNING "Compiler is GCC ${CMAKE_C_COMPILER_VERSION}; bit-equivalence with the original "
+                    "was only verified for GCC 9.2.1 (GNU Arm Embedded 9-2019-q4).")
+endif()
+
 set(ROOT_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(COMMON_DIR ${ROOT_DIR}/common)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE MinSizeRel)
+endif()
+
+# Deviations from the original firmware. Both off by default: the image is
+# then bit-equivalent to v2.05. See docs/app-architecture.md.
+option(APP_FIX_BUGS "Fix confirmed bugs in the reading/auto-range path" OFF)
+option(APP_AUTORANGE_FAST "Auto-range jumps several ranges at once" OFF)
+# Without the fixes the fake reading after a range change uses up the only
+# skipped reading of several ranges (g_setting_238 = 1), so a fast step could
+# act on an unsettled first average. A normal variable, so the cached value
+# is left as the user set it.
+if(APP_AUTORANGE_FAST AND NOT APP_FIX_BUGS)
+    message(STATUS "APP_AUTORANGE_FAST needs APP_FIX_BUGS: turning APP_FIX_BUGS on")
+    set(APP_FIX_BUGS ON)
+endif()
+set(APP_OPTION_DEFINITIONS)
+if(APP_FIX_BUGS)
+    list(APPEND APP_OPTION_DEFINITIONS APP_FIX_BUGS=1)
+endif()
+if(APP_AUTORANGE_FAST)
+    list(APPEND APP_OPTION_DEFINITIONS APP_AUTORANGE_FAST=1)
 endif()
 
 # Reconstructed application modules.
@@ -72,7 +97,7 @@ target_include_directories(app_modules PUBLIC
     ${COMMON_DIR}/cmsis/device
     ${COMMON_DIR}/fatfs
 )
-target_compile_definitions(app_modules PUBLIC STM32L152xD)
+target_compile_definitions(app_modules PUBLIC STM32L152xD ${APP_OPTION_DEFINITIONS})
 target_compile_options(app_modules PRIVATE -std=c11 -Wall -Wextra)
 # FatFs R0.08a, unmodified. Its two file-scope variables get sections of
 # their own so the hybrid image can place them at the original addresses.
@@ -82,7 +107,7 @@ set_source_files_properties(${COMMON_DIR}/fatfs/ff.c PROPERTIES
 # ---- Hybrid test image -----------------------------------------------------
 # Rebuilt modules + bindings of everything else to the original image, for
 # function-level equivalence tests (tools/emu/test_app_functions.py).
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
+find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter)   # python -P needs 3.11+
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hybrid_syms.s
     COMMAND ${Python3_EXECUTABLE} -P ${ROOT_DIR}/tools/hybrid_syms.py
@@ -114,7 +139,7 @@ add_custom_command(
 )
 add_executable(app.elf src/startup.c src/ram_init.c ${CMAKE_CURRENT_BINARY_DIR}/ram_syms.s)
 target_include_directories(app.elf PRIVATE include ${COMMON_DIR}/cmsis/core ${COMMON_DIR}/cmsis/device)
-target_compile_definitions(app.elf PRIVATE STM32L152xD)
+target_compile_definitions(app.elf PRIVATE STM32L152xD ${APP_OPTION_DEFINITIONS})
 target_compile_options(app.elf PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c11 -Wall -Wextra>)
 target_link_options(app.elf PRIVATE
     -T${CMAKE_CURRENT_SOURCE_DIR}/stm32l152xd_app.ld
