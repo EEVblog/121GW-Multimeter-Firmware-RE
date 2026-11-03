@@ -76,7 +76,13 @@ static void key_mem(void)
         }
         return;
     }
+#if APP_FIX_BUGS
+    /* not while a setting is edited: recall would open over the edit and
+     * REL/PEAK would keep stepping the setting instead of the records */
+    if (g_logging_active != 0 || g_flag_806e != 0) {
+#else
     if (g_logging_active != 0) {
+#endif
         beep_triple();
         return;
     }
@@ -120,6 +126,15 @@ static void key_rel(void)
                 beep_triple();
                 return;
             }
+#if APP_FIX_BUGS
+            /* REL off in HOLD showed the held relative value as absolute
+             * and restored the manual-range state under HOLD, so leaving
+             * HOLD left the range manual: not allowed, as RANGE in HOLD */
+            if (g_rel_active != 0 && g_hold_active != 0) {
+                beep_triple();
+                return;
+            }
+#endif
             if ((uint8_t)(g_flag_8048 & (g_rel_active ^ 1u)) == 0) {
                 g_rel_active = (g_rel_active != 1);
                 if (g_rel_active != 0) {
@@ -227,6 +242,15 @@ static void key_peak(void)
         beep_triple();
         return;
     }
+#if APP_FIX_BUGS
+    /* PEAK sets the function up again: that ended logging, and in HOLD
+     * blanked the readout with HOLD still lit. Refused, as MODE in logging
+     * and RANGE in HOLD */
+    if (g_logging_active != 0 || g_hold_active != 0) {
+        beep_triple();
+        return;
+    }
+#endif
     g_flag_80b7 ^= 1u;
     g_peak_select = 0;
     g_flag_804a = 1;

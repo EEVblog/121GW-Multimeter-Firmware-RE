@@ -104,6 +104,15 @@ int32_t minmax_value(int32_t with_hold)
     switch (g_minmax_mode) {
     case 1:
         value = g_minmax_max;
+#if APP_FIX_BUGS
+        /* only negative overloads so far: the maximum is -OL (the original
+         * cleared the overload and showed INT32_MIN) */
+        if (value == INT32_MIN) {
+            g_peak_is_min = 1;
+            g_flag_8046 = 1;
+            break;
+        }
+#endif
         if (value >= DISPLAY_LIMIT) {
             g_peak_is_min = 0;
             g_flag_8046 = 1;
@@ -113,6 +122,15 @@ int32_t minmax_value(int32_t with_hold)
         break;
     case 2:
         value = g_minmax_min;
+#if APP_FIX_BUGS
+        /* only positive overloads so far: the minimum is OL (the original
+         * left the overload state as it was) */
+        if (value == INT32_MAX) {
+            g_peak_is_min = 0;
+            g_flag_8046 = 1;
+            break;
+        }
+#endif
         if (value < -(DISPLAY_LIMIT - 1)) {
             g_peak_is_min = 1;
             g_flag_8046 = 1;
@@ -598,9 +616,17 @@ void voltage_warnings(void)
                 g_flag_80b1 = outside_limit(g_derived_value, 300);
             }
         }
+#if APP_FIX_BUGS
+        /* also in range 0: locked there (manual, MIN/MAX, REL, HOLD), mains
+         * reads OL with no warning symbol */
+        if (g_flag_8046 != 0) {
+            g_flag_80b1 = 1;
+        }
+#else
         if (g_range != 0 && g_flag_8046 != 0) {
             g_flag_80b1 = 1;
         }
+#endif
     } else if (f == 13 || f == 14 || f == 15 || f == 22 || f == 23 || f == 24) {
         if (g_range == 1 || g_range == 3) {
             g_flag_80b1 = outside_limit(g_ref_7d7c, 30000);
@@ -693,8 +719,10 @@ void measure_postprocess(void)
 
 /*
  * orig: 0x0801417C - current input sockets: PE10/PE11 low (1 / 2) when a
- * plug is in. After 10 equal samples, the A socket (1) switches the current
- * functions between their mA and A variants, and a plug in a socket that
+ * plug is in: 1 is the mA/uA socket, 2 the A/500 mA socket. After 10 equal
+ * samples, a plug in the mA/uA socket (g_jack_amps, despite its name)
+ * selects the mA variant of the mA/A current functions (20/21 -> 18/19,
+ * 15/24 -> 14/23) and anything else the A variant; a plug in a socket that
  * does not fit the function asks for the lead ("LEAd")
  */
 void input_jack_check(void)
@@ -749,6 +777,11 @@ void input_jack_check(void)
     }
     if (changed) {
         g_flag_804a = 1;
+#if APP_FIX_BUGS
+        /* as the rotary switch does: the new function's readout would stay
+         * blank with HOLD lit */
+        g_hold_active = 0;
+#endif
         function_change(1);
     }
     if (settled) {

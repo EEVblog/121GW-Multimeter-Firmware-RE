@@ -20,7 +20,9 @@
 /*
  * orig: 0x08006C7A
  * With a new reading below a function-dependent level (and the hold-off
- * counter above 2), restarts the hold-off at 2000.
+ * counter above 2), sets the hold-off counter to its limit (2000), so the
+ * next TIM2 tick clears the frequency reading (irq.c): no frequency is
+ * shown for a signal too small to count.
  */
 void holdoff_on_low_reading(void)
 {
@@ -102,11 +104,36 @@ void product_scaled(int32_t a, int32_t b)
     g_derived_value = (int32_t)(((int64_t)a * (int64_t)b) / divisor);
 }
 
+#if APP_FIX_BUGS
+/* floor(sqrt(n)) for 64-bit n, bit by bit as isqrt_u32() */
+static uint32_t isqrt_u64(uint64_t n)
+{
+    uint64_t root = 0;
+    uint64_t bit = 1ull << 62;
+
+    while (bit > n) {
+        bit >>= 2;
+    }
+    while (bit != 0) {
+        if (n >= root + bit) {
+            n -= root + bit;
+            root = (root >> 1) + bit;
+        } else {
+            root >>= 1;
+        }
+        bit >>= 2;
+    }
+    return (uint32_t)root;
+}
+#endif
+
 /*
  * orig: 0x0800A6A8
  * sqrt(a^2 + b^2) for |a|, |b| <= 60000, else 100000. The squares and their
  * sum wrap at 32 bits, as in the original; isqrt_u32() gives exactly the
- * original's (int)sqrt((double)sum).
+ * original's (int)sqrt((double)sum). The sum wraps once the magnitude passes
+ * 65535 (a = b = 47000 reads 11092 instead of 66468, in range); with
+ * APP_FIX_BUGS it is summed in 64 bits (same result while it fits 32).
  */
 void vector_magnitude(void)
 {
@@ -119,7 +146,13 @@ void vector_magnitude(void)
     if (g_vec_a <= VECTOR_LIMIT && g_vec_b <= VECTOR_LIMIT) {
         g_vec_a_sq = (uint32_t)g_vec_a * (uint32_t)g_vec_a;
         g_vec_b_sq = (uint32_t)g_vec_b * (uint32_t)g_vec_b;
+#if APP_FIX_BUGS
+        uint64_t sum = (uint64_t)g_vec_b_sq + g_vec_a_sq;
+
+        g_derived_value = (int32_t)((sum >> 32) == 0 ? isqrt_u32((uint32_t)sum) : isqrt_u64(sum));
+#else
         g_derived_value = (int32_t)isqrt_u32(g_vec_b_sq + g_vec_a_sq);
+#endif
     } else {
         g_derived_value = VECTOR_OVERFLOW;
     }

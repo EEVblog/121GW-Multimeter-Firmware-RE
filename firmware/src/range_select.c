@@ -426,6 +426,16 @@ static void reconfig_overload_reset(void)
  */
 void function_change(uint8_t stop_logging)
 {
+#if APP_FIX_BUGS
+    /* a calibration step in progress belongs to the old function/range:
+     * abandon it, or its partial sum would be stored in the new record */
+    g_avg_flag_808c = 0;
+    g_cal_flag_808e = 0;
+    g_flag_8090 = 0;
+    g_avg_count = 0;
+    g_avg_sum = 0;
+    g_cal_sum64 = 0;
+#endif
     if (g_function == 9 && g_range != 0 && g_range < 6) {
         g_count_805a = 2;
     }
@@ -467,6 +477,14 @@ void function_change(uint8_t stop_logging)
         } else {
             g_range = 0;
         }
+#if APP_FIX_BUGS
+        /* PEAK keeps the range, which the new function may not have (VAC
+         * range 2/3 -> ACmV with 2 ranges): its tables and calibration
+         * record would be read past their end */
+        if (g_range >= g_range_count[g_function]) {
+            g_range = 0;
+        }
+#endif
         g_autohold_mode = 0;
         g_flag_8051 = 0;
         g_flag_8052 = 0;

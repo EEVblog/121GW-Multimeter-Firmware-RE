@@ -182,7 +182,16 @@ void key_scan(void)
     }
 
     /* still held */
+#if APP_FIX_BUGS
+    /* stop at KEY_LONG_PRESS_DONE: counting on, the uint8 wrapped to 0
+     * 205 scans later and the held key counted as a new press (a second
+     * long press, or a short press on release) */
+    if (g_key_hold_ticks != KEY_LONG_PRESS_DONE) {
+        g_key_hold_ticks++;
+    }
+#else
     g_key_hold_ticks++;
+#endif
     if (g_key_hold_ticks == KEY_LONG_PRESS_TICKS) {
         g_key_hold_ticks = KEY_LONG_PRESS_DONE;
         g_key_release_armed = 0;

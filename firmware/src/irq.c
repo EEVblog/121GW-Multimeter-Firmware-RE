@@ -312,7 +312,15 @@ void TIM2_IRQHandler(void)
         }
         if (g_mode_8037 == 7) {
             g_flag_80d5 = (g_flag_80d5 != 1);
+#if APP_FIX_BUGS
+            /* drawing here shares g_digits/g_digit_text and the LCD shadow
+             * with the main loop, which may be drawing the readout: ask
+             * display_update() for the secondary readout instead (mode 7
+             * draws the same hour:minute pair there) */
+            g_disp_flag_8062 = 1;
+#else
             show_time_pair(1);
+#endif
         }
     }
     g_tick_div100++;
