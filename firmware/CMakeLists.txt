@@ -21,6 +21,14 @@ endif()
 # then bit-equivalent to v2.05. See docs/app-architecture.md.
 option(APP_FIX_BUGS "Fix confirmed bugs in the reading/auto-range path" OFF)
 option(APP_AUTORANGE_FAST "Auto-range jumps several ranges at once" OFF)
+# Without the fixes the fake reading after a range change uses up the only
+# skipped reading of several ranges (g_setting_238 = 1), so a fast step could
+# act on an unsettled first average. A normal variable, so the cached value
+# is left as the user set it.
+if(APP_AUTORANGE_FAST AND NOT APP_FIX_BUGS)
+    message(STATUS "APP_AUTORANGE_FAST needs APP_FIX_BUGS: turning APP_FIX_BUGS on")
+    set(APP_FIX_BUGS ON)
+endif()
 set(APP_OPTION_DEFINITIONS)
 if(APP_FIX_BUGS)
     list(APPEND APP_OPTION_DEFINITIONS APP_FIX_BUGS=1)

@@ -53,12 +53,15 @@ void cal_clamp_e14(void)
  * scaled. A botched gain step (wrong input, reversed leads) gives zero or a
  * negative gain; stored, a negative one reloads as a huge positive gain
  * (the record is read as unsigned). Such a gain is refused with a triple
- * beep and the old record kept.
+ * beep and the old record kept. The caller has already put the refused gain
+ * in the working gain (gain_select_for_range()), so the stored record is
+ * loaded again and readings go on with it.
  */
 static int cal_gain_storable(int32_t scaled)
 {
     if (scaled <= 0 || scaled == INT32_MAX) {
         beep_triple();
+        cal_load(g_function, g_range);
         return 0;
     }
     return 1;

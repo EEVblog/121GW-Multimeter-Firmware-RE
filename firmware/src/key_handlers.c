@@ -433,6 +433,12 @@ void key_long_press_handler(uint8_t key)
     case 0x10:                                          /* RANGE: back to auto range */
         if (g_logging_active != 0 || g_menu_active != 0) {
             beep_triple();
+#if APP_FIX_BUGS
+        } else if (g_flag_808a == 0 && g_flag_80b7 != 0) {
+            /* PEAK reads through RMS and keeps the range manual (key_peak):
+             * auto range would act on those readings */
+            beep_triple();
+#endif
         } else {
             if (g_flag_808a == 0) {
                 g_manual_range = 0;
@@ -457,7 +463,13 @@ void key_long_press_handler(uint8_t key)
         if (g_logging_active != 0 || g_menu_active != 0 || g_flag_806e != 0) {
             beep_triple();
         } else if (g_function == 2 || g_function == 4) {
+#if APP_FIX_BUGS
+            /* the filter sets the function up again (g_flag_804a), which in
+             * HOLD blanked the readout with HOLD still lit: refused, as PEAK */
+            if (g_flag_80ba == 0 && g_hold_active == 0) {
+#else
             if (g_flag_80ba == 0) {
+#endif
                 g_flag_80b9 ^= 1u;
                 g_flag_80ba = 0;
                 g_flag_804a = 1;

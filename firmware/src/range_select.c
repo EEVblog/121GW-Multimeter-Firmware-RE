@@ -570,17 +570,49 @@ static int autorange_decade_function(uint8_t f)
            || f == 16 || f == 17 || f == 18 || f == 19 || f == 20 || f == 21;
 }
 
-/* 90 % of the bargraph limit of `range` of the current function */
+/* the bargraph limit of `range` of the current function */
+static uint32_t autorange_limit(uint8_t range)
+{
+    return (uint32_t)g_bar_limit_table[g_function][range];
+}
+
+/* 90 % of it */
 static uint32_t autorange_limit_90(uint8_t range)
 {
-    return (uint32_t)g_bar_limit_table[g_function][range] * 9u / 10u;
+    return autorange_limit(range) * 9u / 10u;
+}
+
+/*
+ * Whether this reading came from g_ad1_average of the current set-up, so
+ * that its level says whether the ADC clipped. Not in PEAK (g_flag_80b7: the
+ * HY3131 runs RMS and the counter, AD1 is not updated), not in function 2
+ * AC+DC (g_flag_80ba: the phases alternate) and not in functions 16..21
+ * (the VA phases borrow the set-up of functions 1/2).
+ */
+static int autorange_reading_from_ad1(void)
+{
+    uint8_t f = g_function;
+
+    if (f == 1 || f == 3 || f == 9) {
+        return 1;
+    }
+    if (f == 4) {
+        return g_flag_80b7 == 0;
+    }
+    if (f == 2) {
+        return g_flag_80b7 == 0 && g_flag_80ba == 0;
+    }
+    return 0;
 }
 
 /*
  * Range to go to for a reading above the upper limit: the top range when
- * the ADC is at the rail, else the lowest higher range whose 90 % limit
- * holds the reading (magnitude / 10^k). A clipped reading that is not
- * caught here underestimates, which only costs another step later.
+ * the reading comes from AD1 and the ADC is at the rail, else the lowest
+ * higher range whose limit holds the reading (magnitude / 10^k). The full
+ * limit, not 90 %: a reading between 90 and 100 % of it fits, and going one
+ * range further would read below 10 % there and step straight back down.
+ * A clipped reading that is not caught here underestimates, which only
+ * costs another step later.
  */
 static uint8_t autorange_up_target(uint32_t magnitude)
 {
@@ -592,13 +624,15 @@ static uint8_t autorange_up_target(uint32_t magnitude)
     if (!autorange_decade_function(g_function)) {
         return target;
     }
-    if (g_ad1_average < 0) {
-        ad1 = 0u - ad1;
+    if (autorange_reading_from_ad1()) {
+        if (g_ad1_average < 0) {
+            ad1 = 0u - ad1;
+        }
+        if (ad1 >= AUTORANGE_AD1_RAIL) {
+            return top;
+        }
     }
-    if (ad1 >= AUTORANGE_AD1_RAIL) {
-        return top;
-    }
-    while (target < top && magnitude / divisor > autorange_limit_90(target)) {
+    while (target < top && magnitude / divisor > autorange_limit(target)) {
         target++;
         divisor *= 10u;   /* at most 10^6: ranges 0..6 */
     }
