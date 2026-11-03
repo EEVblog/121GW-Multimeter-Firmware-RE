@@ -429,6 +429,10 @@ void system_init(void)
         (void)flash_ob_bor_config(0);
         flash_ob_launch();
     }
+#if APP_FIX_BUGS
+    /* the original bootloader leaves the flash unlocked; EEPROM writes unlock it again */
+    flash_lock_all();
+#endif
 
     PWR->CR = ((PWR->CR & 0xFFFFE7FFu) | PWR_CR_VOS_RANGE1) & 0xFFFFFFF3u;
     while (PWR->CSR & PWR_CSR_VOSF_BIT) {

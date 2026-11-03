@@ -31,7 +31,14 @@ extern DWORD g_log_start_pos;          /* 0x20007EDC  file position before the l
 extern DWORD g_log_end_pos;            /* 0x20007EE0  where the next write goes */
 extern uint32_t g_log_bytes;           /* 0x20007EE4 */
 extern uint16_t g_log_buf_len;         /* 0x20007FDA  bytes in g_sd_buffer since the last flush */
-extern uint8_t g_sd_buffer[SD_BUFFER_SIZE];  /* 0x20001240  written text (for the read-back) or EEPROM image */
+/*
+ * 0x20001240  written text (for the read-back) or EEPROM image. log_write()
+ * fills it with a whole flush (header or up to 60 records, several KB), so
+ * it is declared with the free RAM it runs into (up to 0x2000394F, before
+ * g_ble_history_main), not with the 0x4B0 bytes of the EEPROM image.
+ */
+#define SD_LOG_BUFFER_SPAN  0x2710u
+extern uint8_t g_sd_buffer[SD_LOG_BUFFER_SPAN];
 extern uint8_t g_sd_read_buf[0x200];   /* 0x20006EA8 */
 extern uint8_t g_sd_result;            /* 0x200080F4  last FatFs result */
 extern char g_sd_drive;                /* 0x200080F5  "0:" path: '0', then g_log_resync (':'), then g_sd_transfer_error (NUL) */

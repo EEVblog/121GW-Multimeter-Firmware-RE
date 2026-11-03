@@ -182,6 +182,9 @@ sd_error_t sd_read_block(uint8_t *buffer, uint64_t address, uint16_t block_size)
 sd_error_t sd_write_multi_blocks(const uint8_t *buffer, uint64_t address,
                                  uint16_t block_size, uint32_t block_count);
 sd_error_t sd_wait_write_operation(void);
+#if APP_FIX_BUGS
+sd_error_t sd_wait_read_operation(void);
+#endif
 
 /* Interrupt hooks */
 sd_error_t sd_process_irq(void);

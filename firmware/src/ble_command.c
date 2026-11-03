@@ -6,6 +6,9 @@
  *   0xF8 + 7 ASCII-hex bytes  set the clock (registers 2, 4, 6, 10, 12, 14),
  *                             the 7th byte is the XOR of the other six; only
  *                             the first such command after start-up is applied
+ *                             (with APP_FIX_BUGS only if the values are a
+ *                             valid date and time; otherwise it is treated
+ *                             as a bad checksum)
  *   0xF4 + 2 ASCII-hex bytes  the same key code twice: inject a key event
  * Accepted commands are echoed back.
  */
@@ -62,6 +65,21 @@ uint8_t ble_hex_byte(uint8_t pos)
     return (uint8_t)((hex_digit(g_ble_cmd[pos]) << 4) + hex_digit(g_ble_cmd[pos + 1]));
 }
 
+#if APP_FIX_BUGS
+/*
+ * Not in the original: the six clock values (year 0..99, month, day, hour,
+ * minute, second) form a valid date and time. The original writes any
+ * value to the RTC as BCD; impossible dates and times then reach the log
+ * (a month or day of 0, characters other than digits in the "YYMMDDNN.csv"
+ * name, which can stop the log file being created).
+ */
+static int clock_values_valid(const uint8_t v[6])
+{
+    return v[0] <= 99 && v[1] >= 1 && v[1] <= 12 && v[2] >= 1
+           && v[2] <= rtc_days_in_month(v[0], v[1]) && v[3] <= 23 && v[4] <= 59 && v[5] <= 59;
+}
+#endif
+
 /* orig: 0x0800C332 */
 void ble_handle_command(void)
 {
@@ -77,7 +95,11 @@ void ble_handle_command(void)
             v[i] = ble_hex_byte((uint8_t)(1 + 2 * i));
             check ^= v[i];
         }
+#if APP_FIX_BUGS
+        if (check == ble_hex_byte(13) && clock_values_valid(v)) {
+#else
         if (check == ble_hex_byte(13)) {
+#endif
             ble_echo_command();
             if (g_clock_set_by_ble == 0) {
                 g_rtc_set_reg2 = v[0];
